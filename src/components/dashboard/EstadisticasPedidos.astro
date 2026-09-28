@@ -1,0 +1,385 @@
+<section id="estadisticas-pedidos" class="space-y-2">
+  <div class="flex justify-end">
+    <button
+      id="estadisticas-sonido"
+      type="button"
+      class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+      aria-label="Desactivar sonido de notificaciones"
+      aria-pressed="true"
+      title="Desactivar sonido de notificaciones"
+    >
+      <svg
+        id="estadisticas-sonido-icono-activo"
+        class="h-4 w-4"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M11 5 6 9H3v6h3l5 4V5Zm4.5 3.5a5 5 0 0 1 0 7m3-10a9 9 0 0 1 0 13"
+        ></path>
+      </svg>
+      <svg
+        id="estadisticas-sonido-icono-silencio"
+        class="hidden h-4 w-4"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M11 5 6 9H3v6h3l5 4V5Zm5 4 5 6m0-6-5 6"></path>
+      </svg>
+    </button>
+  </div>
+
+  <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <article
+      id="stat-articulo-revision"
+      class="rounded-lg border border-amber-200 border-t-4 bg-amber-50/80 p-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <p class="text-sm font-semibold text-amber-900">En revisión</p>
+      <p id="stat-en-revision" class="mt-2 text-4xl font-bold text-amber-950">
+        —
+      </p>
+      <p class="mt-2 text-xs text-amber-800/80">Requieren atención</p>
+    </article>
+
+    <article
+      id="stat-articulo-impresion"
+      class="rounded-lg border border-cyan-200 border-t-4 bg-cyan-50/80 p-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <p class="text-sm font-semibold text-cyan-900">En impresión</p>
+      <p id="stat-en-impresion" class="mt-2 text-4xl font-bold text-cyan-950">
+        —
+      </p>
+      <p class="mt-2 text-xs text-cyan-800/80">Trabajos activos</p>
+    </article>
+
+    <article
+      id="stat-articulo-listos"
+      class="rounded-lg border border-emerald-200 border-t-4 bg-emerald-50/80 p-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <p class="text-sm font-semibold text-emerald-900">Listos</p>
+      <p id="stat-listos" class="mt-2 text-4xl font-bold text-emerald-950">—</p>
+      <p class="mt-2 text-xs text-emerald-800/80">Esperando entrega</p>
+    </article>
+
+    <article
+      id="stat-articulo-entregados"
+      class="rounded-lg border border-slate-300 border-t-4 bg-white p-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <p class="text-sm font-semibold text-slate-700">Entregados</p>
+      <p id="stat-entregados" class="mt-2 text-4xl font-bold text-slate-950">
+        —
+      </p>
+      <p class="mt-2 text-xs text-slate-500">Pedidos completados</p>
+    </article>
+  </div>
+</section>
+
+<style>
+  @keyframes stat-increment {
+    0%,
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgb(8 145 178 / 0%);
+    }
+    9%,
+    33%,
+    57% {
+      transform: scale(1.025);
+      box-shadow: 0 0 0 4px rgb(8 145 178 / 12%);
+    }
+    21%,
+    45%,
+    69% {
+      transform: scale(1);
+      box-shadow: 0 0 0 1px rgb(8 145 178 / 8%);
+    }
+  }
+
+  .stat-increment {
+    animation: stat-increment 4.8s ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stat-increment {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  import {
+    iniciarPedidosStore,
+    suscribirsePedidos,
+  } from "../../services/pedidos-store";
+
+  import type { Pedido } from "../../types/pedido";
+  import { obtenerUsuario } from "../../services/auth";
+  import { pedidoPerteneceAlArea } from "../../services/permisos";
+
+  const enRevision = document.getElementById("stat-en-revision");
+  const enImpresion = document.getElementById("stat-en-impresion");
+  const listos = document.getElementById("stat-listos");
+  const entregados = document.getElementById("stat-entregados");
+  const botonSonido = document.getElementById(
+    "estadisticas-sonido",
+  ) as HTMLButtonElement | null;
+  const iconoSonidoActivo = document.getElementById(
+    "estadisticas-sonido-icono-activo",
+  );
+  const iconoSonidoSilencio = document.getElementById(
+    "estadisticas-sonido-icono-silencio",
+  );
+
+  type EstadoContadores = Record<
+    "REVISION" | "IMPRIMIENDO" | "LISTO" | "ENTREGADO",
+    number
+  >;
+
+  const articulosEstadisticas: Record<
+    keyof EstadoContadores,
+    { contador: HTMLElement | null; articulo: HTMLElement | null }
+  > = {
+    REVISION: {
+      contador: enRevision,
+      articulo: document.getElementById("stat-articulo-revision"),
+    },
+    IMPRIMIENDO: {
+      contador: enImpresion,
+      articulo: document.getElementById("stat-articulo-impresion"),
+    },
+    LISTO: {
+      contador: listos,
+      articulo: document.getElementById("stat-articulo-listos"),
+    },
+    ENTREGADO: {
+      contador: entregados,
+      articulo: document.getElementById("stat-articulo-entregados"),
+    },
+  };
+
+  let estadisticasPrevias: EstadoContadores | null = null;
+  let cargaInicialCompleta = false;
+  let sonidoActivo = true;
+  let contextoAudio: AudioContext | null = null;
+  const temporizadoresAnimacion = new WeakMap<HTMLElement, number>();
+
+  function prepararAudio() {
+    if (!sonidoActivo || !("AudioContext" in window)) {
+      return;
+    }
+
+    contextoAudio ??= new AudioContext();
+    if (contextoAudio.state === "suspended") {
+      void contextoAudio.resume().catch(() => {});
+    }
+  }
+
+  function reproducirSonidoIncremento() {
+    if (!sonidoActivo) {
+      return;
+    }
+
+    prepararAudio();
+    if (!contextoAudio) {
+      return;
+    }
+
+    const emitirTonos = () => {
+      if (!contextoAudio || contextoAudio.state !== "running") {
+        return;
+      }
+
+      const inicio = contextoAudio.currentTime;
+      [523.25, 659.25, 783.99].forEach((frecuencia, indice) => {
+        const momento = inicio + indice * 0.11;
+        const campana = contextoAudio!.createOscillator();
+        const armonico = contextoAudio!.createOscillator();
+        const volumenCampana = contextoAudio!.createGain();
+        const volumenArmonico = contextoAudio!.createGain();
+
+        campana.type = "sine";
+        campana.frequency.setValueAtTime(frecuencia, momento);
+        volumenCampana.gain.setValueAtTime(0.0001, momento);
+        volumenCampana.gain.exponentialRampToValueAtTime(
+          0.045,
+          momento + 0.012,
+        );
+        volumenCampana.gain.exponentialRampToValueAtTime(
+          0.0001,
+          momento + 0.34,
+        );
+        campana.connect(volumenCampana);
+        volumenCampana.connect(contextoAudio!.destination);
+        campana.start(momento);
+        campana.stop(momento + 0.36);
+
+        armonico.type = "sine";
+        armonico.frequency.setValueAtTime(frecuencia * 2.76, momento);
+        volumenArmonico.gain.setValueAtTime(0.0001, momento);
+        volumenArmonico.gain.exponentialRampToValueAtTime(
+          0.009,
+          momento + 0.01,
+        );
+        volumenArmonico.gain.exponentialRampToValueAtTime(
+          0.0001,
+          momento + 0.2,
+        );
+        armonico.connect(volumenArmonico);
+        volumenArmonico.connect(contextoAudio!.destination);
+        armonico.start(momento);
+        armonico.stop(momento + 0.22);
+      });
+    };
+
+    if (contextoAudio.state === "suspended") {
+      void contextoAudio
+        .resume()
+        .then(emitirTonos)
+        .catch(() => {});
+    } else {
+      emitirTonos();
+    }
+  }
+
+  function animarIncremento(articulo: HTMLElement) {
+    const temporizador = temporizadoresAnimacion.get(articulo);
+    if (temporizador !== undefined) {
+      window.clearTimeout(temporizador);
+    }
+
+    articulo.classList.remove("stat-increment");
+    void articulo.offsetWidth;
+    articulo.classList.add("stat-increment");
+
+    temporizadoresAnimacion.set(
+      articulo,
+      window.setTimeout(() => {
+        articulo.classList.remove("stat-increment");
+        temporizadoresAnimacion.delete(articulo);
+      }, 4900),
+    );
+  }
+
+  function actualizarControlSonido() {
+    if (!botonSonido) {
+      return;
+    }
+
+    const etiqueta = sonidoActivo
+      ? "Desactivar sonido de notificaciones"
+      : "Activar sonido de notificaciones";
+    botonSonido.setAttribute("aria-label", etiqueta);
+    botonSonido.setAttribute("title", etiqueta);
+    botonSonido.setAttribute("aria-pressed", String(sonidoActivo));
+    iconoSonidoActivo?.classList.toggle("hidden", !sonidoActivo);
+    iconoSonidoSilencio?.classList.toggle("hidden", sonidoActivo);
+  }
+
+  botonSonido?.addEventListener("click", () => {
+    sonidoActivo = !sonidoActivo;
+    actualizarControlSonido();
+    prepararAudio();
+  });
+
+  document.addEventListener("pointerdown", prepararAudio, { once: true });
+  document.addEventListener("keydown", prepararAudio, { once: true });
+
+  /**
+   * Determina si una fecha corresponde al día actual
+   * en la zona horaria de Ecuador.
+   */
+  function fechaEsDeHoy(fecha: string | null): boolean {
+    if (!fecha) {
+      return false;
+    }
+
+    const fechaRegistro = new Date(fecha);
+    const fechaActual = new Date();
+
+    const formatoFecha = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Guayaquil",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
+    return (
+      formatoFecha.format(fechaRegistro) === formatoFecha.format(fechaActual)
+    );
+  }
+
+  /**
+   * Actualiza las estadísticas del dashboard.
+   *
+   * El store emite Pedido[], por lo que el callback debe
+   * usar el contrato real del modelo y no un array custom.
+   */
+  function actualizarEstadisticas(pedidos: Pedido[]) {
+    const estadisticas: EstadoContadores = {
+      REVISION: 0,
+      IMPRIMIENDO: 0,
+      LISTO: 0,
+      ENTREGADO: 0,
+    };
+
+    const usuario = obtenerUsuario();
+    const pedidosDeHoy = pedidos.filter(
+      (pedido) =>
+        pedidoPerteneceAlArea(pedido, usuario) &&
+        fechaEsDeHoy(pedido.updatedAt),
+    );
+
+    pedidosDeHoy.forEach((pedido) => {
+      if (pedido.estado in estadisticas) {
+        estadisticas[pedido.estado as keyof typeof estadisticas]++;
+      }
+    });
+
+    let huboIncremento = false;
+
+    (Object.keys(articulosEstadisticas) as (keyof EstadoContadores)[]).forEach(
+      (estado) => {
+        const { contador, articulo } = articulosEstadisticas[estado];
+        const valor = estadisticas[estado];
+        contador && (contador.textContent = String(valor));
+
+        if (
+          cargaInicialCompleta &&
+          estadisticasPrevias &&
+          valor > estadisticasPrevias[estado]
+        ) {
+          if (articulo) {
+            animarIncremento(articulo);
+          }
+          huboIncremento = true;
+        }
+      },
+    );
+
+    estadisticasPrevias = estadisticas;
+    if (huboIncremento) {
+      reproducirSonidoIncremento();
+    }
+  }
+
+  suscribirsePedidos(actualizarEstadisticas);
+
+  iniciarPedidosStore()
+    .catch((error) => {
+      console.error("No se pudo iniciar el store:", error);
+    })
+    .finally(() => {
+      cargaInicialCompleta = true;
+    });
+</script>

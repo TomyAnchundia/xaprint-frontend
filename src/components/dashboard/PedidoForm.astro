@@ -1,0 +1,1348 @@
+---
+interface Props {
+  mode?: "crear" | "editar";
+}
+
+const { mode = "crear" } = Astro.props;
+---
+
+<div
+  id="modal-nuevo-pedido"
+  class="fixed inset-0 z-50 hidden"
+  aria-hidden="true"
+>
+  <div
+    id="modal-nuevo-pedido-fondo"
+    class="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
+  >
+  </div>
+
+  <div
+    class="relative flex h-full w-full items-center justify-center p-3 sm:p-5 lg:p-8"
+  >
+    <div
+      class="relative flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="nuevo-pedido-titulo"
+    >
+      <!-- Header fijo -->
+      <div
+        class="flex shrink-0 items-start justify-between border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-6"
+      >
+        <div>
+          <p
+            class="text-xs font-semibold uppercase tracking-wider text-blue-600"
+          >
+            Producción
+          </p>
+          <h2
+            id="nuevo-pedido-titulo"
+            class="mt-1 text-xl font-bold text-slate-900"
+          >
+            {mode === "editar" ? "Editar pedido" : "Nuevo pedido"}
+          </h2>
+
+          <p id="nuevo-pedido-subtitulo" class="mt-1 text-sm text-slate-500">
+            {
+              mode === "editar"
+                ? "Modifica los datos del trabajo de impresión."
+                : "Registra un nuevo trabajo de impresión."
+            }
+          </p>
+        </div>
+
+        <button
+          id="cerrar-modal-nuevo-pedido"
+          type="button"
+          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Cerrar"
+        >
+          <svg
+            class="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M6 6l12 12M18 6L6 18"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Contenido con scroll -->
+      <form id="form-nuevo-pedido" class="min-h-0 flex-1 overflow-y-auto">
+        <div class="space-y-6 bg-slate-50/70 p-5 sm:p-6">
+          <!-- Cliente -->
+          <section>
+            <div class="grid items-end gap-3 sm:grid-cols-[1fr_auto]">
+              <div class="relative">
+                <input
+                  id="busqueda-cliente"
+                  type="search"
+                  autocomplete="off"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                  aria-controls="resultados-clientes"
+                  placeholder="Buscar por nombre o teléfono"
+                  class="block min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20"
+                />
+                <input id="pedido-cliente" name="clienteId" type="hidden" />
+                <div
+                  id="resultados-clientes"
+                  class="absolute inset-x-0 top-full z-20 mt-1 hidden max-h-56 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+                  role="listbox"
+                  aria-label="Resultados de clientes"
+                >
+                </div>
+              </div>
+
+              <div class="flex items-end">
+                <button
+                  id="btn-nuevo-cliente"
+                  type="button"
+                  class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 sm:w-auto"
+                >
+                  <svg
+                    class="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M12 5v14M5 12h14"></path>
+                  </svg>
+
+                  Nuevo cliente
+                </button>
+              </div>
+            </div>
+
+            <!-- Nuevo cliente -->
+            <div
+              id="nuevo-cliente-panel"
+              class="mt-3 hidden rounded-xl border border-blue-100 bg-blue-50/50 p-4"
+            >
+              <div class="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-slate-900">
+                    Registrar cliente
+                  </p>
+
+                  <p class="text-xs text-slate-500">
+                    Se guardará antes de crear el pedido.
+                  </p>
+                </div>
+
+                <button
+                  id="cancelar-nuevo-cliente"
+                  type="button"
+                  class="shrink-0 text-xs font-medium text-slate-500 hover:text-slate-800"
+                >
+                  Cancelar
+                </button>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label
+                    for="nuevo-cliente-nombre"
+                    class="mb-1.5 block text-sm font-medium text-slate-700"
+                  >
+                    Nombre
+                  </label>
+
+                  <input
+                    id="nuevo-cliente-nombre"
+                    type="text"
+                    maxlength="120"
+                    placeholder="Nombre del cliente"
+                    class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    for="nuevo-cliente-telefono"
+                    class="mb-1.5 block text-sm font-medium text-slate-700"
+                  >
+                    Teléfono
+                  </label>
+
+                  <input
+                    id="nuevo-cliente-telefono"
+                    type="tel"
+                    maxlength="30"
+                    placeholder="0999999999"
+                    class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+              </div>
+
+              <button
+                id="guardar-nuevo-cliente"
+                type="button"
+                class="mt-3 min-h-10 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Guardar cliente
+              </button>
+            </div>
+          </section>
+
+          <!-- Servicio -->
+          <section>
+            <div class="mb-3">
+              <h3 class="text-sm font-semibold text-slate-900">Impresión</h3>
+
+              <p class="text-xs text-slate-500">
+                Define el tipo de DTF y las medidas del trabajo.
+              </p>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label
+                  for="pedido-servicio"
+                  class="mb-1.5 block text-sm font-medium text-slate-700"
+                >
+                  Servicio
+                </label>
+
+                <select
+                  id="pedido-servicio"
+                  name="servicio"
+                  required
+                  class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="TEXTIL">DTF Textil</option>
+                  <option value="UV">DTF UV</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  for="pedido-ancho"
+                  class="mb-1.5 block text-sm font-medium text-slate-700"
+                >
+                  Ancho
+                </label>
+
+                <select
+                  id="pedido-ancho"
+                  name="ancho"
+                  required
+                  class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                >
+                  <option value="31">31 cm</option>
+                  <option value="58">58 cm</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  for="pedido-largo"
+                  class="mb-1.5 block text-sm font-medium text-slate-700"
+                >
+                  Largo (cm)
+                </label>
+
+                <input
+                  id="pedido-largo"
+                  name="largo"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  required
+                  placeholder="230"
+                  class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+            </div>
+
+            <!-- Precio -->
+            <div
+              id="precio-preview"
+              class="mt-4 flex items-center justify-between gap-4 rounded-xl border border-cyan-200 bg-cyan-50/70 px-4 py-3"
+            >
+              <div>
+                <p
+                  id="valor-cobrar-etiqueta"
+                  class="text-sm font-semibold text-cyan-950"
+                >
+                  Valor a cobrar estimado
+                </p>
+
+                <p
+                  id="precio-preview-ayuda"
+                  class="mt-0.5 text-xs text-slate-600"
+                >
+                  Ingresa el largo para calcular.
+                </p>
+              </div>
+
+              <p
+                id="precio-preview-valor"
+                class="shrink-0 text-2xl font-bold text-cyan-950"
+              >
+                —
+              </p>
+            </div>
+          </section>
+
+          <!-- Configuración -->
+          <section>
+            <div class="mb-3">
+              <h3 class="text-sm font-semibold text-slate-900">
+                Configuración de impresión
+              </h3>
+
+              <p
+                id="configuracion-impresion-ayuda"
+                class="text-xs text-slate-500"
+              >
+                Ajusta las opciones según el material y el ancho seleccionado.
+              </p>
+            </div>
+
+            <fieldset
+              id="configuracion-impresion-controles"
+              class="m-0 min-w-0 rounded-xl border border-slate-200 bg-white p-4 transition disabled:opacity-50"
+            >
+              <div class="grid gap-3 sm:grid-cols-3">
+                <label
+                  class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 transition has-checked:border-cyan-300 has-checked:bg-cyan-50 has-disabled:cursor-not-allowed"
+                >
+                  <input
+                    id="pedido-contraer"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-slate-300 text-cyan-700 focus:ring-cyan-600"
+                  />
+                  <span>
+                    <span class="block text-sm font-semibold text-slate-800">
+                      Contraer
+                    </span>
+                    <span class="block text-xs text-slate-500">
+                      Ajuste de impresión
+                    </span>
+                  </span>
+                </label>
+
+                <div>
+                  <label
+                    for="pedido-velocidad"
+                    class="mb-1.5 block text-sm font-semibold text-slate-700"
+                    >Velocidad</label
+                  >
+                  <select
+                    id="pedido-velocidad"
+                    class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                  >
+                    <option value="">Sin especificar</option>
+                    <option value="83">83</option>
+                    <option value="88">88</option>
+                  </select>
+                </div>
+
+                <label
+                  class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 transition has-checked:border-cyan-300 has-checked:bg-cyan-50 has-disabled:cursor-not-allowed"
+                >
+                  <input
+                    id="pedido-obstruccion"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-slate-300 text-cyan-700 focus:ring-cyan-600"
+                  />
+                  <span>
+                    <span class="block text-sm font-semibold text-slate-800">
+                      Obturación
+                    </span>
+                    <span class="block text-xs text-slate-500">
+                      Marcar cuando aplique
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+          </section>
+
+          <!-- Producción -->
+          <section>
+            <div class="mb-3">
+              <h3 class="text-sm font-semibold text-slate-900">Producción</h3>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  for="pedido-prioridad"
+                  class="mb-1.5 block text-sm font-medium text-slate-700"
+                >
+                  Prioridad
+                </label>
+
+                <select
+                  id="pedido-prioridad"
+                  class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="0">Normal</option>
+                  <option value="1">Alta</option>
+                  <option value="2">Urgente</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  for="pedido-fecha-entrega"
+                  class="mb-1.5 block text-sm font-medium text-slate-700"
+                >
+                  Fecha de entrega
+                </label>
+
+                <input
+                  id="pedido-fecha-entrega"
+                  type="date"
+                  class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <label
+                for="pedido-observaciones"
+                class="mb-1.5 block text-sm font-medium text-slate-700"
+              >
+                Observaciones
+              </label>
+
+              <textarea
+                id="pedido-observaciones"
+                rows="3"
+                maxlength="1000"
+                placeholder="Detalles importantes del trabajo..."
+                class="block w-full resize-y rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              ></textarea>
+            </div>
+          </section>
+
+          <!-- Mensaje -->
+          <div
+            id="nuevo-pedido-mensaje"
+            class="hidden rounded-lg border px-4 py-3 text-sm"
+            role="alert"
+            aria-live="polite"
+          >
+          </div>
+        </div>
+
+        <!-- Footer fijo -->
+        <div
+          class="sticky bottom-0 flex shrink-0 flex-col-reverse gap-3 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6"
+        >
+          <button
+            id="cancelar-modal-nuevo-pedido"
+            type="button"
+            class="min-h-11 rounded-lg border border-slate-300 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Cancelar
+          </button>
+
+          <button
+            id="guardar-pedido"
+            type="submit"
+            class="min-h-11 rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {mode === "editar" ? "Guardar cambios" : "Crear pedido"}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  #form-nuevo-pedido select {
+    appearance: none;
+    padding-right: 2.75rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='m5 7.5 5 5 5-5' stroke='%2364758b' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.85rem center;
+    background-size: 1rem 1rem;
+  }
+
+  #form-nuevo-pedido select:disabled {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='m5 7.5 5 5 5-5' stroke='%2394a3b8' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+</style>
+
+<script>
+  import type { Pedido, ServicioPedido } from "../../types/pedido";
+
+  import {
+    calcularPrecio,
+    crearCliente,
+    crearPedido,
+    obtenerClientes,
+    obtenerPedido,
+    actualizarPedido,
+  } from "../../services/api";
+
+  type Servicio = ServicioPedido;
+  type Modo = "crear" | "editar";
+
+  let modoActual: Modo = "crear";
+  let pedidoEnEdicion: Pedido | null = null;
+
+  const modal = document.getElementById("modal-nuevo-pedido");
+  const fondo = document.getElementById("modal-nuevo-pedido-fondo");
+
+  const titulo = document.getElementById("nuevo-pedido-titulo");
+  const subtitulo = document.getElementById("nuevo-pedido-subtitulo");
+
+  const cerrar = document.getElementById("cerrar-modal-nuevo-pedido");
+  const cancelar = document.getElementById("cancelar-modal-nuevo-pedido");
+
+  const formulario = document.getElementById("form-nuevo-pedido");
+
+  const clienteSelect = document.getElementById(
+    "pedido-cliente",
+  ) as HTMLInputElement | null;
+  const busquedaCliente = document.getElementById(
+    "busqueda-cliente",
+  ) as HTMLInputElement | null;
+  const resultadosClientes = document.getElementById("resultados-clientes");
+  let clientesDisponibles: Awaited<ReturnType<typeof obtenerClientes>> = [];
+
+  const nuevoClientePanel = document.getElementById("nuevo-cliente-panel");
+
+  const btnNuevoCliente = document.getElementById("btn-nuevo-cliente");
+
+  const btnCancelarNuevoCliente = document.getElementById(
+    "cancelar-nuevo-cliente",
+  );
+
+  const btnGuardarNuevoCliente = document.getElementById(
+    "guardar-nuevo-cliente",
+  ) as HTMLButtonElement | null;
+
+  const nuevoClienteNombre = document.getElementById(
+    "nuevo-cliente-nombre",
+  ) as HTMLInputElement | null;
+
+  const nuevoClienteTelefono = document.getElementById(
+    "nuevo-cliente-telefono",
+  ) as HTMLInputElement | null;
+
+  const servicioSelect = document.getElementById(
+    "pedido-servicio",
+  ) as HTMLSelectElement | null;
+
+  const anchoSelect = document.getElementById(
+    "pedido-ancho",
+  ) as HTMLSelectElement | null;
+
+  const largoInput = document.getElementById(
+    "pedido-largo",
+  ) as HTMLInputElement | null;
+
+  const precioValor = document.getElementById("precio-preview-valor");
+
+  const precioAyuda = document.getElementById("precio-preview-ayuda");
+  const valorCobrarEtiqueta = document.getElementById("valor-cobrar-etiqueta");
+
+  const contraerInput = document.getElementById(
+    "pedido-contraer",
+  ) as HTMLInputElement | null;
+
+  const velocidadSelect = document.getElementById(
+    "pedido-velocidad",
+  ) as HTMLSelectElement | null;
+
+  const configuracionImpresionControles = document.getElementById(
+    "configuracion-impresion-controles",
+  ) as HTMLFieldSetElement | null;
+
+  const configuracionImpresionAyuda = document.getElementById(
+    "configuracion-impresion-ayuda",
+  );
+
+  const obstruccionInput = document.getElementById(
+    "pedido-obstruccion",
+  ) as HTMLInputElement | null;
+
+  const prioridadSelect = document.getElementById(
+    "pedido-prioridad",
+  ) as HTMLSelectElement | null;
+
+  const fechaEntregaInput = document.getElementById(
+    "pedido-fecha-entrega",
+  ) as HTMLInputElement | null;
+
+  const observacionesInput = document.getElementById(
+    "pedido-observaciones",
+  ) as HTMLTextAreaElement | null;
+
+  const mensaje = document.getElementById("nuevo-pedido-mensaje");
+
+  const btnGuardarPedido = document.getElementById(
+    "guardar-pedido",
+  ) as HTMLButtonElement | null;
+
+  let precioTimer: number | null = null;
+
+  function mostrarMensaje(texto: string, tipo: "error" | "success") {
+    if (!mensaje) return;
+
+    mensaje.textContent = texto;
+
+    mensaje.className =
+      tipo === "error"
+        ? "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        : "rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700";
+  }
+
+  function ocultarMensaje() {
+    if (!mensaje) return;
+
+    mensaje.textContent = "";
+    mensaje.className = "hidden";
+  }
+
+  function formatearPrecio(valor: number) {
+    return new Intl.NumberFormat("es-EC", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(valor);
+  }
+
+  function normalizarBusqueda(valor: string): string {
+    return valor
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("es")
+      .trim();
+  }
+
+  function ocultarResultadosClientes() {
+    resultadosClientes?.classList.add("hidden");
+    busquedaCliente?.setAttribute("aria-expanded", "false");
+  }
+
+  function seleccionarCliente(clienteId: number) {
+    const cliente = clientesDisponibles.find((item) => item.id === clienteId);
+    if (!cliente || !clienteSelect || !busquedaCliente) return;
+
+    clienteSelect.value = String(cliente.id);
+    busquedaCliente.value = cliente.nombre;
+    ocultarResultadosClientes();
+  }
+
+  function mostrarResultadosClientes(consulta: string) {
+    if (!resultadosClientes || !busquedaCliente) return;
+
+    resultadosClientes.replaceChildren();
+    const termino = normalizarBusqueda(consulta);
+    const coincidencias = clientesDisponibles.filter((cliente) => {
+      const textoCliente = normalizarBusqueda(
+        `${cliente.nombre} ${cliente.telefono ?? ""}`,
+      );
+      return textoCliente.includes(termino);
+    });
+
+    if (coincidencias.length === 0) {
+      const sinResultados = document.createElement("p");
+      sinResultados.className = "px-3 py-2 text-sm text-slate-500";
+      sinResultados.textContent = termino
+        ? "No hay clientes que coincidan."
+        : "No hay clientes disponibles.";
+      resultadosClientes.appendChild(sinResultados);
+    } else {
+      coincidencias.slice(0, 30).forEach((cliente) => {
+        const opcion = document.createElement("button");
+        opcion.type = "button";
+        opcion.setAttribute("role", "option");
+        opcion.setAttribute("aria-selected", "false");
+        opcion.className =
+          "block w-full px-3 py-2 text-left transition hover:bg-cyan-50 focus:bg-cyan-50 focus:outline-none";
+
+        const nombre = document.createElement("span");
+        nombre.className = "block text-sm font-medium text-slate-800";
+        nombre.textContent = cliente.nombre;
+        opcion.appendChild(nombre);
+
+        if (cliente.telefono) {
+          const telefono = document.createElement("span");
+          telefono.className = "mt-0.5 block text-xs text-slate-500";
+          telefono.textContent = cliente.telefono;
+          opcion.appendChild(telefono);
+        }
+
+        opcion.addEventListener("click", () => seleccionarCliente(cliente.id));
+        resultadosClientes.appendChild(opcion);
+      });
+    }
+
+    resultadosClientes.classList.remove("hidden");
+    busquedaCliente.setAttribute("aria-expanded", "true");
+  }
+
+  function actualizarTextosModal() {
+    const esEdicion = modoActual === "editar";
+
+    if (titulo) {
+      titulo.textContent = esEdicion ? "Editar pedido" : "Nuevo pedido";
+    }
+
+    if (subtitulo) {
+      subtitulo.textContent = esEdicion
+        ? "Modifica los datos del trabajo de impresión."
+        : "Registra un nuevo trabajo de impresión.";
+    }
+
+    if (btnGuardarPedido) {
+      btnGuardarPedido.textContent = esEdicion
+        ? "Guardar cambios"
+        : "Crear pedido";
+    }
+  }
+
+  function aplicarReglasImpresion(aplicarDefaultsTextil31 = false) {
+    if (!servicioSelect || !anchoSelect || !configuracionImpresionControles) {
+      return;
+    }
+
+    const esUv = servicioSelect.value === "UV";
+    const esTextil31 = !esUv && Number(anchoSelect.value) === 31;
+    const esTextil58 = !esUv && Number(anchoSelect.value) === 58;
+
+    anchoSelect.disabled = esUv;
+    configuracionImpresionControles.disabled = esUv;
+
+    if (velocidadSelect) {
+      velocidadSelect.disabled = esUv || esTextil58;
+    }
+
+    if (esUv) {
+      if (contraerInput) contraerInput.checked = false;
+      if (velocidadSelect) velocidadSelect.value = "";
+      if (obstruccionInput) obstruccionInput.checked = false;
+      if (configuracionImpresionAyuda) {
+        configuracionImpresionAyuda.textContent =
+          "La configuración de impresión no aplica para DTF UV.";
+      }
+      return;
+    }
+
+    if (esTextil58 && velocidadSelect) {
+      velocidadSelect.value = "";
+    }
+
+    if (esTextil31 && aplicarDefaultsTextil31) {
+      if (contraerInput) contraerInput.checked = true;
+      if (velocidadSelect) velocidadSelect.value = "83";
+      if (obstruccionInput) obstruccionInput.checked = true;
+    }
+
+    if (configuracionImpresionAyuda) {
+      configuracionImpresionAyuda.textContent = esTextil58
+        ? "La velocidad no está disponible para DTF Textil de 58 cm."
+        : esTextil31
+          ? "Para DTF Textil de 31 cm se sugieren Contraer, Obturación y velocidad 83."
+          : "Ajusta las opciones según el material y el ancho seleccionado.";
+    }
+  }
+
+  function actualizarAnchos() {
+    if (!servicioSelect || !anchoSelect) return;
+
+    const servicio = servicioSelect.value as Servicio;
+
+    anchoSelect.innerHTML =
+      servicio === "UV"
+        ? `<option value="29">29 cm</option>`
+        : `
+          <option value="31">31 cm</option>
+          <option value="58">58 cm</option>
+        `;
+
+    if (servicio === "UV") {
+      anchoSelect.value = "29";
+    } else {
+      anchoSelect.value = "31";
+    }
+
+    aplicarReglasImpresion(servicio === "TEXTIL");
+    actualizarPrecio();
+  }
+
+  async function actualizarPrecio(mantenerValorActual = false) {
+    if (
+      !servicioSelect ||
+      !anchoSelect ||
+      !largoInput ||
+      !precioValor ||
+      !precioAyuda
+    ) {
+      return;
+    }
+
+    const largo = Number(largoInput.value);
+
+    if (!Number.isFinite(largo) || largo <= 0) {
+      if (!mantenerValorActual) {
+        precioValor.textContent = "—";
+        if (valorCobrarEtiqueta) {
+          valorCobrarEtiqueta.textContent = "Valor a cobrar estimado";
+        }
+      }
+      precioAyuda.textContent = "Ingresa el largo para calcular.";
+      return;
+    }
+
+    if (!mantenerValorActual) {
+      precioValor.textContent = "...";
+      if (valorCobrarEtiqueta) {
+        valorCobrarEtiqueta.textContent = "Valor a cobrar estimado";
+      }
+    }
+    precioAyuda.textContent = "Calculando precio...";
+
+    try {
+      const resultado = await calcularPrecio({
+        servicio: servicioSelect.value as Servicio,
+        ancho: Number(anchoSelect.value),
+        largo,
+      });
+      const valorCalculado =
+        resultado.valorCobrar ?? resultado.valor_cobrar ?? resultado.precio;
+      const valorCalculadoNormalizado = Number(valorCalculado);
+
+      if (
+        valorCalculado === undefined ||
+        valorCalculado === null ||
+        valorCalculado === "" ||
+        !Number.isFinite(valorCalculadoNormalizado)
+      ) {
+        throw new Error("El servidor no devolvió un valor a cobrar válido.");
+      }
+
+      if (!mantenerValorActual) {
+        precioValor.textContent = formatearPrecio(valorCalculadoNormalizado);
+      }
+      precioAyuda.textContent = mantenerValorActual
+        ? "Importe actual guardado en el pedido."
+        : "Estimación calculada por el servidor.";
+    } catch (error) {
+      console.error(error);
+
+      if (!mantenerValorActual) {
+        precioValor.textContent = "—";
+      }
+      precioAyuda.textContent =
+        error instanceof Error
+          ? error.message
+          : "No se pudo calcular el valor a cobrar.";
+    }
+  }
+
+  async function cargarClientes(seleccionarId?: number) {
+    if (!clienteSelect || !busquedaCliente) return;
+
+    busquedaCliente.disabled = true;
+    busquedaCliente.placeholder = "Cargando clientes...";
+
+    try {
+      clientesDisponibles = await obtenerClientes();
+      busquedaCliente.placeholder = "Buscar por nombre o teléfono";
+
+      if (seleccionarId !== undefined) {
+        seleccionarCliente(seleccionarId);
+      } else {
+        clienteSelect.value = "";
+        busquedaCliente.value = "";
+      }
+    } catch (error) {
+      console.error(error);
+      clientesDisponibles = [];
+      busquedaCliente.placeholder = "No se pudieron cargar los clientes";
+
+      mostrarMensaje("No se pudieron cargar los clientes.", "error");
+    } finally {
+      busquedaCliente.disabled = false;
+    }
+  }
+
+  function mostrarNuevoCliente() {
+    nuevoClientePanel?.classList.remove("hidden");
+    nuevoClienteNombre?.focus();
+  }
+
+  function ocultarNuevoCliente() {
+    nuevoClientePanel?.classList.add("hidden");
+
+    if (nuevoClienteNombre) {
+      nuevoClienteNombre.value = "";
+    }
+
+    if (nuevoClienteTelefono) {
+      nuevoClienteTelefono.value = "";
+    }
+  }
+
+  async function guardarCliente() {
+    if (
+      !btnGuardarNuevoCliente ||
+      !nuevoClienteNombre ||
+      !nuevoClienteTelefono
+    ) {
+      return;
+    }
+
+    const nombre = nuevoClienteNombre.value.trim();
+    const telefono = nuevoClienteTelefono.value.trim();
+
+    if (!nombre) {
+      nuevoClienteNombre.focus();
+      return;
+    }
+
+    btnGuardarNuevoCliente.disabled = true;
+    btnGuardarNuevoCliente.textContent = "Guardando...";
+
+    try {
+      const cliente = await crearCliente({
+        nombre,
+        telefono: telefono || null,
+      });
+
+      await cargarClientes(cliente.id);
+
+      ocultarNuevoCliente();
+
+      mostrarMensaje("Cliente creado correctamente.", "success");
+    } catch (error) {
+      console.error(error);
+
+      mostrarMensaje(
+        error instanceof Error ? error.message : "No se pudo crear el cliente.",
+        "error",
+      );
+    } finally {
+      btnGuardarNuevoCliente.disabled = false;
+      btnGuardarNuevoCliente.textContent = "Guardar cliente";
+    }
+  }
+
+  function resetearFormulario() {
+    if (precioTimer !== null) {
+      window.clearTimeout(precioTimer);
+      precioTimer = null;
+    }
+
+    if (clienteSelect) {
+      clienteSelect.value = "";
+    }
+    if (busquedaCliente) {
+      busquedaCliente.value = "";
+    }
+    ocultarResultadosClientes();
+
+    if (servicioSelect) {
+      servicioSelect.value = "TEXTIL";
+    }
+
+    if (anchoSelect) {
+      anchoSelect.innerHTML = `
+        <option value="31">31 cm</option>
+        <option value="58">58 cm</option>
+      `;
+
+      anchoSelect.value = "31";
+    }
+
+    if (largoInput) {
+      largoInput.value = "";
+    }
+
+    if (contraerInput) {
+      contraerInput.checked = false;
+    }
+
+    if (velocidadSelect) {
+      velocidadSelect.value = "";
+    }
+
+    if (obstruccionInput) {
+      obstruccionInput.checked = false;
+    }
+
+    aplicarReglasImpresion(true);
+
+    if (prioridadSelect) {
+      prioridadSelect.value = "0";
+    }
+
+    if (fechaEntregaInput) {
+      fechaEntregaInput.value = "";
+    }
+
+    if (observacionesInput) {
+      observacionesInput.value = "";
+    }
+
+    if (precioValor) {
+      precioValor.textContent = "—";
+    }
+
+    if (precioAyuda) {
+      precioAyuda.textContent = "Ingresa el largo para calcular.";
+    }
+
+    if (valorCobrarEtiqueta) {
+      valorCobrarEtiqueta.textContent = "Valor a cobrar estimado";
+    }
+
+    ocultarNuevoCliente();
+    ocultarMensaje();
+  }
+
+  function cargarDatosPedido(pedido: Pedido) {
+    if (precioValor) {
+      precioValor.textContent =
+        pedido.valorCobrar === null ? "—" : formatearPrecio(pedido.valorCobrar);
+    }
+    if (valorCobrarEtiqueta) {
+      valorCobrarEtiqueta.textContent = "Valor a cobrar actual";
+    }
+
+    if (clienteSelect) {
+      clienteSelect.value = String(pedido.cliente.id);
+    }
+    if (busquedaCliente) {
+      busquedaCliente.value = pedido.cliente.nombre;
+    }
+
+    if (servicioSelect) {
+      servicioSelect.value = pedido.servicio;
+    }
+
+    if (anchoSelect) {
+      anchoSelect.innerHTML =
+        pedido.servicio === "UV"
+          ? `<option value="29">29 cm</option>`
+          : `
+            <option value="31">31 cm</option>
+            <option value="58">58 cm</option>
+          `;
+
+      anchoSelect.value = String(pedido.ancho);
+    }
+
+    if (largoInput) {
+      largoInput.value = pedido.largo !== null ? String(pedido.largo) : "";
+    }
+
+    if (contraerInput) {
+      contraerInput.checked = pedido.contraer ?? false;
+    }
+
+    if (velocidadSelect) {
+      velocidadSelect.value =
+        pedido.velocidad !== null ? String(pedido.velocidad) : "";
+    }
+
+    if (obstruccionInput) {
+      obstruccionInput.checked = pedido.obstruccion ?? false;
+    }
+
+    aplicarReglasImpresion(false);
+
+    if (prioridadSelect) {
+      prioridadSelect.value = String(pedido.prioridad);
+    }
+
+    if (fechaEntregaInput) {
+      fechaEntregaInput.value = pedido.fechaEntrega
+        ? pedido.fechaEntrega.slice(0, 10)
+        : "";
+    }
+
+    if (observacionesInput) {
+      observacionesInput.value = pedido.observaciones ?? "";
+    }
+
+    if (pedido.largo !== null && pedido.largo > 0) {
+      actualizarPrecio(true);
+    }
+  }
+
+  async function abrirModalCrear() {
+    if (!modal) return;
+
+    modoActual = "crear";
+    pedidoEnEdicion = null;
+
+    actualizarTextosModal();
+    resetearFormulario();
+
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+
+    document.body.classList.add("overflow-hidden");
+
+    await cargarClientes();
+
+    setTimeout(() => {
+      busquedaCliente?.focus();
+    }, 50);
+  }
+
+  async function abrirModalEditar(id: number) {
+    if (!modal) return;
+
+    modoActual = "editar";
+    pedidoEnEdicion = null;
+
+    actualizarTextosModal();
+    resetearFormulario();
+
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+
+    document.body.classList.add("overflow-hidden");
+
+    if (busquedaCliente) busquedaCliente.disabled = true;
+
+    try {
+      const pedido = await obtenerPedido(id);
+
+      pedidoEnEdicion = pedido;
+
+      await cargarClientes(pedido.cliente.id);
+
+      cargarDatosPedido(pedido);
+
+      setTimeout(() => {
+        busquedaCliente?.focus();
+      }, 50);
+    } catch (error) {
+      console.error(error);
+
+      mostrarMensaje(
+        error instanceof Error ? error.message : "No se pudo cargar el pedido.",
+        "error",
+      );
+    } finally {
+      if (busquedaCliente) busquedaCliente.disabled = false;
+    }
+  }
+
+  function cerrarModal() {
+    if (!modal) return;
+
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+
+    document.body.classList.remove("overflow-hidden");
+
+    pedidoEnEdicion = null;
+  }
+
+  formulario?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (
+      !clienteSelect ||
+      !servicioSelect ||
+      !anchoSelect ||
+      !largoInput ||
+      !btnGuardarPedido
+    ) {
+      return;
+    }
+
+    ocultarMensaje();
+
+    const clienteId = Number(clienteSelect.value);
+    const servicio = servicioSelect.value as Servicio;
+    const ancho = Number(anchoSelect.value);
+    const largo = Number(largoInput.value);
+
+    if (!clienteId) {
+      mostrarMensaje("Selecciona un cliente.", "error");
+
+      busquedaCliente?.focus();
+
+      return;
+    }
+
+    if (!Number.isFinite(largo) || largo <= 0) {
+      mostrarMensaje("Ingresa un largo válido mayor que 0 cm.", "error");
+
+      largoInput.focus();
+
+      return;
+    }
+
+    btnGuardarPedido.disabled = true;
+
+    btnGuardarPedido.textContent =
+      modoActual === "editar" ? "Guardando cambios..." : "Creando pedido...";
+
+    try {
+      const datos = {
+        clienteId,
+        servicio,
+        ancho,
+        largo,
+        contraer: contraerInput?.checked ?? false,
+        velocidad: velocidadSelect?.value
+          ? Number(velocidadSelect.value)
+          : undefined,
+        obstruccion: obstruccionInput?.checked ?? false,
+        observaciones: observacionesInput?.value.trim() || undefined,
+        prioridad: prioridadSelect ? Number(prioridadSelect.value) : 0,
+        fechaEntrega: fechaEntregaInput?.value || null,
+      };
+
+      if (modoActual === "editar" && pedidoEnEdicion) {
+        const pedidoActualizado = await actualizarPedido(
+          pedidoEnEdicion.id,
+          datos,
+        );
+
+        document.dispatchEvent(
+          new CustomEvent("centro-control:pedido-actualizado", {
+            detail: {
+              pedido: pedidoActualizado,
+            },
+          }),
+        );
+      } else {
+        const nuevoPedido = await crearPedido(datos);
+
+        document.dispatchEvent(
+          new CustomEvent("centro-control:pedido-creado", {
+            detail: {
+              pedido: nuevoPedido,
+            },
+          }),
+        );
+      }
+
+      cerrarModal();
+    } catch (error) {
+      console.error(error);
+
+      mostrarMensaje(
+        error instanceof Error
+          ? error.message
+          : modoActual === "editar"
+            ? "No se pudo actualizar el pedido."
+            : "No se pudo crear el pedido.",
+        "error",
+      );
+    } finally {
+      btnGuardarPedido.disabled = false;
+
+      btnGuardarPedido.textContent =
+        modoActual === "editar" ? "Guardar cambios" : "Crear pedido";
+    }
+  });
+
+  servicioSelect?.addEventListener("change", actualizarAnchos);
+
+  busquedaCliente?.addEventListener("input", () => {
+    if (clienteSelect) clienteSelect.value = "";
+    mostrarResultadosClientes(busquedaCliente.value);
+  });
+
+  busquedaCliente?.addEventListener("focus", () => {
+    mostrarResultadosClientes(busquedaCliente.value);
+  });
+
+  busquedaCliente?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      ocultarResultadosClientes();
+      return;
+    }
+
+    if (
+      event.key === "Enter" &&
+      resultadosClientes &&
+      !resultadosClientes.classList.contains("hidden")
+    ) {
+      const primeraOpcion = resultadosClientes.querySelector<HTMLButtonElement>(
+        'button[role="option"]',
+      );
+      if (primeraOpcion) {
+        event.preventDefault();
+        primeraOpcion.click();
+      }
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (
+      target instanceof Node &&
+      !target.parentElement?.closest("#resultados-clientes") &&
+      target !== busquedaCliente &&
+      !busquedaCliente?.contains(target)
+    ) {
+      ocultarResultadosClientes();
+    }
+  });
+
+  largoInput?.addEventListener("input", () => {
+    if (precioTimer !== null) {
+      window.clearTimeout(precioTimer);
+    }
+
+    precioTimer = window.setTimeout(() => {
+      actualizarPrecio();
+    }, 350);
+  });
+
+  anchoSelect?.addEventListener("change", () => {
+    aplicarReglasImpresion(Number(anchoSelect.value) === 31);
+    actualizarPrecio();
+  });
+
+  btnNuevoCliente?.addEventListener("click", mostrarNuevoCliente);
+
+  btnCancelarNuevoCliente?.addEventListener("click", ocultarNuevoCliente);
+
+  btnGuardarNuevoCliente?.addEventListener("click", guardarCliente);
+
+  cerrar?.addEventListener("click", cerrarModal);
+
+  cancelar?.addEventListener("click", cerrarModal);
+
+  fondo?.addEventListener("click", cerrarModal);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal?.classList.contains("hidden")) {
+      cerrarModal();
+    }
+  });
+
+  document.addEventListener("centro-control:nuevo-pedido", () => {
+    abrirModalCrear();
+  });
+
+  document.addEventListener("centro-control:editar-pedido", (event) => {
+    const customEvent = event as CustomEvent<{ id: number }>;
+
+    const id = customEvent.detail?.id;
+
+    if (!id) {
+      console.error("No se recibió el ID del pedido para editar.");
+
+      return;
+    }
+
+    abrirModalEditar(id);
+  });
+</script>

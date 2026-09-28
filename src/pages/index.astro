@@ -1,0 +1,192 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Sidebar from "../components/layout/Sidebar.astro";
+import Header from "../components/layout/Header.astro";
+import EstadisticasPedidos from "../components/dashboard/EstadisticasPedidos.astro";
+import ListaPedidos from "../components/dashboard/ListaPedidos.astro";
+import PedidoDetalle from "../components/dashboard/PedidoDetalle.astro";
+import PedidoForm from "../components/dashboard/PedidoForm.astro";
+import Historial from "../components/historial/Historial.astro";
+import Clientes from "../components/admin/Clientes.astro";
+import Usuarios from "../components/admin/Usuarios.astro";
+import Tarifas from "../components/admin/Tarifas.astro";
+import Estadisticas from "../components/admin/Estadisticas.astro";
+---
+
+<Layout title="Pedidos | Centro de Control">
+  <div class="flex h-screen overflow-hidden bg-slate-50">
+    <Sidebar />
+
+    <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <Header />
+
+      <main class="min-h-0 flex-1 overflow-hidden">
+        <div class="flex h-full min-h-0 flex-col p-2 sm:p-3 lg:p-4">
+          <div
+            class="mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-col"
+          >
+            <!-- ============================================ -->
+            <!-- VISTA: PEDIDOS                               -->
+            <!-- ============================================ -->
+
+            <section id="vista-pedidos" class="flex h-full min-h-0 flex-col">
+              <!-- Encabezado -->
+              <div
+                class="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+              >
+                <div>
+                  <h2 class="text-2xl font-bold tracking-tight text-slate-900">
+                    Resumen de Impresiones
+                  </h2>
+                </div>
+              </div>
+
+              <!-- Estadísticas -->
+              <div class="shrink-0 pb-3">
+                <EstadisticasPedidos />
+              </div>
+
+              <!-- Lista -->
+              <div class="min-h-0 flex-1 overflow-hidden">
+                <ListaPedidos />
+              </div>
+            </section>
+
+            <!-- ============================================ -->
+            <!-- VISTA: HISTORIAL                             -->
+            <!-- ============================================ -->
+
+            <section
+              id="vista-historial"
+              class="hidden h-full min-h-0 flex-col"
+            >
+              <Historial />
+            </section>
+
+            <section id="vista-clientes" class="hidden h-full min-h-0 flex-col">
+              <Clientes />
+            </section>
+
+            <section id="vista-usuarios" class="hidden h-full min-h-0 flex-col">
+              <Usuarios />
+            </section>
+
+            <section id="vista-tarifas" class="hidden h-full min-h-0 flex-col">
+              <Tarifas />
+            </section>
+
+            <section
+              id="vista-estadisticas"
+              class="hidden h-full min-h-0 flex-col"
+            >
+              <Estadisticas />
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modales / paneles globales -->
+    <PedidoDetalle />
+    <PedidoForm />
+  </div>
+
+  <script>
+    import {
+      suscribirseConexion,
+      iniciarPedidosStore,
+    } from "../services/pedidos-store";
+
+    import { obtenerToken, obtenerUsuario } from "../services/auth";
+    import { puedeVerVista } from "../services/permisos";
+
+    /*
+     * Protección del dashboard
+     *
+     * Si no existe JWT, no permitimos
+     * permanecer en esta página.
+     */
+    const usuario = obtenerUsuario();
+
+    if (!obtenerToken() || !usuario) {
+      window.location.replace("/login");
+    } else {
+      const punto = document.getElementById("estado-api-punto");
+      const texto = document.getElementById("estado-api-texto");
+
+      suscribirseConexion((conectado) => {
+        if (!punto || !texto) return;
+
+        if (conectado) {
+          punto.className = "h-2 w-2 rounded-full bg-emerald-500";
+          texto.className = "text-emerald-600";
+          texto.textContent = "Sistema conectado";
+        } else {
+          punto.className = "h-2 w-2 rounded-full bg-red-500";
+          texto.className = "text-red-600";
+          texto.textContent = "Sin conexión";
+        }
+      });
+
+      iniciarPedidosStore().catch((error) => {
+        console.error("No se pudo iniciar el sistema de pedidos:", error);
+      });
+    }
+
+    /*
+     * Navegación interna del dashboard
+     *
+     * El Sidebar no cambia de página.
+     * Simplemente nos indica qué vista debe mostrarse.
+     */
+    const vistas: Record<
+      string,
+      { element: HTMLElement | null; titulo: string }
+    > = {
+      pedidos: {
+        element: document.getElementById("vista-pedidos"),
+        titulo: "Pedidos",
+      },
+      historial: {
+        element: document.getElementById("vista-historial"),
+        titulo: "Historial",
+      },
+      clientes: {
+        element: document.getElementById("vista-clientes"),
+        titulo: "Clientes",
+      },
+      usuarios: {
+        element: document.getElementById("vista-usuarios"),
+        titulo: "Usuarios",
+      },
+      tarifas: {
+        element: document.getElementById("vista-tarifas"),
+        titulo: "Tarifas",
+      },
+      estadisticas: {
+        element: document.getElementById("vista-estadisticas"),
+        titulo: "Estadísticas",
+      },
+    };
+
+    window.addEventListener("centro-control:cambiar-vista", (event) => {
+      const customEvent = event as CustomEvent<{
+        vista: string;
+      }>;
+
+      const vista = customEvent.detail?.vista;
+
+      const activa = vistas[vista];
+      if (!activa || !puedeVerVista(vista, usuario)) return;
+
+      Object.values(vistas).forEach(({ element }) => {
+        element?.classList.add("hidden");
+        element?.classList.remove("flex");
+      });
+
+      activa.element?.classList.remove("hidden");
+      activa.element?.classList.add("flex");
+      document.title = `${activa.titulo} | Centro de Control`;
+    });
+  </script>
+</Layout>

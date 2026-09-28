@@ -1,0 +1,392 @@
+<section class="flex h-full min-h-0 flex-col gap-4">
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <p class="text-xs font-semibold uppercase text-amber-800">
+        Configuración
+      </p>
+      <h2 class="mt-1 text-2xl font-bold text-slate-900">Tarifas</h2>
+      <p class="mt-1 text-sm text-slate-500">
+        Precios por servicio, ancho y rango de metros.
+      </p>
+    </div>
+    <button
+      id="tarifas-nueva"
+      type="button"
+      class="h-10 rounded-lg bg-amber-700 px-4 text-sm font-semibold text-white transition hover:bg-amber-800"
+      >+ Nueva tarifa</button
+    >
+  </header>
+
+  <div
+    class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white"
+  >
+    <div
+      class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3"
+    >
+      <div
+        class="inline-flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1"
+        role="group"
+        aria-label="Filtrar tarifas por servicio"
+      >
+        <button
+          type="button"
+          data-tarifa-filtro="TODOS"
+          aria-pressed="true"
+          class="tarifa-filtro rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
+          >Todos</button
+        >
+        <button
+          type="button"
+          data-tarifa-filtro="TEXTIL"
+          aria-pressed="false"
+          class="tarifa-filtro rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-white"
+          >Textil</button
+        >
+        <button
+          type="button"
+          data-tarifa-filtro="UV"
+          aria-pressed="false"
+          class="tarifa-filtro rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-white"
+          >UV</button
+        >
+      </div>
+      <p
+        id="tarifas-cantidad"
+        class="text-xs font-medium text-slate-500"
+        aria-live="polite"
+      >
+      </p>
+    </div>
+    <div class="min-h-0 flex-1 overflow-auto">
+      <table class="w-full min-w-160 text-left text-sm">
+        <thead
+          class="sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-500"
+        >
+          <tr
+            ><th class="px-4 py-3 font-semibold">Servicio</th><th
+              class="px-4 py-3 font-semibold">Ancho</th
+            ><th class="px-4 py-3 font-semibold">Rango</th><th
+              class="px-4 py-3 text-right font-semibold">Precio</th
+            ><th class="px-4 py-3 font-semibold">Estado</th><th
+              class="px-4 py-3"></th></tr
+          >
+        </thead>
+        <tbody id="tarifas-body" class="divide-y divide-slate-100"
+          ><tr
+            ><td colspan="6" class="px-4 py-8 text-center text-slate-500"
+              >Cargando tarifas...</td
+            ></tr
+          ></tbody
+        >
+      </table>
+    </div>
+  </div>
+
+  <div
+    id="tarifa-modal"
+    class="fixed inset-0 z-70 hidden items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
+  >
+    <form
+      id="tarifa-form"
+      class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl"
+    >
+      <h3 id="tarifa-form-titulo" class="text-lg font-bold text-slate-900">
+        Nueva tarifa
+      </h3>
+      <div class="mt-4 grid grid-cols-2 gap-3">
+        <div>
+          <label
+            for="tarifa-servicio"
+            class="mb-1 block text-sm font-medium text-slate-700"
+            >Servicio</label
+          ><select
+            id="tarifa-servicio"
+            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
+            ><option value="TEXTIL">DTF Textil</option><option value="UV"
+              >DTF UV</option
+            ></select
+          >
+        </div>
+        <div>
+          <label
+            for="tarifa-ancho"
+            class="mb-1 block text-sm font-medium text-slate-700">Ancho</label
+          ><select
+            id="tarifa-ancho"
+            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
+            ><option value="31">31 cm</option><option value="58">58 cm</option
+            ></select
+          >
+        </div>
+        <div>
+          <label
+            for="tarifa-desde"
+            class="mb-1 block text-sm font-medium text-slate-700"
+            >Desde (cm)</label
+          ><input
+            id="tarifa-desde"
+            type="number"
+            min="0"
+            step="1"
+            required
+            class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
+          />
+        </div>
+        <div>
+          <label
+            for="tarifa-hasta"
+            class="mb-1 block text-sm font-medium text-slate-700"
+            >Hasta (cm)</label
+          ><input
+            id="tarifa-hasta"
+            type="number"
+            min="0.01"
+            step="1"
+            placeholder="Sin límite"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
+          />
+        </div>
+        <div class="col-span-2">
+          <label
+            for="tarifa-precio"
+            class="mb-1 block text-sm font-medium text-slate-700"
+            >Precio del rango</label
+          ><div
+            class="flex items-center rounded-lg border border-slate-300 bg-white px-3 focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-100"
+          >
+            <span class="text-sm text-slate-400">$</span><input
+              id="tarifa-precio"
+              type="number"
+              min="0.01"
+              step="0.01"
+              required
+              class="w-full border-0 bg-transparent px-2 py-2.5 text-sm outline-none focus:ring-0"
+            />
+          </div>
+        </div>
+      </div>
+      <p id="tarifa-form-error" class="mt-3 hidden text-sm text-red-700"></p>
+      <div class="mt-5 flex justify-end gap-2">
+        <button
+          id="tarifa-cancelar"
+          type="button"
+          class="h-9 rounded-lg border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >Cancelar</button
+        ><button
+          id="tarifa-guardar"
+          type="submit"
+          class="h-9 rounded-lg bg-amber-700 px-4 text-sm font-semibold text-white hover:bg-amber-800"
+          >Guardar</button
+        >
+      </div>
+    </form>
+  </div>
+  <p
+    id="tarifas-aviso"
+    class="hidden rounded-lg border px-4 py-3 text-sm"
+    role="status"
+    aria-live="polite"
+  >
+  </p>
+</section>
+
+<script>
+  import {
+    actualizarTarifa,
+    cambiarTarifaActiva,
+    crearTarifa,
+    obtenerTarifas,
+    type Tarifa,
+  } from "../../services/api";
+  import type { ServicioPedido } from "../../types/pedido";
+
+  const cuerpo = document.getElementById("tarifas-body");
+  const cantidad = document.getElementById("tarifas-cantidad");
+  const modal = document.getElementById("tarifa-modal");
+  const form = document.getElementById("tarifa-form") as HTMLFormElement | null;
+  const servicio = document.getElementById(
+    "tarifa-servicio",
+  ) as HTMLSelectElement | null;
+  const ancho = document.getElementById(
+    "tarifa-ancho",
+  ) as HTMLSelectElement | null;
+  const desde = document.getElementById(
+    "tarifa-desde",
+  ) as HTMLInputElement | null;
+  const hasta = document.getElementById(
+    "tarifa-hasta",
+  ) as HTMLInputElement | null;
+  const precio = document.getElementById(
+    "tarifa-precio",
+  ) as HTMLInputElement | null;
+  const titulo = document.getElementById("tarifa-form-titulo");
+  const error = document.getElementById("tarifa-form-error");
+  const aviso = document.getElementById("tarifas-aviso");
+  let tarifas: Tarifa[] = [];
+  let servicioFiltro = "TODOS";
+  let editandoId: number | null = null;
+
+  function mostrarAviso(texto: string, esError = false) {
+    if (!aviso) return;
+    aviso.textContent = texto;
+    aviso.className = esError
+      ? "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+      : "rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800";
+  }
+
+  function renderizar() {
+    if (!cuerpo) return;
+    const filtradas = tarifas.filter(
+      (tarifa) =>
+        servicioFiltro === "TODOS" || tarifa.servicio === servicioFiltro,
+    );
+    if (cantidad)
+      cantidad.textContent = `${filtradas.length} ${filtradas.length === 1 ? "rango" : "rangos"}`;
+    cuerpo.innerHTML = filtradas.length
+      ? filtradas
+          .map(
+            (tarifa) =>
+              `<tr class="transition hover:bg-amber-50/50"><td class="px-4 py-3 font-semibold text-slate-800">${tarifa.servicio === "TEXTIL" ? "DTF Textil" : "DTF UV"}</td><td class="px-4 py-3 text-slate-600">${tarifa.ancho} cm</td><td class="px-4 py-3 text-slate-600">${tarifa.desde} – ${tarifa.hasta ?? "∞"} cm</td><td class="px-4 py-3 text-right font-bold text-slate-900">$${tarifa.precio.toFixed(2)}</td><td class="px-4 py-3"><span class="rounded-full px-2.5 py-1 text-xs font-semibold ${tarifa.activo ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-500"}">${tarifa.activo ? "Activa" : "Inactiva"}</span></td><td class="px-4 py-3 text-right"><div class="flex justify-end gap-2"><button type="button" data-editar="${tarifa.id}" class="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-white">Editar</button><button type="button" data-activa="${tarifa.id}" data-valor="${!tarifa.activo}" class="rounded-md border px-2.5 py-1.5 text-xs font-semibold ${tarifa.activo ? "border-red-200 text-red-700 hover:bg-red-50" : "border-emerald-200 text-emerald-800 hover:bg-emerald-50"}">${tarifa.activo ? "Desactivar" : "Activar"}</button></div></td></tr>`,
+          )
+          .join("")
+      : `<tr><td colspan="6" class="px-4 py-10 text-center text-sm text-slate-500">No hay tarifas para este filtro.</td></tr>`;
+    cuerpo
+      .querySelectorAll<HTMLButtonElement>("[data-editar]")
+      .forEach((boton) =>
+        boton.addEventListener("click", () =>
+          abrir(
+            tarifas.find((item) => item.id === Number(boton.dataset.editar)),
+          ),
+        ),
+      );
+    cuerpo
+      .querySelectorAll<HTMLButtonElement>("[data-activa]")
+      .forEach((boton) =>
+        boton.addEventListener(
+          "click",
+          () =>
+            void cambiarActiva(
+              Number(boton.dataset.activa),
+              boton.dataset.valor === "true",
+            ),
+        ),
+      );
+  }
+
+  async function cargar() {
+    if (cuerpo)
+      cuerpo.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">Cargando tarifas...</td></tr>`;
+    try {
+      tarifas = await obtenerTarifas();
+      renderizar();
+    } catch (caught) {
+      if (cuerpo)
+        cuerpo.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-red-700">${caught instanceof Error ? caught.message : "No se pudieron cargar las tarifas."}</td></tr>`;
+    }
+  }
+
+  function abrir(tarifa?: Tarifa) {
+    editandoId = tarifa?.id ?? null;
+    if (titulo) titulo.textContent = tarifa ? "Editar tarifa" : "Nueva tarifa";
+    if (servicio) servicio.value = tarifa?.servicio ?? "TEXTIL";
+    actualizarAnchos(tarifa?.ancho);
+    if (desde) desde.value = tarifa ? String(tarifa.desde) : "";
+    if (hasta)
+      hasta.value =
+        tarifa?.hasta === null || tarifa?.hasta === undefined
+          ? ""
+          : String(tarifa.hasta);
+    if (precio) precio.value = tarifa ? String(tarifa.precio) : "";
+    error?.classList.add("hidden");
+    modal?.classList.remove("hidden");
+    modal?.classList.add("flex");
+  }
+
+  function actualizarAnchos(anchoActual?: number) {
+    if (!servicio || !ancho) return;
+    const anchos = servicio.value === "UV" ? [29] : [31, 58];
+    ancho.innerHTML = anchos
+      .map((valor) => `<option value="${valor}">${valor} cm</option>`)
+      .join("");
+    ancho.value = String(anchoActual ?? anchos[0]);
+  }
+
+  async function cambiarActiva(id: number, activo: boolean) {
+    try {
+      await cambiarTarifaActiva(id, activo);
+      await cargar();
+      mostrarAviso(activo ? "Tarifa activada." : "Tarifa desactivada.");
+    } catch (caught) {
+      mostrarAviso(
+        caught instanceof Error
+          ? caught.message
+          : "No se pudo cambiar el estado.",
+        true,
+      );
+    }
+  }
+
+  document
+    .getElementById("tarifas-nueva")
+    ?.addEventListener("click", () => abrir());
+  document.getElementById("tarifa-cancelar")?.addEventListener("click", () => {
+    modal?.classList.add("hidden");
+    modal?.classList.remove("flex");
+  });
+  servicio?.addEventListener("change", () => actualizarAnchos());
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-tarifa-filtro]")
+    .forEach((boton) =>
+      boton.addEventListener("click", () => {
+        servicioFiltro = boton.dataset.tarifaFiltro ?? "TODOS";
+        document
+          .querySelectorAll<HTMLButtonElement>("[data-tarifa-filtro]")
+          .forEach((item) => {
+            const activo = item === boton;
+            item.classList.toggle("bg-slate-900", activo);
+            item.classList.toggle("text-white", activo);
+            item.classList.toggle("shadow-sm", activo);
+            item.classList.toggle("text-slate-600", !activo);
+            item.setAttribute("aria-pressed", String(activo));
+          });
+        renderizar();
+      }),
+    );
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!servicio || !ancho || !desde || !hasta || !precio) return;
+    const datos = {
+      servicio: servicio.value as ServicioPedido,
+      ancho: Number(ancho.value),
+      desde: Number(desde.value),
+      hasta: hasta.value ? Number(hasta.value) : null,
+      precio: Number(precio.value),
+    };
+    const guardar = document.getElementById(
+      "tarifa-guardar",
+    ) as HTMLButtonElement | null;
+    if (guardar) guardar.disabled = true;
+    try {
+      if (editandoId === null) await crearTarifa(datos);
+      else await actualizarTarifa(editandoId, datos);
+      modal?.classList.add("hidden");
+      modal?.classList.remove("flex");
+      await cargar();
+      mostrarAviso(
+        editandoId === null ? "Tarifa creada." : "Tarifa actualizada.",
+      );
+    } catch (caught) {
+      if (error) {
+        error.textContent =
+          caught instanceof Error
+            ? caught.message
+            : "No se pudo guardar la tarifa.";
+        error.classList.remove("hidden");
+      }
+    } finally {
+      if (guardar) guardar.disabled = false;
+    }
+  });
+
+  void cargar();
+</script>

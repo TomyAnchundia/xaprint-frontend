@@ -1,0 +1,305 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const API_URL = import.meta.env.PUBLIC_API_URL ?? "http://localhost:3000";
+---
+
+<Layout title="Iniciar sesión | Centro de Control">
+  <main class="min-h-screen bg-slate-50">
+    <div class="grid min-h-screen lg:grid-cols-2">
+      <!-- Panel izquierdo -->
+      <section
+        class="hidden bg-slate-900 p-10 text-white lg:flex lg:flex-col lg:justify-between"
+      >
+        <div>
+          <div class="flex items-center gap-3">
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-900"
+            >
+              <svg
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3 3v18h18"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M7 16v-4M12 16V8M17 16v-7"></path>
+              </svg>
+            </div>
+
+            <div>
+              <p class="font-semibold">Centro de Control</p>
+
+              <p class="text-xs text-slate-400">Control de producción</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="max-w-md">
+          <p class="mb-3 text-sm font-medium text-slate-400">
+            Gestión de pedidos
+          </p>
+
+          <h1 class="text-4xl font-bold tracking-tight">
+            Todo el flujo de producción,
+            <span class="text-slate-400"> en un solo lugar. </span>
+          </h1>
+
+          <p class="mt-5 leading-7 text-slate-400">
+            Consulta pedidos, controla sus estados y mantén un historial de los
+            cambios realizados durante la producción.
+          </p>
+        </div>
+
+        <p class="text-sm text-slate-500">Centro de Control</p>
+      </section>
+
+      <!-- Panel de login -->
+      <section class="flex items-center justify-center p-6 sm:p-10">
+        <div class="w-full max-w-md">
+          <!-- Marca móvil -->
+          <div class="mb-8 lg:hidden">
+            <div class="flex items-center gap-3">
+              <div
+                class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white"
+              >
+                <svg
+                  class="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M3 3v18h18"></path>
+
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M7 16v-4M12 16V8M17 16v-7"></path>
+                </svg>
+              </div>
+
+              <div>
+                <p class="font-semibold text-slate-900">Centro de Control</p>
+
+                <p class="text-xs text-slate-500">Control de producción</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Título -->
+          <div class="mb-8">
+            <h2 class="text-2xl font-bold tracking-tight text-slate-900">
+              Iniciar sesión
+            </h2>
+
+            <p class="mt-2 text-sm text-slate-500">
+              Ingresa tus credenciales para continuar.
+            </p>
+          </div>
+
+          <!-- Formulario -->
+          <form id="login-form" data-api-url={API_URL} class="space-y-5">
+            <!-- Usuario -->
+            <div>
+              <label
+                for="username"
+                class="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Usuario
+              </label>
+
+              <input
+                id="username"
+                name="username"
+                type="text"
+                autocomplete="username"
+                required
+                placeholder="Ingresa tu usuario"
+                class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              />
+            </div>
+
+            <!-- Contraseña -->
+            <div>
+              <label
+                for="password"
+                class="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Contraseña
+              </label>
+
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+                placeholder="Ingresa tu contraseña"
+                class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              />
+            </div>
+
+            <!-- Error -->
+            <div
+              id="login-error"
+              class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              role="alert"
+            >
+            </div>
+
+            <!-- Botón -->
+            <button
+              id="login-button"
+              type="submit"
+              class="flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span id="login-button-text"> Iniciar sesión </span>
+            </button>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script is:inline>
+    const loginForm = document.getElementById("login-form");
+    const loginUsername = document.getElementById("username");
+    const loginPassword = document.getElementById("password");
+    const loginButton = document.getElementById("login-button");
+    const loginButtonText = document.getElementById("login-button-text");
+    const loginError = document.getElementById("login-error");
+
+    if (loginForm) {
+      loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        console.log("Formulario de login interceptado");
+
+        const apiUrl = loginForm.dataset.apiUrl;
+
+        const username = loginUsername?.value.trim() ?? "";
+
+        const password = loginPassword?.value ?? "";
+
+        if (!apiUrl) {
+          console.error("API_URL no está definido");
+
+          if (loginError) {
+            loginError.textContent =
+              "No se pudo determinar la dirección del servidor.";
+            loginError.classList.remove("hidden");
+          }
+
+          return;
+        }
+
+        if (!username || !password) {
+          if (loginError) {
+            loginError.textContent = "Ingresa tu usuario y contraseña.";
+            loginError.classList.remove("hidden");
+          }
+
+          return;
+        }
+
+        if (loginError) {
+          loginError.textContent = "";
+          loginError.classList.add("hidden");
+        }
+
+        if (loginButton) {
+          loginButton.disabled = true;
+        }
+
+        if (loginButtonText) {
+          loginButtonText.textContent = "Iniciando sesión...";
+        }
+
+        try {
+          console.log("Enviando login a:", `${apiUrl}/usuarios/login`);
+
+          const response = await fetch(`${apiUrl}/usuarios/login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              username,
+              password,
+            }),
+          });
+
+          const data = await response.json();
+
+          console.log("Respuesta del servidor:", data);
+
+          if (!response.ok) {
+            let mensaje = "Usuario o contraseña incorrectos.";
+
+            if (data && typeof data.message === "string") {
+              mensaje = data.message;
+            }
+
+            throw new Error(mensaje);
+          }
+
+          if (
+            !data ||
+            typeof data.token !== "string" ||
+            data.token.length === 0
+          ) {
+            throw new Error("El servidor no devolvió un token válido.");
+          }
+
+          console.log("Login correcto. Guardando sesión...");
+
+          localStorage.setItem("centro-control-token", data.token);
+
+          if (data.usuario && typeof data.usuario === "object") {
+            localStorage.setItem(
+              "centro-control-usuario",
+              JSON.stringify(data.usuario),
+            );
+          }
+
+          console.log("Sesión guardada. Redirigiendo...");
+
+          window.location.replace("/");
+        } catch (error) {
+          console.error("Error durante el login:", error);
+
+          if (loginError) {
+            loginError.textContent =
+              error instanceof Error
+                ? error.message
+                : "No se pudo iniciar sesión.";
+
+            loginError.classList.remove("hidden");
+          }
+
+          if (loginButton) {
+            loginButton.disabled = false;
+          }
+
+          if (loginButtonText) {
+            loginButtonText.textContent = "Iniciar sesión";
+          }
+        }
+      });
+    } else {
+      console.error("No se encontró #login-form");
+    }
+  </script>
+</Layout>

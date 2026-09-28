@@ -1,0 +1,458 @@
+<section class="flex h-full min-h-0 flex-col gap-4">
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <p class="text-xs font-semibold uppercase text-cyan-800">Directorio</p>
+      <h2 class="mt-1 text-2xl font-bold text-slate-900">Clientes</h2>
+      <p class="mt-1 text-sm text-slate-500">
+        Consulta y administra tus clientes.
+      </p>
+    </div>
+    <button
+      id="clientes-nuevo"
+      class="inline-flex h-10 items-center gap-2 rounded-lg bg-cyan-800 px-4 text-sm font-semibold text-white transition hover:bg-cyan-900"
+    >
+      <span aria-hidden="true">+</span> Nuevo cliente
+    </button>
+  </header>
+
+  <div
+    class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]"
+  >
+    <section
+      class="flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white"
+    >
+      <div class="space-y-3 border-b border-slate-200 bg-slate-50/70 p-3">
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="text-sm font-semibold text-slate-800">
+            Lista de clientes
+          </h3>
+          <span
+            id="clientes-cantidad"
+            class="text-xs font-medium text-slate-500"
+            aria-live="polite">—</span
+          >
+        </div>
+        <label class="group relative block">
+          <span class="sr-only">Buscar clientes por nombre o teléfono</span>
+          <svg
+            class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition group-focus-within:text-cyan-700"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7"></circle>
+            <path stroke-linecap="round" d="m20 20-4-4"></path>
+          </svg>
+          <input
+            id="clientes-buscar"
+            type="search"
+            placeholder="Buscar por nombre o teléfono"
+            class="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
+          />
+        </label>
+      </div>
+      <div
+        id="clientes-lista"
+        class="min-h-0 flex-1 overflow-y-auto divide-y divide-slate-100"
+      >
+        <p class="p-5 text-sm text-slate-500">Cargando clientes...</p>
+      </div>
+    </section>
+
+    <section
+      id="cliente-detalle"
+      class="min-h-0 overflow-y-auto rounded-xl border border-slate-200 bg-white p-5"
+    >
+      <div
+        class="flex h-full min-h-40 items-center justify-center text-center text-sm text-slate-500"
+      >
+        Selecciona un cliente para ver su ficha.
+      </div>
+    </section>
+  </div>
+
+  <div
+    id="cliente-form-overlay"
+    class="fixed inset-0 z-70 hidden items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
+  >
+    <form
+      id="cliente-form"
+      class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl"
+    >
+      <h3 id="cliente-form-titulo" class="text-lg font-bold text-slate-900">
+        Nuevo cliente
+      </h3>
+      <label
+        for="cliente-form-nombre"
+        class="mb-1 mt-4 block text-sm font-medium text-slate-700">Nombre</label
+      >
+      <input
+        id="cliente-form-nombre"
+        required
+        maxlength="120"
+        class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
+      />
+      <label
+        for="cliente-form-telefono"
+        class="mb-1 mt-3 block text-sm font-medium text-slate-700"
+        >Teléfono</label
+      >
+      <input
+        id="cliente-form-telefono"
+        required
+        maxlength="30"
+        type="tel"
+        class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
+      />
+      <p id="cliente-form-error" class="mt-3 hidden text-sm text-red-700"></p>
+      <div class="mt-5 flex justify-end gap-2">
+        <button
+          id="cliente-form-cancelar"
+          type="button"
+          class="h-9 rounded-lg border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >Cancelar</button
+        >
+        <button
+          id="cliente-form-guardar"
+          type="submit"
+          class="h-9 rounded-lg bg-cyan-800 px-4 text-sm font-semibold text-white hover:bg-cyan-900"
+          >Guardar</button
+        >
+      </div>
+    </form>
+  </div>
+  <p
+    id="clientes-notificacion"
+    class="hidden rounded-lg border px-4 py-3 text-sm"
+    role="status"
+    aria-live="polite"
+  >
+  </p>
+</section>
+
+<script>
+  import {
+    actualizarCliente,
+    crearCliente,
+    eliminarCliente,
+    obtenerClientes,
+    obtenerDeudaCliente,
+    obtenerDeudasClientes,
+    obtenerPagosCliente,
+    registrarAbonoCliente,
+    type Cliente,
+    type ResumenDeudaCliente,
+  } from "../../services/api";
+
+  const lista = document.getElementById("clientes-lista");
+  const detalle = document.getElementById("cliente-detalle");
+  const buscar = document.getElementById(
+    "clientes-buscar",
+  ) as HTMLInputElement | null;
+  const overlay = document.getElementById("cliente-form-overlay");
+  const form = document.getElementById(
+    "cliente-form",
+  ) as HTMLFormElement | null;
+  const nombreInput = document.getElementById(
+    "cliente-form-nombre",
+  ) as HTMLInputElement | null;
+  const telefonoInput = document.getElementById(
+    "cliente-form-telefono",
+  ) as HTMLInputElement | null;
+  const formTitulo = document.getElementById("cliente-form-titulo");
+  const error = document.getElementById("cliente-form-error");
+  const notificacion = document.getElementById("clientes-notificacion");
+
+  let clientes: Cliente[] = [];
+  let resumenesDeuda: ResumenDeudaCliente[] = [];
+  let clienteSeleccionado: Cliente | null = null;
+  let editandoId: number | null = null;
+  let solicitudDetalle = 0;
+
+  function normalizar(texto: string) {
+    return texto
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("es")
+      .trim();
+  }
+
+  function avisar(texto: string, esError = false) {
+    if (!notificacion) return;
+    notificacion.textContent = texto;
+    notificacion.className = esError
+      ? "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+      : "rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800";
+  }
+
+  function renderLista() {
+    if (!lista) return;
+    const consulta = normalizar(buscar?.value ?? "");
+    const encontrados = clientes.filter((cliente) => {
+      const coincide = normalizar(
+        `${cliente.nombre} ${cliente.telefono ?? ""}`,
+      ).includes(consulta);
+      const resumen = resumenesDeuda.find(
+        (item) => item.cliente.id === cliente.id,
+      );
+      return coincide && (Boolean(consulta) || (resumen?.totalDeuda ?? 0) > 0);
+    });
+    const cantidad = document.getElementById("clientes-cantidad");
+    if (cantidad) {
+      cantidad.textContent = `${encontrados.length} ${encontrados.length === 1 ? "cliente" : "clientes"}`;
+    }
+
+    if (
+      clienteSeleccionado &&
+      !encontrados.some((cliente) => cliente.id === clienteSeleccionado?.id)
+    ) {
+      clienteSeleccionado = null;
+      renderDetalle();
+    }
+    lista.innerHTML = encontrados.length
+      ? encontrados
+          .map((cliente) => {
+            const resumen = resumenesDeuda.find(
+              (item) => item.cliente.id === cliente.id,
+            );
+            return `
+      <button type="button" data-cliente-id="${cliente.id}" class="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-cyan-50 ${clienteSeleccionado?.id === cliente.id ? "bg-cyan-50" : ""}">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-sm font-bold text-cyan-900">${escapeHtml(cliente.nombre.slice(0, 1).toUpperCase())}</span>
+        <span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold text-slate-800">${escapeHtml(cliente.nombre)}</span><span class="mt-0.5 block truncate text-xs text-slate-500">${escapeHtml(cliente.telefono ?? "Sin teléfono")}</span></span>
+        <span class="text-right"><span class="block text-xs text-slate-400">#${cliente.id}</span>${(resumen?.totalDeuda ?? 0) > 0 ? `<span class="mt-1 block rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900">${formatearMoneda(resumen!.totalDeuda)}</span>` : `<span class="mt-1 block text-[11px] text-slate-400">Sin deuda</span>`}</span>
+      </button>`;
+          })
+          .join("")
+      : `<p class="p-5 text-sm text-slate-500">No hay coincidencias.</p>`;
+
+    lista
+      .querySelectorAll<HTMLButtonElement>("[data-cliente-id]")
+      .forEach((boton) => {
+        boton.addEventListener("click", () => {
+          const id = Number(boton.dataset.clienteId);
+          clienteSeleccionado =
+            clientes.find((cliente) => cliente.id === id) ?? null;
+          renderLista();
+          renderDetalle();
+        });
+      });
+  }
+
+  async function renderDetalle() {
+    if (!detalle) return;
+    const cliente = clienteSeleccionado;
+    const idSolicitud = ++solicitudDetalle;
+    if (!cliente) {
+      detalle.innerHTML = `<div class="flex h-full min-h-40 items-center justify-center text-center text-sm text-slate-500">Selecciona un cliente para ver su ficha.</div>`;
+      return;
+    }
+    detalle.innerHTML = `
+      <div class="flex items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase text-cyan-800">Ficha de cliente</p><h3 class="mt-1 text-xl font-bold text-slate-900">${escapeHtml(cliente.nombre)}</h3></div><span class="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">#${cliente.id}</span></div>
+      <dl class="mt-6 divide-y divide-slate-100 rounded-lg border border-slate-200"><div class="px-3 py-3"><dt class="text-xs text-slate-500">Teléfono</dt><dd class="mt-1 text-sm font-medium text-slate-800">${escapeHtml(cliente.telefono ?? "No registrado")}</dd></div></dl>
+      <div id="cliente-finanzas" class="mt-4"><p class="text-sm text-slate-500">Cargando saldo y pagos...</p></div>
+      <div class="mt-5 flex flex-wrap gap-2"><button id="cliente-editar" type="button" class="h-9 rounded-lg bg-cyan-800 px-4 text-sm font-semibold text-white hover:bg-cyan-900">Editar cliente</button><button id="cliente-eliminar" type="button" class="h-9 rounded-lg border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 hover:bg-red-100">Eliminar</button></div>`;
+    detalle
+      .querySelector("#cliente-editar")
+      ?.addEventListener("click", () => abrirFormulario(cliente));
+    detalle
+      .querySelector("#cliente-eliminar")
+      ?.addEventListener("click", () => void borrarCliente(cliente));
+
+    try {
+      const [deuda, pagosCliente] = await Promise.all([
+        obtenerDeudaCliente(cliente.id),
+        obtenerPagosCliente(cliente.id),
+      ]);
+      if (
+        idSolicitud !== solicitudDetalle ||
+        clienteSeleccionado?.id !== cliente.id
+      )
+        return;
+      const finanzas = detalle.querySelector("#cliente-finanzas");
+      if (!finanzas) return;
+      const pagosRecientes = [...pagosCliente.pagos].reverse().slice(0, 5);
+      finanzas.innerHTML = `
+        <div class="grid grid-cols-2 gap-2">
+          <div class="rounded-lg border border-amber-200 bg-amber-50 p-3"><p class="text-xs font-medium text-amber-800">Por cobrar</p><p class="mt-1 text-lg font-bold text-amber-950">${formatearMoneda(deuda.totalDeuda)}</p><p class="text-[11px] text-amber-800">${deuda.pedidos.length} pedidos con saldo</p></div>
+          <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3"><p class="text-xs font-medium text-emerald-800">Pagos registrados</p><p class="mt-1 text-lg font-bold text-emerald-950">${pagosCliente.pagos.length}</p><p class="text-[11px] text-emerald-800">Abonos recibidos</p></div>
+        </div>
+        ${deuda.totalDeuda > 0 ? `<form id="cliente-abono-form" class="mt-4 rounded-lg border border-slate-200 p-3"><label for="cliente-abono-monto" class="block text-sm font-semibold text-slate-800">Registrar abono</label><p class="mt-1 text-xs text-slate-500">Se aplicará a los pedidos entregados más antiguos. Máximo: ${formatearMoneda(deuda.totalDeuda)}</p><div class="mt-3 flex items-end gap-2"><div class="min-w-0 flex-1"><label for="cliente-abono-monto" class="sr-only">Monto del abono</label><input id="cliente-abono-monto" name="monto" type="number" min="0.01" max="${deuda.totalDeuda.toFixed(2)}" step="0.01" required inputmode="decimal" placeholder="0.00" class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100" /></div><button type="submit" class="h-10 shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">Guardar abono</button></div><p id="cliente-abono-error" class="mt-2 hidden text-sm text-red-700" role="alert"></p></form>` : ""}
+        <h4 class="mt-5 text-sm font-bold text-slate-900">Últimos pagos</h4>
+        ${pagosRecientes.length ? `<ul class="mt-2 divide-y divide-slate-100 rounded-lg border border-slate-200">${pagosRecientes.map((pago) => `<li class="flex items-start justify-between gap-3 px-3 py-2.5"><span><span class="block text-sm font-semibold text-slate-800">${formatearMoneda(pago.monto)}</span><span class="mt-0.5 block text-xs text-slate-500">${new Intl.DateTimeFormat("es-EC", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guayaquil" }).format(new Date(pago.fecha))} · ${escapeHtml(pago.usuario.username)}</span></span><span class="text-right text-xs text-slate-500">${pago.aplicaciones.map((aplicacion: { pedidoId: number; monto: number }) => `#${aplicacion.pedidoId}: ${formatearMoneda(aplicacion.monto)}`).join("<br>")}</span></li>`).join("")}</ul>` : `<p class="mt-2 rounded-lg bg-slate-50 p-3 text-sm text-slate-500">Aún no hay pagos registrados.</p>`}
+      `;
+
+      const formularioAbono = finanzas.querySelector<HTMLFormElement>(
+        "#cliente-abono-form",
+      );
+      formularioAbono?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const entrada = formularioAbono.querySelector<HTMLInputElement>(
+          "#cliente-abono-monto",
+        );
+        const boton = formularioAbono.querySelector<HTMLButtonElement>(
+          'button[type="submit"]',
+        );
+        const errorAbono = formularioAbono.querySelector(
+          "#cliente-abono-error",
+        );
+        const monto = Number(entrada?.value);
+        if (!entrada || !boton || !Number.isFinite(monto) || monto <= 0) {
+          entrada?.setCustomValidity("Ingresa un monto mayor a 0.");
+          entrada?.reportValidity();
+          return;
+        }
+        if (monto > deuda.totalDeuda) {
+          entrada.setCustomValidity(
+            `El abono no puede superar ${formatearMoneda(deuda.totalDeuda)}.`,
+          );
+          entrada.reportValidity();
+          return;
+        }
+
+        entrada.setCustomValidity("");
+        boton.disabled = true;
+        boton.textContent = "Guardando...";
+        errorAbono?.classList.add("hidden");
+
+        try {
+          await registrarAbonoCliente(cliente.id, monto);
+          await cargar();
+          avisar("Abono registrado correctamente.");
+        } catch (caught) {
+          if (errorAbono) {
+            errorAbono.textContent =
+              caught instanceof Error
+                ? caught.message
+                : "No se pudo registrar el abono.";
+            errorAbono.classList.remove("hidden");
+          }
+          boton.disabled = false;
+          boton.textContent = "Guardar abono";
+        }
+      });
+      formularioAbono
+        ?.querySelector<HTMLInputElement>("#cliente-abono-monto")
+        ?.addEventListener("input", (event) => {
+          (event.currentTarget as HTMLInputElement).setCustomValidity("");
+        });
+    } catch (caught) {
+      if (idSolicitud !== solicitudDetalle) return;
+      const finanzas = detalle.querySelector("#cliente-finanzas");
+      if (finanzas)
+        finanzas.innerHTML = `<p class="text-sm text-slate-500">No se pudo cargar el resumen de pagos: ${escapeHtml(caught instanceof Error ? caught.message : "error desconocido")}</p>`;
+    }
+  }
+
+  function formatearMoneda(valor: number) {
+    return new Intl.NumberFormat("es-EC", {
+      style: "currency",
+      currency: "USD",
+    }).format(valor);
+  }
+
+  function escapeHtml(texto: string) {
+    const span = document.createElement("span");
+    span.textContent = texto;
+    return span.innerHTML;
+  }
+
+  function abrirFormulario(cliente?: Cliente) {
+    editandoId = cliente?.id ?? null;
+    if (formTitulo)
+      formTitulo.textContent = cliente ? "Editar cliente" : "Nuevo cliente";
+    if (nombreInput) nombreInput.value = cliente?.nombre ?? "";
+    if (telefonoInput) telefonoInput.value = cliente?.telefono ?? "";
+    error?.classList.add("hidden");
+    overlay?.classList.remove("hidden");
+    overlay?.classList.add("flex");
+    nombreInput?.focus();
+  }
+
+  function cerrarFormulario() {
+    overlay?.classList.add("hidden");
+    overlay?.classList.remove("flex");
+  }
+
+  async function cargar() {
+    if (!lista) return;
+    lista.innerHTML = `<p class="p-5 text-sm text-slate-500">Cargando clientes...</p>`;
+    try {
+      [clientes, resumenesDeuda] = await Promise.all([
+        obtenerClientes(),
+        obtenerDeudasClientes(),
+      ]);
+      renderLista();
+      renderDetalle();
+    } catch (caught) {
+      lista.innerHTML = `<p class="p-5 text-sm text-red-700">${escapeHtml(caught instanceof Error ? caught.message : "No se pudieron cargar los clientes.")}</p>`;
+    }
+  }
+
+  async function borrarCliente(cliente: Cliente) {
+    if (!window.confirm(`¿Eliminar a ${cliente.nombre}?`)) return;
+    try {
+      await eliminarCliente(cliente.id);
+      clienteSeleccionado = null;
+      await cargar();
+      avisar("Cliente eliminado.");
+    } catch (caught) {
+      avisar(
+        caught instanceof Error
+          ? caught.message
+          : "No se pudo eliminar el cliente.",
+        true,
+      );
+    }
+  }
+
+  document
+    .getElementById("clientes-nuevo")
+    ?.addEventListener("click", () => abrirFormulario());
+  document
+    .getElementById("cliente-form-cancelar")
+    ?.addEventListener("click", cerrarFormulario);
+  buscar?.addEventListener("input", renderLista);
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!nombreInput || !telefonoInput) return;
+    const datos = {
+      nombre: nombreInput.value.trim(),
+      telefono: telefonoInput.value.trim(),
+    };
+    const guardar = document.getElementById(
+      "cliente-form-guardar",
+    ) as HTMLButtonElement | null;
+    if (guardar) guardar.disabled = true;
+    try {
+      const guardado =
+        editandoId === null
+          ? await crearCliente(datos)
+          : await actualizarCliente(editandoId, datos);
+      await cargar();
+      clienteSeleccionado =
+        clientes.find((cliente) => cliente.id === guardado.id) ?? guardado;
+      renderLista();
+      renderDetalle();
+      cerrarFormulario();
+      avisar(editandoId === null ? "Cliente creado." : "Cliente actualizado.");
+    } catch (caught) {
+      if (error) {
+        error.textContent =
+          caught instanceof Error
+            ? caught.message
+            : "No se pudo guardar el cliente.";
+        error.classList.remove("hidden");
+      }
+    } finally {
+      if (guardar) guardar.disabled = false;
+    }
+  });
+
+  window.addEventListener("centro-control:actualizar-datos", () => {
+    void cargar();
+  });
+
+  void cargar();
+</script>

@@ -1,0 +1,128 @@
+---
+
+---
+
+<header
+  class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6"
+>
+  <div class="flex items-center gap-3">
+    <button
+      id="menu-button"
+      type="button"
+      class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200 lg:hidden"
+      aria-label="Abrir menú"
+    >
+      <svg
+        class="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
+    </button>
+
+    <div>
+      <h1 class="text-lg font-semibold text-slate-900">XAPRINT</h1>
+
+      <p class="hidden text-xs text-slate-400 sm:block">Impresiones</p>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-2 sm:gap-3">
+    <!-- Estado de conexión -->
+    <div
+      id="estado-api"
+      class="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5"
+      title="Estado de conexión con el servidor"
+    >
+      <span class="relative flex h-2 w-2">
+        <span
+          id="estado-api-ping"
+          class="absolute inline-flex h-full w-full animate-ping rounded-full bg-slate-400 opacity-75"
+        ></span>
+
+        <span
+          id="estado-api-punto"
+          class="relative inline-flex h-2 w-2 rounded-full bg-slate-400"></span>
+      </span>
+
+      <span id="estado-api-texto" class="text-xs font-medium text-slate-500">
+        Conectando...
+      </span>
+    </div>
+
+    <!-- Notificaciones -->
+    <button
+      type="button"
+      class="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+      aria-label="Notificaciones"
+    >
+      <svg
+        class="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"></path>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<script>
+  import { suscribirseConexion } from "../../services/pedidos-store";
+
+  const menuButton = document.getElementById("menu-button");
+
+  const estadoApi = document.getElementById("estado-api");
+  const estadoApiPunto = document.getElementById("estado-api-punto");
+  const estadoApiPing = document.getElementById("estado-api-ping");
+  const estadoApiTexto = document.getElementById("estado-api-texto");
+
+  menuButton?.addEventListener("click", () => {
+    window.dispatchEvent(new CustomEvent("centro-control:toggle-sidebar"));
+  });
+
+  suscribirseConexion((conectado) => {
+    if (!estadoApi || !estadoApiPunto || !estadoApiPing || !estadoApiTexto) {
+      return;
+    }
+
+    if (conectado) {
+      estadoApi.className =
+        "flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5";
+
+      estadoApiPunto.className =
+        "relative inline-flex h-2 w-2 rounded-full bg-emerald-500";
+
+      estadoApiPing.className =
+        "absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75";
+
+      estadoApiTexto.className = "text-xs font-medium text-emerald-700";
+
+      estadoApiTexto.textContent = "Sistema conectado";
+    } else {
+      estadoApi.className =
+        "flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5";
+
+      estadoApiPunto.className =
+        "relative inline-flex h-2 w-2 rounded-full bg-red-500";
+
+      estadoApiPing.className =
+        "absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75";
+
+      estadoApiTexto.className = "text-xs font-medium text-red-700";
+
+      estadoApiTexto.textContent = "Sin conexión";
+    }
+  });
+</script>

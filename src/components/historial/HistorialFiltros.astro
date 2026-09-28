@@ -1,0 +1,138 @@
+<div class="space-y-3 rounded-xl border border-slate-200 bg-white p-3">
+  <label class="group relative block w-full max-w-md">
+    <span class="sr-only">Buscar en el historial por nombre de cliente</span>
+    <svg
+      class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition group-focus-within:text-cyan-700"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7"></circle>
+      <path stroke-linecap="round" d="m20 20-4-4"></path>
+    </svg>
+    <input
+      id="historial-buscar-cliente"
+      type="search"
+      autocomplete="off"
+      placeholder="Buscar por nombre de cliente"
+      class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-cyan-600 focus:bg-white focus:ring-2 focus:ring-cyan-100"
+    />
+  </label>
+
+  <div class="flex flex-wrap items-start gap-x-5 gap-y-3">
+    <div>
+      <p class="mb-1.5 text-[11px] font-semibold uppercase text-slate-500">
+        Estado
+      </p>
+      <div
+        class="inline-flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1"
+        role="group"
+        aria-label="Filtrar historial por estado"
+      >
+        <button
+          type="button"
+          data-historial-estado="TODOS"
+          aria-pressed="true"
+          class="historial-filtro-estado rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800"
+          >Todos</button
+        >
+        <button
+          type="button"
+          data-historial-estado="ENTREGADO"
+          aria-pressed="false"
+          class="historial-filtro-estado rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-white hover:text-emerald-800"
+          >Entregados</button
+        >
+        <button
+          type="button"
+          data-historial-estado="CANCELADO"
+          aria-pressed="false"
+          class="historial-filtro-estado rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-white hover:text-red-800"
+          >Cancelados</button
+        >
+      </div>
+    </div>
+
+    <div>
+      <p class="mb-1.5 text-[11px] font-semibold uppercase text-slate-500">
+        Servicio y ancho
+      </p>
+      <div
+        class="inline-flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1"
+        role="group"
+        aria-label="Filtrar historial por servicio y ancho"
+      >
+        <button
+          type="button"
+          data-historial-servicio="TODOS"
+          aria-pressed="true"
+          class="historial-filtro-servicio rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 shadow-sm transition"
+          >Todos</button
+        >
+        <button
+          type="button"
+          data-historial-servicio="UV"
+          aria-pressed="false"
+          class="historial-filtro-servicio rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-white"
+          >UV</button
+        >
+        <button
+          type="button"
+          data-historial-servicio="TEXTIL_31"
+          aria-pressed="false"
+          class="historial-filtro-servicio rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-white"
+          >Textil 31</button
+        >
+        <button
+          type="button"
+          data-historial-servicio="TEXTIL_58"
+          aria-pressed="false"
+          class="historial-filtro-servicio rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-white"
+          >Textil 58</button
+        >
+      </div>
+    </div>
+
+    <div>
+      <p class="mb-1.5 text-[11px] font-semibold uppercase text-slate-500">
+        Periodo
+      </p>
+      <div
+        class="inline-flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1"
+        role="group"
+        aria-label="Filtrar historial por periodo"
+      >
+        <button
+          type="button"
+          data-historial-fecha="HOY"
+          aria-pressed="true"
+          class="historial-filtro-fecha rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 shadow-sm transition"
+          >Hoy</button
+        >
+        <button
+          type="button"
+          data-historial-fecha="AYER"
+          aria-pressed="false"
+          class="historial-filtro-fecha rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-white"
+          >Ayer</button
+        >
+        <button
+          type="button"
+          data-historial-fecha="ULTIMOS_7_DIAS"
+          aria-pressed="false"
+          class="historial-filtro-fecha rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-white"
+          >7 días</button
+        >
+        <button
+          type="button"
+          data-historial-fecha="TODAS"
+          aria-pressed="false"
+          class="historial-filtro-fecha rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-white"
+          >Todas</button
+        >
+      </div>
+    </div>
+  </div>
+</div>

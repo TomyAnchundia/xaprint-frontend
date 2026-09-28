@@ -1,0 +1,431 @@
+---
+import HistorialItem from "./HistorialItem.astro";
+import HistorialVacio from "./HistorialVacio.astro";
+---
+
+<div
+  id="historial-lista"
+  class="flex h-full flex-col gap-3 overflow-y-auto pr-1"
+>
+  <HistorialVacio />
+</div>
+
+<script>
+  import {
+    obtenerHistorialGeneral,
+    type HistorialGeneralItem,
+  } from "../../services/api";
+
+  import { formatearFecha, formatearHora } from "../../utils/fecha";
+  import { obtenerUsuario } from "../../services/auth";
+  import { pedidoPerteneceAlArea } from "../../services/permisos";
+
+  const lista = document.getElementById("historial-lista");
+  const busquedaCliente = document.getElementById(
+    "historial-buscar-cliente",
+  ) as HTMLInputElement | null;
+
+  let filtroEstado = "TODOS";
+  let filtroFecha = "HOY";
+  let filtroServicio = "TODOS";
+  let nombreBuscado = "";
+  let historial: HistorialGeneralItem[] = [];
+
+  function actualizarEstadoBotones(): void {
+    document
+      .querySelectorAll<HTMLButtonElement>("[data-historial-estado]")
+      .forEach((boton) => {
+        const activo = boton.dataset.historialEstado === filtroEstado;
+        const tonoActivo =
+          filtroEstado === "ENTREGADO"
+            ? ["bg-emerald-700", "hover:bg-emerald-800"]
+            : filtroEstado === "CANCELADO"
+              ? ["bg-red-700", "hover:bg-red-800"]
+              : ["bg-slate-900", "hover:bg-slate-800"];
+
+        boton.classList.remove(
+          "bg-slate-900",
+          "bg-emerald-700",
+          "bg-red-700",
+          "hover:bg-slate-800",
+          "hover:bg-emerald-800",
+          "hover:bg-red-800",
+          "hover:bg-white",
+          "hover:text-emerald-800",
+          "hover:text-red-800",
+          "bg-slate-600",
+          "text-white",
+          "text-slate-900",
+          "text-slate-600",
+          "font-semibold",
+          "font-medium",
+          "shadow-sm",
+        );
+
+        if (activo) {
+          boton.classList.add(
+            ...tonoActivo,
+            "text-white",
+            "font-semibold",
+            "shadow-sm",
+          );
+        } else {
+          boton.classList.add(
+            "text-slate-600",
+            "font-medium",
+            "hover:bg-white",
+          );
+        }
+        boton.setAttribute("aria-pressed", String(activo));
+      });
+
+    document
+      .querySelectorAll<HTMLButtonElement>("[data-historial-fecha]")
+      .forEach((boton) => {
+        const activo = boton.dataset.historialFecha === filtroFecha;
+        boton.classList.toggle("bg-white", activo);
+        boton.classList.toggle("text-slate-900", activo);
+        boton.classList.toggle("font-semibold", activo);
+        boton.classList.toggle("shadow-sm", activo);
+        boton.classList.toggle("text-slate-600", !activo);
+        boton.classList.toggle("font-medium", !activo);
+        boton.setAttribute("aria-pressed", String(activo));
+      });
+
+    document
+      .querySelectorAll<HTMLButtonElement>("[data-historial-servicio]")
+      .forEach((boton) => {
+        const activo = boton.dataset.historialServicio === filtroServicio;
+        boton.classList.toggle("bg-white", activo);
+        boton.classList.toggle("text-slate-900", activo);
+        boton.classList.toggle("font-semibold", activo);
+        boton.classList.toggle("shadow-sm", activo);
+        boton.classList.toggle("text-slate-600", !activo);
+        boton.classList.toggle("font-medium", !activo);
+        boton.setAttribute("aria-pressed", String(activo));
+      });
+  }
+
+  function normalizarBusqueda(valor: string): string {
+    return valor
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("es")
+      .trim();
+  }
+
+  function escaparHtml(valor: string): string {
+    return valor
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function formatearMedidas(ancho: number, largo: number | null): string {
+    if (largo === null) {
+      return `${ancho} cm`;
+    }
+
+    return `${ancho} × ${largo} cm`;
+  }
+
+  function obtenerFechaEcuador(fecha: string): string {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Guayaquil",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(fecha));
+  }
+
+  function desplazarFecha(fecha: Date, dias: number): Date {
+    const resultado = new Date(fecha);
+    resultado.setDate(resultado.getDate() + dias);
+    return resultado;
+  }
+
+  function fechaCoincide(fechaRegistro: string, filtro: string): boolean {
+    if (filtro === "TODAS") {
+      return true;
+    }
+
+    const fechaItem = obtenerFechaEcuador(fechaRegistro);
+
+    const ahora = new Date();
+
+    const hoy = obtenerFechaEcuador(ahora.toISOString());
+
+    if (filtro === "HOY") {
+      return fechaItem === hoy;
+    }
+
+    if (filtro === "AYER") {
+      const ayer = desplazarFecha(ahora, -1);
+
+      return fechaItem === obtenerFechaEcuador(ayer.toISOString());
+    }
+
+    if (filtro === "ULTIMOS_7_DIAS") {
+      const fechaActual = new Date(`${hoy}T00:00:00-05:00`);
+
+      const fechaMinima = new Date(fechaActual);
+
+      fechaMinima.setDate(fechaMinima.getDate() - 6);
+
+      const fechaItemDate = new Date(`${fechaItem}T00:00:00-05:00`);
+
+      return fechaItemDate >= fechaMinima && fechaItemDate <= fechaActual;
+    }
+
+    return true;
+  }
+
+  function renderizar(items: HistorialGeneralItem[]) {
+    if (!lista) return;
+
+    if (items.length === 0) {
+      lista.innerHTML = `
+        <div
+          class="flex h-full min-h-[240px] items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white"
+        >
+          <div class="px-6 py-12 text-center">
+            <div
+              class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+            >
+              <svg
+                class="h-6 w-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 8v4l2.5 2.5"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
+                />
+              </svg>
+            </div>
+
+            <h3
+              class="text-base font-semibold text-slate-900"
+            >
+              No hay pedidos en el historial
+            </h3>
+
+            <p class="mt-1 text-sm text-slate-500">
+              No hay registros que coincidan con los filtros seleccionados.
+            </p>
+          </div>
+        </div>
+      `;
+
+      return;
+    }
+
+    lista.innerHTML = items
+      .map((item) => {
+        const cliente = item.cliente?.nombre?.trim() || "Cliente sin nombre";
+
+        const precio =
+          item.precioFinal !== null
+            ? `$${item.precioFinal.toFixed(2)}`
+            : "Sin precio";
+
+        const servicio = item.servicio === "TEXTIL" ? "DTF Textil" : "DTF UV";
+
+        const medidas = formatearMedidas(item.ancho, item.largo);
+
+        const estadoTexto =
+          item.estado === "ENTREGADO" ? "Entregado" : "Cancelado";
+
+        const estadoClase =
+          item.estado === "ENTREGADO"
+            ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+            : "bg-red-50 text-red-700 ring-red-600/20";
+
+        return `
+          <article
+            class="group rounded-xl border border-slate-200 border-l-4 ${item.estado === "ENTREGADO" ? "border-l-emerald-500" : "border-l-red-500"} bg-white p-4 shadow-sm transition duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+          >
+            <div
+              class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-sm font-bold text-slate-900 group-hover:text-cyan-950">
+                    Pedido #${item.pedidoId}
+                  </span>
+
+                  <span
+                    class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${estadoClase}"
+                  >
+                    ${estadoTexto}
+                  </span>
+                </div>
+
+                <p class="mt-2 truncate text-sm font-semibold text-slate-800">
+                  ${escaparHtml(cliente)}
+                </p>
+
+                <div class="mt-2 flex flex-wrap gap-1.5 text-xs font-medium text-slate-600">
+                  <span class="rounded-md bg-slate-100 px-2 py-1">${servicio}</span>
+                  <span class="rounded-md bg-cyan-50 px-2 py-1 text-cyan-900">${medidas}</span>
+                </div>
+              </div>
+
+              <div class="shrink-0 sm:text-right">
+                <p class="text-lg font-bold text-slate-900">
+                  ${precio}
+                </p>
+
+                <p
+                  class="mt-1 text-sm text-slate-500"
+                >
+                  ${formatearFecha(item.fecha)}
+                
+                </p>
+              </div>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
+  function aplicarFiltros() {
+    const consulta = normalizarBusqueda(nombreBuscado);
+    const resultado = historial.filter((item) => {
+      const coincideEstado =
+        filtroEstado === "TODOS" || item.estado === filtroEstado;
+
+      const coincideFecha = fechaCoincide(item.fecha, filtroFecha);
+
+      const coincideServicio =
+        filtroServicio === "TODOS" ||
+        (filtroServicio === "UV" && item.servicio === "UV") ||
+        (filtroServicio === "TEXTIL_31" &&
+          item.servicio === "TEXTIL" &&
+          item.ancho === 31) ||
+        (filtroServicio === "TEXTIL_58" &&
+          item.servicio === "TEXTIL" &&
+          item.ancho === 58);
+
+      const nombreCliente = normalizarBusqueda(item.cliente?.nombre ?? "");
+      const coincideNombre = !consulta || nombreCliente.includes(consulta);
+      const coincideArea = pedidoPerteneceAlArea(item, obtenerUsuario());
+
+      return (
+        coincideEstado &&
+        coincideFecha &&
+        coincideServicio &&
+        coincideNombre &&
+        coincideArea
+      );
+    });
+
+    renderizar(resultado);
+    actualizarEstadoBotones();
+  }
+
+  async function cargarHistorial() {
+    if (!lista) return;
+
+    lista.innerHTML = `
+      <div
+        class="flex h-full min-h-[240px] items-center justify-center rounded-xl border border-slate-200 bg-white"
+      >
+        <div class="text-center">
+          <div
+            class="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-700"
+          ></div>
+
+          <p class="text-sm text-slate-500">
+            Cargando historial...
+          </p>
+        </div>
+      </div>
+    `;
+
+    try {
+      historial = await obtenerHistorialGeneral();
+
+      aplicarFiltros();
+    } catch (error) {
+      console.error("No se pudo cargar el historial:", error);
+
+      lista.innerHTML = `
+        <div
+          class="flex h-full min-h-[240px] items-center justify-center rounded-xl border border-red-200 bg-white"
+        >
+          <div class="px-6 py-12 text-center">
+            <h3
+              class="text-base font-semibold text-red-700"
+            >
+              No se pudo cargar el historial
+            </h3>
+
+            <p class="mt-1 text-sm text-slate-500">
+              Comprueba la conexión con el servidor e inténtalo nuevamente.
+            </p>
+
+            <button
+              id="historial-reintentar"
+              type="button"
+              class="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      `;
+
+      document
+        .getElementById("historial-reintentar")
+        ?.addEventListener("click", cargarHistorial);
+    }
+  }
+
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-historial-estado]")
+    .forEach((boton) => {
+      boton.addEventListener("click", () => {
+        filtroEstado = boton.dataset.historialEstado ?? "TODOS";
+        aplicarFiltros();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-historial-fecha]")
+    .forEach((boton) => {
+      boton.addEventListener("click", () => {
+        filtroFecha = boton.dataset.historialFecha ?? "HOY";
+        aplicarFiltros();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-historial-servicio]")
+    .forEach((boton) => {
+      boton.addEventListener("click", () => {
+        filtroServicio = boton.dataset.historialServicio ?? "TODOS";
+        aplicarFiltros();
+      });
+    });
+
+  busquedaCliente?.addEventListener("input", () => {
+    nombreBuscado = busquedaCliente.value;
+    aplicarFiltros();
+  });
+
+  window.addEventListener("centro-control:recargar-historial", cargarHistorial);
+
+  cargarHistorial();
+</script>

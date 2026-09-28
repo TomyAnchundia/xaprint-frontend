@@ -1,0 +1,2128 @@
+---
+import PedidoDetalleModales from "./PedidoDetalleModales.astro";
+---
+
+<div
+  id="pedido-detalle-overlay"
+  class="pointer-events-none invisible fixed inset-0 z-50"
+>
+  <!-- Fondo -->
+  <div
+    id="pedido-detalle-backdrop"
+    class="absolute inset-0 bg-slate-900/30 opacity-0 transition-opacity duration-200"
+  >
+  </div>
+
+  <!-- Panel -->
+  <aside
+    id="pedido-detalle-panel"
+    class="absolute right-0 top-0 flex h-full w-full max-w-xl translate-x-full flex-col bg-slate-50 shadow-2xl transition-transform duration-200"
+  >
+    <!-- Header -->
+    <div class="shrink-0 border-b border-slate-200 bg-slate-100 px-5 py-3">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <p
+            class="text-[10px] font-medium uppercase tracking-wide text-slate-400"
+          >
+            Detalle del pedido
+          </p>
+
+          <h2
+            id="detalle-titulo"
+            class="mt-0.5 text-base font-bold text-slate-900"
+          >
+            Pedido
+          </h2>
+
+          <div class="mt-1.5 rounded-lg bg-white/80 px-2.5 py-1.5">
+            <p class="text-[10px] font-medium uppercase text-slate-400">
+              Cliente
+            </p>
+            <div class="mt-0.5 flex flex-wrap items-center gap-x-2">
+              <p
+                id="detalle-cliente-header"
+                class="min-w-0 text-2xl font-semibold text-slate-700"
+              >
+                —
+              </p>
+              <p
+                id="detalle-telefono-header"
+                class="text-[11px] text-slate-500"
+              >
+                —
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex shrink-0 items-center gap-2">
+          <!-- Editar -->
+          <button
+            id="detalle-editar"
+            type="button"
+            class="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-cyan-950 px-3 text-xs font-medium text-white transition hover:bg-cyan-900 hover:text-blue-100 focus:outline-none focus:ring-2 focus:ring-slate-300"
+          >
+            <svg
+              class="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"
+              ></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M16.5 3.5a2.121 2.121 0 013 3L8 18l-4 1 1-4L16.5 3.5z"
+              ></path>
+            </svg>
+            Editar
+          </button>
+
+          <!-- Cerrar -->
+          <button
+            id="detalle-cerrar"
+            type="button"
+            class="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Cerrar detalle"
+          >
+            <svg
+              class="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="detalle-impresion-header"
+        class="hidden mt-2 rounded-lg border border-cyan-100 bg-cyan-50 px-2.5 py-2"
+      >
+        <div class="grid grid-cols-3 gap-2 text-[11px] leading-4">
+          <div class="min-w-0">
+            <p class="text-slate-500">Servicio</p>
+            <p
+              id="detalle-servicio"
+              class="truncate text-xs font-semibold text-slate-800"
+            >
+              —
+            </p>
+          </div>
+          <div class="min-w-0">
+            <p class="text-slate-500">Medidas</p>
+            <p
+              id="detalle-medidas"
+              class="truncate text-xs font-semibold text-slate-800"
+            >
+              —
+            </p>
+          </div>
+          <div class="min-w-0">
+            <p class="text-slate-500">Ajustes</p>
+            <div class="flex flex-wrap gap-x-2 text-[11px] text-slate-700">
+              <span
+                >Contr. <strong
+                  id="detalle-contraer"
+                  class="text-xs font-semibold text-slate-800">—</strong
+                ></span
+              >
+              <span
+                >Vel. <strong
+                  id="detalle-velocidad"
+                  class="text-xs font-semibold text-slate-800">—</strong
+                ></span
+              >
+              <span
+                >Obst. <strong
+                  id="detalle-obstruccion"
+                  class="text-xs font-semibold text-slate-800">—</strong
+                ></span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenido -->
+    <div class="min-h-0 flex-1 overflow-y-auto">
+      <!-- Loading -->
+      <div
+        id="detalle-loading"
+        class="flex items-center justify-center px-5 py-20"
+      >
+        <div class="flex items-center gap-3 text-sm text-slate-400">
+          <span
+            class="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-slate-700"
+          ></span>
+          Cargando pedido...
+        </div>
+
+        <div
+          class="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3"
+        >
+          <div>
+            <p class="text-xs font-medium text-slate-500">Estado de pago</p>
+            <span
+              id="detalle-estado-pago"
+              class="mt-1 inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900"
+              >No pagado</span
+            >
+          </div>
+          <button
+            id="detalle-pago-accion"
+            type="button"
+            class="hidden h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+            >Registrar pago</button
+          >
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div id="detalle-error" class="hidden px-5 py-20 text-center">
+        <p class="font-medium text-red-600">No se pudo cargar el pedido</p>
+        <p id="detalle-error-mensaje" class="mt-1 text-sm text-slate-400">
+          Comprueba que el backend esté disponible.
+        </p>
+      </div>
+
+      <!-- Información -->
+      <div id="detalle-contenido" class="hidden">
+        <!-- Estado -->
+        <section class="border-b border-slate-200 px-5 py-4">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <p
+              class="text-xs font-medium uppercase tracking-wide text-slate-400"
+            >
+              Estado actual
+            </p>
+
+            <span
+              id="detalle-estado"
+              class="inline-flex rounded-full px-3 py-1.5 text-sm font-medium"
+            ></span>
+
+            <span
+              id="detalle-prioridad"
+              class="hidden rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700"
+            >
+              Prioridad
+            </span>
+          </div>
+
+          <!-- Acciones de estado -->
+          <div class="mt-5 rounded-xl border border-slate-200 bg-white p-4">
+            <div class="flex flex-col gap-3">
+              <div>
+                <p class="text-sm font-semibold text-slate-800">
+                  Acciones de estado
+                </p>
+
+                <p
+                  id="detalle-acciones-descripcion"
+                  class="mt-1 text-xs leading-5 text-slate-400"
+                >
+                  Selecciona una acción.
+                </p>
+              </div>
+
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <!-- Retroceder -->
+                <button
+                  id="detalle-retroceder"
+                  type="button"
+                  class="hidden h-10 flex-1 min-w-35 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <span class="flex items-center justify-center gap-1.5">
+                    <svg
+                      class="h-3.5 w-3.5 shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M15 18l-6-6 6-6"></path>
+                    </svg>
+
+                    <span id="detalle-retroceder-texto">Retroceder</span>
+                  </span>
+                </button>
+
+                <!-- Avanzar -->
+                <button
+                  id="detalle-avanzar"
+                  type="button"
+                  class="hidden h-10 flex-1 min-w-35 items-center justify-center rounded-xl bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <span class="flex items-center justify-center gap-1.5">
+                    <span id="detalle-avanzar-texto">Avanzar</span>
+
+                    <svg
+                      class="h-3.5 w-3.5 shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M9 18l6-6-6-6"></path>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+              <!-- Cancelar -->
+              <div
+                id="detalle-cancelar-contenedor"
+                class="hidden border-t border-slate-200 pt-2"
+              >
+                <button
+                  id="detalle-cancelar"
+                  type="button"
+                  class="w-full h-9 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-600 shadow-sm transition hover:bg-red-100 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <span class="flex items-center justify-center gap-1.5">
+                    <svg
+                      class="h-3.5 w-3.5 shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M6 6l12 12M18 6L6 18"></path>
+                    </svg>
+
+                    <span>Cancelar pedido</span>
+                  </span>
+                </button>
+              </div>
+
+              <p
+                id="detalle-acciones-error"
+                class="hidden text-xs font-medium text-red-600"
+              >
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Precio -->
+        <section class="border-b border-slate-200 px-5 py-5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-slate-900">Precio</h3>
+          </div>
+
+          <div class="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+            <div class="space-y-2.5 text-sm">
+              <div
+                class="flex items-center justify-between gap-3 text-slate-500"
+              >
+                <span>Calculado</span>
+
+                <span
+                  id="detalle-precio-calculado"
+                  class="font-medium text-slate-700"
+                >
+                  —
+                </span>
+              </div>
+
+              <div
+                class="flex items-center justify-between gap-3 text-slate-500"
+              >
+                <span>Costo de diseño</span>
+
+                <div class="flex items-center gap-2">
+                  <span
+                    id="detalle-costo-diseno"
+                    class="font-medium text-slate-700"
+                  >
+                    —
+                  </span>
+                  <button
+                    id="detalle-costo-diseno-editar"
+                    type="button"
+                    class="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-cyan-300 hover:text-cyan-800 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                    >Establecer</button
+                  >
+                </div>
+              </div>
+
+              <div
+                class="flex items-center justify-between gap-3 text-slate-500"
+              >
+                <span>Aporte desarrollador</span>
+
+                <span
+                  id="detalle-aporte-desarrollador"
+                  class="font-medium text-slate-700"
+                >
+                  —
+                </span>
+              </div>
+            </div>
+
+            <div class="mt-4 border-t border-slate-200 pt-3">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm font-semibold text-slate-700">
+                  Valor a cobrar
+                </span>
+                <span
+                  id="detalle-valor-cobrar"
+                  class="text-xl font-bold text-slate-900">—</span
+                >
+              </div>
+            </div>
+
+            <!-- Precio especial -->
+            <div id="detalle-precio-especial-contenedor" class="mt-3 hidden">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm text-violet-500">Precio especial</span>
+
+                <span
+                  id="detalle-precio-especial"
+                  class="text-sm font-semibold text-violet-700"
+                >
+                  —
+                </span>
+              </div>
+
+              <!-- Información del precio especial -->
+              <div
+                id="detalle-precio-especial-info"
+                class="mt-2 text-right text-xs text-slate-400"
+              >
+              </div>
+
+              <!-- Acciones precio especial -->
+              <div class="mt-3 flex justify-end gap-2">
+                <button
+                  id="detalle-precio-especial-editar"
+                  type="button"
+                  class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 text-xs font-semibold text-violet-700 transition hover:bg-violet-100 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                >
+                  <svg
+                    class="h-3.5 w-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 20h9"></path>
+
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M16.5 3.5a2.121 2.121 0 013 3L8 18l-4 1 1-4L16.5 3.5z"
+                    ></path>
+                  </svg>
+
+                  Editar
+                </button>
+
+                <button
+                  id="detalle-precio-especial-quitar"
+                  type="button"
+                  class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-600 transition hover:bg-red-100 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-200"
+                >
+                  <svg
+                    class="h-3.5 w-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M6 6l12 12M18 6L6 18"></path>
+                  </svg>
+
+                  Quitar
+                </button>
+              </div>
+            </div>
+
+            <!-- Establecer precio especial -->
+            <div id="detalle-precio-especial-establecer" class="mt-3">
+              <button
+                id="detalle-precio-especial-nuevo"
+                type="button"
+                class="inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-100 px-3 text-xs font-semibold text-violet-800 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-300 hover:bg-violet-200 focus:outline-none focus:ring-2 focus:ring-violet-300"
+              >
+                <svg
+                  class="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 5v14M5 12h14"></path>
+                </svg>
+
+                Establecer precio especial
+              </button>
+            </div>
+          </div>
+
+          <!-- Error precio especial -->
+          <p
+            id="detalle-precio-especial-error"
+            class="mt-2 hidden text-xs font-medium text-red-600"
+          >
+          </p>
+        </section>
+
+        <!-- Mensajes para WhatsApp -->
+        <section class="border-b border-slate-200 px-5 py-5">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900">
+              Mensajes para WhatsApp
+            </h3>
+            <p class="mt-1 text-xs leading-5 text-slate-400">
+              Copia un mensaje preparado para enviarlo al cliente.
+            </p>
+          </div>
+
+          <div class="mt-3 grid gap-2 sm:grid-cols-2">
+            <!-- Impresión lista -->
+            <button
+              id="detalle-whatsapp-listo"
+              type="button"
+              class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-100 px-2.5 py-2 text-[11px] font-semibold text-emerald-800 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-200 hover:shadow focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <svg
+                class="h-3.5 w-3.5 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 12l2 2 4-4"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+
+              <span id="detalle-whatsapp-listo-texto">
+                Copiar aviso de impresión lista
+              </span>
+            </button>
+
+            <!-- Detalle del precio -->
+            <button
+              id="detalle-whatsapp-precio"
+              type="button"
+              class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-violet-200 bg-violet-100 px-2.5 py-2 text-[11px] font-semibold text-violet-800 shadow-sm transition hover:border-violet-300 hover:bg-violet-200 hover:shadow focus:outline-none focus:ring-2 focus:ring-violet-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <svg
+                class="h-3.5 w-3.5 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 1v22"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path>
+              </svg>
+
+              <span id="detalle-whatsapp-precio-texto">
+                Copiar detalle del precio
+              </span>
+            </button>
+          </div>
+
+          <p
+            id="detalle-whatsapp-mensaje"
+            class="mt-2 hidden text-xs font-medium text-emerald-600"
+          >
+          </p>
+        </section>
+
+        <!-- Observaciones -->
+        <section
+          id="detalle-observaciones-seccion"
+          class="hidden border-b border-slate-200 px-5 py-5"
+        >
+          <h3 class="text-sm font-semibold text-slate-900">Observaciones</h3>
+
+          <p
+            id="detalle-observaciones"
+            class="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600"
+          >
+          </p>
+        </section>
+
+        <!-- Fechas -->
+        <section class="border-b border-slate-200 px-5 py-5">
+          <h3 class="text-sm font-semibold text-slate-900">Fechas</h3>
+
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <p class="text-xs text-slate-400">Creado</p>
+
+              <p id="detalle-creado" class="mt-1 text-sm text-slate-600">—</p>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-400">Última actualización</p>
+
+              <p id="detalle-actualizado" class="mt-1 text-sm text-slate-600">
+                —
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-400">Fecha de entrega</p>
+
+              <p id="detalle-entrega" class="mt-1 text-sm text-slate-600">—</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Historial -->
+        <section class="px-5 py-5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-slate-900">
+              Historial de estados
+            </h3>
+
+            <span
+              id="detalle-historial-cantidad"
+              class="text-xs text-slate-400"
+            >
+              0 cambios
+            </span>
+          </div>
+
+          <div id="detalle-historial" class="mt-4"></div>
+        </section>
+      </div>
+    </div>
+  </aside>
+
+  <PedidoDetalleModales />
+
+  <script>
+    import {
+      actualizarPedido,
+      cambiarEstadoPedido,
+      cambiarPrecioEspecial,
+      obtenerHistorialPedido,
+      obtenerPedido,
+      registrarPagoPedido,
+      revertirUltimoPagoPedido,
+    } from "../../services/api";
+
+    import { suscribirsePedidos } from "../../services/pedidos-store";
+    import { formatearFecha } from "../../utils/fecha";
+    import {
+      copiarMensaje,
+      mostrarModalElement,
+      ocultarModalElement,
+      ocultarOverlayElement,
+      renderizarHistorialElement,
+      mostrarOverlayElement,
+    } from "../../utils/pedido-detalle-ui";
+    import {
+      accionesSiguientes,
+      estados,
+      estadosAnteriores,
+      estadosSiguientes,
+      formatearMedidas,
+      formatearPrecio,
+      generarMensajeImpresionLista,
+      generarMensajePrecio,
+    } from "../../utils/pedido-detalle";
+
+    import type {
+      EstadoPedido,
+      HistorialPedido,
+      Pedido,
+    } from "../../types/pedido";
+
+    /*
+     * --------------------------------------------------------------------------
+     * Referencias DOM
+     * --------------------------------------------------------------------------
+     */
+
+    const overlay = document.getElementById("pedido-detalle-overlay");
+    const backdrop = document.getElementById("pedido-detalle-backdrop");
+    const panel = document.getElementById("pedido-detalle-panel");
+
+    const cerrar = document.getElementById("detalle-cerrar");
+
+    const editar = document.getElementById(
+      "detalle-editar",
+    ) as HTMLButtonElement | null;
+
+    const titulo = document.getElementById("detalle-titulo");
+    const loading = document.getElementById("detalle-loading");
+    const error = document.getElementById("detalle-error");
+    const errorMensaje = document.getElementById("detalle-error-mensaje");
+    const contenido = document.getElementById("detalle-contenido");
+
+    const estadoElemento = document.getElementById("detalle-estado");
+    const prioridad = document.getElementById("detalle-prioridad");
+
+    const accionesDescripcion = document.getElementById(
+      "detalle-acciones-descripcion",
+    );
+
+    const accionesError = document.getElementById("detalle-acciones-error");
+
+    const avanzar = document.getElementById(
+      "detalle-avanzar",
+    ) as HTMLButtonElement | null;
+
+    const avanzarTexto = document.getElementById("detalle-avanzar-texto");
+
+    const retroceder = document.getElementById(
+      "detalle-retroceder",
+    ) as HTMLButtonElement | null;
+
+    const retrocederTexto = document.getElementById("detalle-retroceder-texto");
+
+    const cancelar = document.getElementById(
+      "detalle-cancelar",
+    ) as HTMLButtonElement | null;
+
+    const cancelarContenedor = document.getElementById(
+      "detalle-cancelar-contenedor",
+    );
+
+    const clienteHeader = document.getElementById("detalle-cliente-header");
+    const telefonoHeader = document.getElementById("detalle-telefono-header");
+    const whatsappListo = document.getElementById(
+      "detalle-whatsapp-listo",
+    ) as HTMLButtonElement | null;
+
+    const whatsappListoTexto = document.getElementById(
+      "detalle-whatsapp-listo-texto",
+    );
+
+    const whatsappPrecio = document.getElementById(
+      "detalle-whatsapp-precio",
+    ) as HTMLButtonElement | null;
+
+    const whatsappPrecioTexto = document.getElementById(
+      "detalle-whatsapp-precio-texto",
+    );
+
+    const whatsappMensaje = document.getElementById("detalle-whatsapp-mensaje");
+    const impresionHeader = document.getElementById("detalle-impresion-header");
+    const servicio = document.getElementById("detalle-servicio");
+    const medidas = document.getElementById("detalle-medidas");
+    const contraer = document.getElementById("detalle-contraer");
+    const velocidad = document.getElementById("detalle-velocidad");
+    const obstruccion = document.getElementById("detalle-obstruccion");
+
+    const precioCalculado = document.getElementById("detalle-precio-calculado");
+    const costoDiseno = document.getElementById("detalle-costo-diseno");
+    const costoDisenoEditar = document.getElementById(
+      "detalle-costo-diseno-editar",
+    ) as HTMLButtonElement | null;
+    const aporteDesarrollador = document.getElementById(
+      "detalle-aporte-desarrollador",
+    );
+    const valorCobrar = document.getElementById("detalle-valor-cobrar");
+    const estadoPagoElemento = document.getElementById("detalle-estado-pago");
+    const pagoAccion = document.getElementById(
+      "detalle-pago-accion",
+    ) as HTMLButtonElement | null;
+
+    const precioEspecialContenedor = document.getElementById(
+      "detalle-precio-especial-contenedor",
+    );
+
+    const precioEspecial = document.getElementById("detalle-precio-especial");
+
+    const precioEspecialInfo = document.getElementById(
+      "detalle-precio-especial-info",
+    );
+
+    const precioEspecialEstablecer = document.getElementById(
+      "detalle-precio-especial-establecer",
+    );
+
+    const precioEspecialNuevo = document.getElementById(
+      "detalle-precio-especial-nuevo",
+    ) as HTMLButtonElement | null;
+
+    const precioEspecialEditar = document.getElementById(
+      "detalle-precio-especial-editar",
+    ) as HTMLButtonElement | null;
+
+    const precioEspecialQuitar = document.getElementById(
+      "detalle-precio-especial-quitar",
+    ) as HTMLButtonElement | null;
+
+    const precioEspecialError = document.getElementById(
+      "detalle-precio-especial-error",
+    );
+
+    const observacionesSeccion = document.getElementById(
+      "detalle-observaciones-seccion",
+    );
+
+    const observaciones = document.getElementById("detalle-observaciones");
+
+    const creado = document.getElementById("detalle-creado");
+    const actualizado = document.getElementById("detalle-actualizado");
+    const entrega = document.getElementById("detalle-entrega");
+
+    const historial = document.getElementById("detalle-historial");
+
+    const historialCantidad = document.getElementById(
+      "detalle-historial-cantidad",
+    );
+
+    /*
+     * --------------------------------------------------------------------------
+     * Modal de precio especial
+     * --------------------------------------------------------------------------
+     */
+
+    const modalPrecioEspecial = document.getElementById(
+      "modal-precio-especial",
+    );
+
+    const modalPrecioEspecialBackdrop = document.getElementById(
+      "modal-precio-especial-backdrop",
+    );
+
+    const modalPrecioEspecialTitulo = document.getElementById(
+      "modal-precio-especial-titulo",
+    );
+    const modalPrecioEspecialActual = document.getElementById(
+      "modal-precio-especial-actual",
+    );
+
+    const modalPrecioEspecialInput = document.getElementById(
+      "modal-precio-especial-input",
+    ) as HTMLInputElement | null;
+
+    const modalPrecioEspecialError = document.getElementById(
+      "modal-precio-especial-error",
+    );
+
+    const modalPrecioEspecialCancelar = document.getElementById(
+      "modal-precio-especial-cancelar",
+    ) as HTMLButtonElement | null;
+
+    const modalPrecioEspecialGuardar = document.getElementById(
+      "modal-precio-especial-guardar",
+    ) as HTMLButtonElement | null;
+
+    const modalCostoDiseno = document.getElementById("modal-costo-diseno");
+    const modalCostoDisenoBackdrop = document.getElementById(
+      "modal-costo-diseno-backdrop",
+    );
+    const modalCostoDisenoTitulo = document.getElementById(
+      "modal-costo-diseno-titulo",
+    );
+    const modalCostoDisenoActual = document.getElementById(
+      "modal-costo-diseno-actual",
+    );
+    const modalCostoDisenoInput = document.getElementById(
+      "modal-costo-diseno-input",
+    ) as HTMLInputElement | null;
+    const modalCostoDisenoError = document.getElementById(
+      "modal-costo-diseno-error",
+    );
+    const modalCostoDisenoCancelar = document.getElementById(
+      "modal-costo-diseno-cancelar",
+    ) as HTMLButtonElement | null;
+    const modalCostoDisenoGuardar = document.getElementById(
+      "modal-costo-diseno-guardar",
+    ) as HTMLButtonElement | null;
+
+    /*
+     * --------------------------------------------------------------------------
+     * Modal para quitar precio especial
+     * --------------------------------------------------------------------------
+     */
+
+    const modalQuitarPrecioEspecial = document.getElementById(
+      "modal-quitar-precio-especial",
+    );
+
+    const modalQuitarPrecioEspecialBackdrop = document.getElementById(
+      "modal-quitar-precio-especial-backdrop",
+    );
+
+    const modalQuitarPrecioEspecialCancelar = document.getElementById(
+      "modal-quitar-precio-especial-cancelar",
+    ) as HTMLButtonElement | null;
+
+    const modalQuitarPrecioEspecialConfirmar = document.getElementById(
+      "modal-quitar-precio-especial-confirmar",
+    ) as HTMLButtonElement | null;
+
+    /*
+     * --------------------------------------------------------------------------
+     * Modal de cancelación
+     * --------------------------------------------------------------------------
+     */
+
+    const modalCancelar = document.getElementById("modal-cancelar-pedido");
+
+    const modalCancelarBackdrop = document.getElementById(
+      "modal-cancelar-backdrop",
+    );
+
+    const modalCancelarNo = document.getElementById(
+      "modal-cancelar-no",
+    ) as HTMLButtonElement | null;
+
+    const modalCancelarSi = document.getElementById(
+      "modal-cancelar-si",
+    ) as HTMLButtonElement | null;
+
+    const modalPago = document.getElementById("modal-confirmar-pago");
+    const modalPagoBackdrop = document.getElementById(
+      "modal-confirmar-pago-backdrop",
+    );
+    const modalPagoTitulo = document.getElementById(
+      "modal-confirmar-pago-titulo",
+    );
+    const modalPagoTexto = document.getElementById(
+      "modal-confirmar-pago-texto",
+    );
+    const modalPagoMonto = document.getElementById(
+      "modal-confirmar-pago-monto",
+    );
+    const modalPagoError = document.getElementById(
+      "modal-confirmar-pago-error",
+    );
+    const modalPagoCancelar = document.getElementById(
+      "modal-confirmar-pago-cancelar",
+    ) as HTMLButtonElement | null;
+    const modalPagoConfirmar = document.getElementById(
+      "modal-confirmar-pago-confirmar",
+    ) as HTMLButtonElement | null;
+
+    /*
+     * --------------------------------------------------------------------------
+     * Estado local
+     * --------------------------------------------------------------------------
+     */
+
+    let pedidoActual: Pedido | null = null;
+    let historialActual: HistorialPedido[] = [];
+    let procesandoEstado = false;
+    let procesandoPrecioEspecial = false;
+    let procesandoCostoDiseno = false;
+    let procesandoPago = false;
+    let modoModalPago: "registrar" | "revertir" = "registrar";
+
+    /*
+     * --------------------------------------------------------------------------
+     * Overlay
+     * --------------------------------------------------------------------------
+     */
+
+    function mostrarOverlay() {
+      mostrarOverlayElement(overlay, backdrop, panel);
+    }
+
+    function ocultarOverlay() {
+      ocultarModalCancelar();
+      ocultarModalPrecioEspecial();
+      ocultarModalCostoDiseno();
+      ocultarModalQuitarPrecioEspecial();
+      ocultarModalPago();
+      ocultarOverlayElement(overlay, backdrop, panel);
+    }
+
+    function mostrarModalCostoDiseno() {
+      if (!modalCostoDiseno || !pedidoActual || !modalCostoDisenoInput) {
+        return;
+      }
+
+      const costoActual = pedidoActual.costoDiseno ?? 0;
+      if (modalCostoDisenoTitulo) {
+        modalCostoDisenoTitulo.textContent =
+          costoActual > 0
+            ? "Editar costo de diseño"
+            : "Establecer costo de diseño";
+      }
+      if (modalCostoDisenoActual) {
+        modalCostoDisenoActual.textContent = `Actual: ${formatearPrecio(costoActual)}`;
+      }
+
+      modalCostoDisenoInput.value = costoActual.toFixed(2);
+      modalCostoDisenoError?.classList.add("hidden");
+      mostrarModalElement(modalCostoDiseno);
+
+      setTimeout(() => {
+        modalCostoDisenoInput.focus();
+        modalCostoDisenoInput.select();
+      }, 50);
+    }
+
+    function ocultarModalCostoDiseno() {
+      ocultarModalElement(modalCostoDiseno);
+
+      if (
+        modalPrecioEspecial?.classList.contains("hidden") &&
+        modalQuitarPrecioEspecial?.classList.contains("hidden") &&
+        modalCancelar?.classList.contains("hidden") &&
+        overlay?.classList.contains("invisible")
+      ) {
+        document.body.classList.remove("overflow-hidden");
+      }
+    }
+
+    async function guardarCostoDiseno() {
+      if (!pedidoActual || !modalCostoDisenoInput || procesandoCostoDiseno) {
+        return;
+      }
+
+      const valorTexto = modalCostoDisenoInput.value.trim();
+      const valor = Number(valorTexto);
+      if (!valorTexto || !Number.isFinite(valor) || valor < 0) {
+        if (modalCostoDisenoError) {
+          modalCostoDisenoError.textContent =
+            "Ingresa un costo válido igual o mayor que $0.00.";
+          modalCostoDisenoError.classList.remove("hidden");
+        }
+        modalCostoDisenoInput.focus();
+        return;
+      }
+
+      procesandoCostoDiseno = true;
+      if (modalCostoDisenoGuardar) {
+        modalCostoDisenoGuardar.disabled = true;
+        modalCostoDisenoGuardar.textContent = "Guardando...";
+      }
+      modalCostoDisenoError?.classList.add("hidden");
+
+      try {
+        const pedidoActualizado = await actualizarPedido(pedidoActual.id, {
+          costoDiseno: Number(valor.toFixed(2)),
+        });
+        renderizarPedido(pedidoActualizado);
+        ocultarModalCostoDiseno();
+      } catch (errorApi) {
+        console.error("No se pudo actualizar el costo de diseño:", errorApi);
+        if (modalCostoDisenoError) {
+          modalCostoDisenoError.textContent =
+            errorApi instanceof Error
+              ? errorApi.message
+              : "No se pudo guardar el costo de diseño.";
+          modalCostoDisenoError.classList.remove("hidden");
+        }
+      } finally {
+        procesandoCostoDiseno = false;
+        if (modalCostoDisenoGuardar) {
+          modalCostoDisenoGuardar.disabled = false;
+          modalCostoDisenoGuardar.textContent = "Guardar costo";
+        }
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Modal de precio especial
+     * --------------------------------------------------------------------------
+     */
+
+    function mostrarModalPrecioEspecial() {
+      if (!modalPrecioEspecial || !pedidoActual) {
+        return;
+      }
+
+      const tienePrecioEspecial = pedidoActual.precioEspecial !== null;
+
+      if (modalPrecioEspecialTitulo) {
+        modalPrecioEspecialTitulo.textContent = tienePrecioEspecial
+          ? "Editar precio especial"
+          : "Establecer precio especial";
+      }
+      if (modalPrecioEspecialActual) {
+        modalPrecioEspecialActual.textContent = tienePrecioEspecial
+          ? `Actual: ${formatearPrecio(pedidoActual.precioEspecial)}`
+          : `Actual: ${formatearPrecio(pedidoActual.valorCobrar)}`;
+      }
+
+      if (modalPrecioEspecialInput) {
+        modalPrecioEspecialInput.value =
+          pedidoActual.precioEspecial !== null
+            ? pedidoActual.precioEspecial.toFixed(2)
+            : "";
+
+        modalPrecioEspecialInput.disabled = false;
+      }
+
+      modalPrecioEspecialError?.classList.add("hidden");
+      mostrarModalElement(modalPrecioEspecial);
+
+      setTimeout(() => {
+        modalPrecioEspecialInput?.focus();
+        modalPrecioEspecialInput?.select();
+      }, 50);
+    }
+
+    function ocultarModalPrecioEspecial() {
+      ocultarModalElement(modalPrecioEspecial);
+
+      if (
+        modalQuitarPrecioEspecial?.classList.contains("hidden") &&
+        modalCancelar?.classList.contains("hidden") &&
+        overlay?.classList.contains("invisible")
+      ) {
+        document.body.classList.remove("overflow-hidden");
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Modal quitar precio especial
+     * --------------------------------------------------------------------------
+     */
+
+    function mostrarModalQuitarPrecioEspecial() {
+      if (!modalQuitarPrecioEspecial || !pedidoActual) {
+        return;
+      }
+
+      mostrarModalElement(modalQuitarPrecioEspecial);
+    }
+
+    function ocultarModalQuitarPrecioEspecial() {
+      ocultarModalElement(modalQuitarPrecioEspecial);
+
+      if (
+        modalPrecioEspecial?.classList.contains("hidden") &&
+        modalCancelar?.classList.contains("hidden") &&
+        overlay?.classList.contains("invisible")
+      ) {
+        document.body.classList.remove("overflow-hidden");
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Guardar precio especial
+     * --------------------------------------------------------------------------
+     */
+
+    async function guardarPrecioEspecial() {
+      if (
+        !pedidoActual ||
+        !modalPrecioEspecialInput ||
+        procesandoPrecioEspecial
+      ) {
+        return;
+      }
+
+      const valorTexto = modalPrecioEspecialInput.value.trim();
+      const valor = Number(valorTexto);
+
+      if (!valorTexto || !Number.isFinite(valor) || valor <= 0) {
+        if (modalPrecioEspecialError) {
+          modalPrecioEspecialError.textContent =
+            "Ingresa un precio válido mayor que $0.00.";
+
+          modalPrecioEspecialError.classList.remove("hidden");
+        }
+
+        modalPrecioEspecialInput.focus();
+        return;
+      }
+
+      procesandoPrecioEspecial = true;
+
+      if (modalPrecioEspecialGuardar) {
+        modalPrecioEspecialGuardar.disabled = true;
+        modalPrecioEspecialGuardar.textContent = "Guardando...";
+      }
+
+      modalPrecioEspecialError?.classList.add("hidden");
+
+      try {
+        const pedidoActualizado = await cambiarPrecioEspecial(
+          pedidoActual.id,
+          Number(valor.toFixed(2)),
+        );
+
+        renderizarPedido(pedidoActualizado);
+        ocultarModalPrecioEspecial();
+      } catch (errorApi) {
+        console.error("No se pudo cambiar el precio especial:", errorApi);
+
+        if (modalPrecioEspecialError) {
+          modalPrecioEspecialError.textContent =
+            errorApi instanceof Error
+              ? errorApi.message
+              : "No se pudo guardar el precio especial.";
+
+          modalPrecioEspecialError.classList.remove("hidden");
+        }
+      } finally {
+        procesandoPrecioEspecial = false;
+
+        if (modalPrecioEspecialGuardar) {
+          modalPrecioEspecialGuardar.disabled = false;
+          modalPrecioEspecialGuardar.textContent = "Guardar precio";
+        }
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Quitar precio especial
+     * --------------------------------------------------------------------------
+     */
+
+    async function quitarPrecioEspecial() {
+      if (!pedidoActual || procesandoPrecioEspecial) {
+        return;
+      }
+
+      procesandoPrecioEspecial = true;
+
+      if (modalQuitarPrecioEspecialConfirmar) {
+        modalQuitarPrecioEspecialConfirmar.disabled = true;
+        modalQuitarPrecioEspecialConfirmar.textContent = "Quitando...";
+      }
+
+      try {
+        const pedidoActualizado = await cambiarPrecioEspecial(
+          pedidoActual.id,
+          null,
+        );
+
+        renderizarPedido(pedidoActualizado);
+        ocultarModalQuitarPrecioEspecial();
+      } catch (errorApi) {
+        console.error("No se pudo quitar el precio especial:", errorApi);
+
+        ocultarModalQuitarPrecioEspecial();
+
+        if (precioEspecialError) {
+          precioEspecialError.textContent =
+            errorApi instanceof Error
+              ? errorApi.message
+              : "No se pudo quitar el precio especial.";
+
+          precioEspecialError.classList.remove("hidden");
+
+          setTimeout(() => {
+            precioEspecialError.classList.add("hidden");
+          }, 4000);
+        }
+      } finally {
+        procesandoPrecioEspecial = false;
+
+        if (modalQuitarPrecioEspecialConfirmar) {
+          modalQuitarPrecioEspecialConfirmar.disabled = false;
+          modalQuitarPrecioEspecialConfirmar.textContent = "Quitar precio";
+        }
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Modal de cancelación
+     * --------------------------------------------------------------------------
+     */
+
+    function mostrarModalCancelar() {
+      mostrarModalElement(modalCancelar);
+    }
+
+    function ocultarModalCancelar() {
+      ocultarModalElement(modalCancelar);
+
+      if (overlay?.classList.contains("invisible")) {
+        document.body.classList.remove("overflow-hidden");
+      }
+    }
+
+    function mostrarModalPago(modo: "registrar" | "revertir") {
+      if (!pedidoActual || !modalPago) return;
+      modoModalPago = modo;
+      const esReversion = modo === "revertir";
+
+      if (modalPagoTitulo) {
+        modalPagoTitulo.textContent = esReversion
+          ? "Revertir último pago"
+          : "¿El pedido fue pagado?";
+      }
+      if (modalPagoTexto) {
+        modalPagoTexto.textContent = esReversion
+          ? "Esto eliminará el último pago individual registrado para este pedido y recalculará su saldo. Si el pago fue compartido con otros pedidos, el sistema no permitirá revertirlo desde aquí."
+          : "Confirma únicamente si recibiste el pago del cliente. Se registrará solo el saldo pendiente, descontando abonos anteriores. Si todavía no ha pagado, déjalo pendiente y podrás registrar el cobro después.";
+      }
+      if (modalPagoMonto) {
+        modalPagoMonto.textContent = `Total del pedido: ${formatearPrecio(pedidoActual.valorCobrar)}`;
+      }
+      if (modalPagoCancelar) {
+        modalPagoCancelar.textContent = esReversion
+          ? "Cancelar"
+          : "Dejar pendiente";
+      }
+      if (modalPagoConfirmar) {
+        modalPagoConfirmar.textContent = esReversion
+          ? "Sí, revertir pago"
+          : "Sí, recibí el pago";
+        modalPagoConfirmar.className = esReversion
+          ? "h-9 rounded-lg bg-red-700 px-4 text-xs font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+          : "h-9 rounded-lg bg-emerald-700 px-4 text-xs font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50";
+      }
+      modalPagoError?.classList.add("hidden");
+      mostrarModalElement(modalPago);
+    }
+
+    function ocultarModalPago() {
+      ocultarModalElement(modalPago);
+      if (
+        modalCancelar?.classList.contains("hidden") &&
+        modalPrecioEspecial?.classList.contains("hidden") &&
+        modalCostoDiseno?.classList.contains("hidden") &&
+        modalQuitarPrecioEspecial?.classList.contains("hidden") &&
+        overlay?.classList.contains("invisible")
+      ) {
+        document.body.classList.remove("overflow-hidden");
+      }
+    }
+
+    async function confirmarAccionPago() {
+      if (!pedidoActual || procesandoPago || !modalPagoConfirmar) return;
+      procesandoPago = true;
+      modalPagoConfirmar.disabled = true;
+      modalPagoError?.classList.add("hidden");
+
+      try {
+        if (modoModalPago === "registrar") {
+          modalPagoConfirmar.textContent = "Registrando...";
+          await registrarPagoPedido(pedidoActual.id);
+        } else {
+          modalPagoConfirmar.textContent = "Revirtiendo...";
+          await revertirUltimoPagoPedido(pedidoActual.id);
+        }
+
+        const pedidoActualizado = await obtenerPedido(pedidoActual.id);
+        renderizarPedido(pedidoActualizado);
+        const registros = await obtenerHistorialPedido(pedidoActualizado.id);
+        renderizarHistorial(registros);
+        ocultarModalPago();
+      } catch (errorApi) {
+        console.error("No se pudo actualizar el pago del pedido:", errorApi);
+        if (modalPagoError) {
+          modalPagoError.textContent =
+            errorApi instanceof Error
+              ? errorApi.message
+              : "No se pudo actualizar el estado de pago.";
+          modalPagoError.classList.remove("hidden");
+        }
+      } finally {
+        procesandoPago = false;
+        modalPagoConfirmar.disabled = false;
+        modalPagoConfirmar.textContent =
+          modoModalPago === "revertir"
+            ? "Sí, revertir pago"
+            : "Sí, recibí el pago";
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Estados visuales de carga
+     * --------------------------------------------------------------------------
+     */
+
+    function mostrarCarga() {
+      loading?.classList.remove("hidden");
+      error?.classList.add("hidden");
+      contenido?.classList.add("hidden");
+      impresionHeader?.classList.add("hidden");
+    }
+
+    function mostrarError(mensaje: string) {
+      loading?.classList.add("hidden");
+      contenido?.classList.add("hidden");
+      error?.classList.remove("hidden");
+      impresionHeader?.classList.add("hidden");
+
+      if (errorMensaje) {
+        errorMensaje.textContent = mensaje;
+      }
+    }
+
+    function mostrarContenido() {
+      loading?.classList.add("hidden");
+      error?.classList.add("hidden");
+      contenido?.classList.remove("hidden");
+      impresionHeader?.classList.remove("hidden");
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Renderizado de acciones
+     * --------------------------------------------------------------------------
+     */
+
+    function renderizarAcciones(estadoActual: EstadoPedido) {
+      const estadoSiguiente = estadosSiguientes[estadoActual];
+      const estadoAnterior = estadosAnteriores[estadoActual];
+
+      accionesError?.classList.add("hidden");
+
+      /*
+       * Avanzar
+       */
+
+      if (avanzar) {
+        if (estadoSiguiente) {
+          avanzar.classList.remove("hidden");
+          avanzar.disabled = false;
+
+          if (avanzarTexto) {
+            avanzarTexto.textContent =
+              accionesSiguientes[estadoActual] ??
+              `Pasar a ${estados[estadoSiguiente].label}`;
+          }
+        } else {
+          avanzar.classList.add("hidden");
+        }
+      }
+
+      /*
+       * Retroceder
+       */
+
+      if (retroceder) {
+        if (estadoAnterior) {
+          retroceder.classList.remove("hidden");
+          retroceder.disabled = false;
+
+          if (retrocederTexto) {
+            retrocederTexto.textContent = `Volver a ${estados[estadoAnterior].label}`;
+          }
+        } else {
+          retroceder.classList.add("hidden");
+        }
+      }
+
+      /*
+       * Cancelar
+       */
+
+      if (cancelar && cancelarContenedor) {
+        const puedeCancelar =
+          estadoActual === "REVISION" ||
+          estadoActual === "IMPRIMIENDO" ||
+          estadoActual === "LISTO";
+
+        if (puedeCancelar) {
+          cancelarContenedor.classList.remove("hidden");
+          cancelar.disabled = false;
+        } else {
+          cancelarContenedor.classList.add("hidden");
+        }
+      }
+
+      /*
+       * Descripción
+       */
+
+      if (accionesDescripcion) {
+        if (estadoActual === "ENTREGADO") {
+          accionesDescripcion.textContent =
+            "El pedido fue entregado. Si fue un cambio accidental, puedes volver a Listo.";
+        } else if (estadoActual === "CANCELADO") {
+          accionesDescripcion.textContent =
+            "El pedido está cancelado y no tiene movimientos disponibles.";
+        } else if (estadoActual === "REVISION") {
+          accionesDescripcion.textContent =
+            "Cuando el pedido esté listo para producir, envíalo a impresión.";
+        } else if (estadoActual === "IMPRIMIENDO") {
+          accionesDescripcion.textContent =
+            "Cuando termine la impresión, marca el pedido como listo.";
+        } else if (estadoActual === "LISTO") {
+          accionesDescripcion.textContent =
+            "Cuando el cliente reciba el pedido, márcalo como entregado.";
+        } else {
+          accionesDescripcion.textContent =
+            "Puedes modificar el estado del pedido.";
+        }
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Renderizado del precio
+     * --------------------------------------------------------------------------
+     */
+
+    function renderizarPrecio(pedido: Pedido) {
+      const valorCobrarActual =
+        pedido.valorCobrar ??
+        pedido.precioFinal ??
+        pedido.precioCalculado ??
+        null;
+
+      if (precioCalculado) {
+        precioCalculado.textContent = formatearPrecio(
+          pedido.precioCalculado ?? valorCobrarActual,
+        );
+      }
+
+      if (costoDiseno) {
+        costoDiseno.textContent = formatearPrecio(pedido.costoDiseno ?? 0);
+      }
+      if (costoDisenoEditar) {
+        costoDisenoEditar.textContent =
+          (pedido.costoDiseno ?? 0) > 0 ? "Editar" : "Establecer";
+        costoDisenoEditar.setAttribute(
+          "aria-label",
+          (pedido.costoDiseno ?? 0) > 0
+            ? "Editar costo de diseño"
+            : "Establecer costo de diseño",
+        );
+      }
+
+      if (aporteDesarrollador) {
+        aporteDesarrollador.textContent = formatearPrecio(
+          pedido.aporteDesarrollador ?? 0,
+        );
+      }
+
+      if (valorCobrar) {
+        valorCobrar.textContent = formatearPrecio(
+          pedido.valorCobrar ?? pedido.precioFinal ?? valorCobrarActual,
+        );
+      }
+
+      const estadoPago = pedido.estadoPago ?? "NO_PAGADO";
+      const pagoTexto =
+        estadoPago === "PAGADO"
+          ? "Pagado"
+          : estadoPago === "PARCIALMENTE_PAGADO"
+            ? "Parcialmente pagado"
+            : "No pagado";
+      const pagoClase =
+        estadoPago === "PAGADO"
+          ? "bg-emerald-50 text-emerald-800"
+          : estadoPago === "PARCIALMENTE_PAGADO"
+            ? "bg-amber-50 text-amber-900"
+            : "bg-red-50 text-red-800";
+
+      if (estadoPagoElemento) {
+        estadoPagoElemento.textContent = pagoTexto;
+        estadoPagoElemento.className = `mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${pagoClase}`;
+      }
+      if (pagoAccion) {
+        const puedeGestionarPago = pedido.estado === "ENTREGADO";
+        pagoAccion.classList.toggle("hidden", !puedeGestionarPago);
+        pagoAccion.textContent =
+          estadoPago === "PAGADO" ? "Revertir último pago" : "Registrar pago";
+        pagoAccion.className = `h-8 rounded-lg border px-3 text-xs font-semibold transition ${
+          estadoPago === "PAGADO"
+            ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+            : "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+        } ${puedeGestionarPago ? "" : "hidden"}`;
+      }
+
+      const tienePrecioEspecial = pedido.precioEspecial !== null;
+
+      if (precioEspecialContenedor && precioEspecialEstablecer) {
+        precioEspecialContenedor.classList.toggle(
+          "hidden",
+          !tienePrecioEspecial,
+        );
+
+        precioEspecialEstablecer.classList.toggle(
+          "hidden",
+          tienePrecioEspecial,
+        );
+      }
+
+      if (precioEspecial) {
+        precioEspecial.textContent = formatearPrecio(pedido.precioEspecial);
+      }
+
+      /*
+       * Actualmente el backend devuelve el ID del usuario y la fecha,
+       * pero no devuelve todavía el username.
+       */
+
+      if (precioEspecialInfo) {
+        if (tienePrecioEspecial && pedido.precioEspecialFecha) {
+          precioEspecialInfo.textContent = `Establecido el ${formatearFecha(
+            pedido.precioEspecialFecha,
+          )}`;
+        } else {
+          precioEspecialInfo.textContent = "";
+        }
+      }
+
+      precioEspecialError?.classList.add("hidden");
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Renderizado del pedido
+     * --------------------------------------------------------------------------
+     */
+
+    function renderizarPedido(pedido: Pedido) {
+      pedidoActual = pedido;
+
+      const estado = estados[pedido.estado];
+
+      if (titulo) {
+        titulo.textContent = `Pedido #${pedido.id}`;
+      }
+
+      if (estadoElemento) {
+        estadoElemento.textContent = estado?.label ?? pedido.estado;
+
+        estadoElemento.className = `inline-flex rounded-full px-3 py-1.5 text-sm font-medium ${
+          estado?.clase ?? "bg-slate-100 text-slate-700"
+        }`;
+      }
+
+      /*
+       * Prioridad
+       */
+
+      if (prioridad) {
+        prioridad.classList.toggle("hidden", pedido.prioridad <= 0);
+      }
+
+      renderizarAcciones(pedido.estado);
+
+      /*
+       * Cliente
+       */
+
+      if (clienteHeader) {
+        clienteHeader.textContent = pedido.cliente?.nombre ?? "—";
+      }
+
+      if (telefonoHeader) {
+        telefonoHeader.textContent = pedido.cliente?.telefono ?? "—";
+      }
+
+      /*
+       * Impresión
+       */
+
+      if (servicio) {
+        servicio.textContent = pedido.servicio;
+      }
+
+      if (medidas) {
+        medidas.textContent = formatearMedidas(pedido);
+      }
+
+      if (contraer) {
+        contraer.textContent =
+          pedido.contraer === null ? "—" : pedido.contraer ? "Sí" : "No";
+      }
+
+      if (velocidad) {
+        velocidad.textContent =
+          pedido.velocidad !== null ? `${pedido.velocidad}%` : "—";
+      }
+
+      if (obstruccion) {
+        obstruccion.textContent =
+          pedido.obstruccion === null ? "—" : pedido.obstruccion ? "Sí" : "No";
+      }
+
+      /*
+       * Precios
+       */
+
+      renderizarPrecio(pedido);
+
+      /*
+       * Observaciones
+       */
+
+      if (observacionesSeccion && observaciones) {
+        const tieneObservaciones = Boolean(pedido.observaciones?.trim());
+
+        observacionesSeccion.classList.toggle("hidden", !tieneObservaciones);
+
+        if (tieneObservaciones) {
+          observaciones.textContent = pedido.observaciones;
+        }
+      }
+
+      /*
+       * Fechas
+       */
+
+      if (creado) {
+        creado.textContent = formatearFecha(pedido.createdAt);
+      }
+
+      if (actualizado) {
+        actualizado.textContent = formatearFecha(pedido.updatedAt);
+      }
+
+      if (entrega) {
+        entrega.textContent = formatearFecha(pedido.fechaEntrega);
+      }
+
+      renderizarHistorial(historialActual);
+
+      mostrarContenido();
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Historial
+     * --------------------------------------------------------------------------
+     */
+
+    function renderizarHistorial(registros: HistorialPedido[]) {
+      historialActual = registros;
+      renderizarHistorialElement(historial, registros, historialCantidad);
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Carga del pedido
+     * --------------------------------------------------------------------------
+     */
+
+    async function cargarPedido(id: number) {
+      mostrarCarga();
+
+      try {
+        const [pedido, historial] = await Promise.all([
+          obtenerPedido(id),
+          obtenerHistorialPedido(id),
+        ]);
+
+        historialActual = historial;
+
+        renderizarPedido(pedido);
+      } catch (errorApi) {
+        console.error("No se pudo cargar el pedido:", errorApi);
+
+        mostrarError(
+          errorApi instanceof Error
+            ? errorApi.message
+            : "Ocurrió un error al cargar el pedido.",
+        );
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Cambio de estado
+     * --------------------------------------------------------------------------
+     */
+
+    async function cambiarEstado(nuevoEstado: EstadoPedido) {
+      if (!pedidoActual || procesandoEstado) {
+        return;
+      }
+
+      if (pedidoActual.estado === nuevoEstado) {
+        return;
+      }
+
+      procesandoEstado = true;
+
+      avanzar?.setAttribute("disabled", "");
+      retroceder?.setAttribute("disabled", "");
+      cancelar?.setAttribute("disabled", "");
+
+      if (avanzar) {
+        avanzar.disabled = true;
+      }
+
+      if (retroceder) {
+        retroceder.disabled = true;
+      }
+
+      if (cancelar) {
+        cancelar.disabled = true;
+      }
+
+      accionesError?.classList.add("hidden");
+
+      try {
+        const pedidoActualizado = await cambiarEstadoPedido(
+          pedidoActual.id,
+          nuevoEstado,
+        );
+        renderizarPedido(pedidoActualizado);
+
+        /*
+         * El store/WebSocket actualizará el pedido.
+         * Recargamos el historial inmediatamente.
+         */
+
+        const nuevoHistorial = await obtenerHistorialPedido(pedidoActual.id);
+
+        renderizarHistorial(nuevoHistorial);
+
+        if (
+          nuevoEstado === "ENTREGADO" &&
+          pedidoActual.estadoPago !== "PAGADO"
+        ) {
+          mostrarModalPago("registrar");
+        }
+      } catch (errorApi) {
+        console.error("No se pudo cambiar el estado:", errorApi);
+
+        if (accionesError) {
+          accionesError.textContent =
+            errorApi instanceof Error
+              ? errorApi.message
+              : "No se pudo cambiar el estado.";
+
+          accionesError.classList.remove("hidden");
+        }
+      } finally {
+        procesandoEstado = false;
+
+        if (pedidoActual) {
+          renderizarAcciones(pedidoActual.estado);
+        }
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------------------
+     * Mensajes para WhatsApp
+     * --------------------------------------------------------------------------
+     */
+
+    whatsappListo?.addEventListener("click", () => {
+      if (!pedidoActual) {
+        return;
+      }
+
+      void copiarMensaje(
+        generarMensajeImpresionLista(pedidoActual),
+        whatsappListo,
+        whatsappListoTexto,
+        "Copiar aviso de impresión lista",
+      );
+    });
+
+    whatsappPrecio?.addEventListener("click", () => {
+      if (!pedidoActual) {
+        return;
+      }
+
+      void copiarMensaje(
+        generarMensajePrecio(pedidoActual),
+        whatsappPrecio,
+        whatsappPrecioTexto,
+        "Copiar detalle del precio",
+      );
+    });
+    /*
+     * --------------------------------------------------------------------------
+     * Eventos de precio especial
+     * --------------------------------------------------------------------------
+     */
+
+    precioEspecialNuevo?.addEventListener("click", () => {
+      mostrarModalPrecioEspecial();
+    });
+
+    costoDisenoEditar?.addEventListener("click", mostrarModalCostoDiseno);
+
+    modalCostoDisenoGuardar?.addEventListener("click", () => {
+      void guardarCostoDiseno();
+    });
+
+    modalCostoDisenoCancelar?.addEventListener(
+      "click",
+      ocultarModalCostoDiseno,
+    );
+
+    modalCostoDisenoBackdrop?.addEventListener(
+      "click",
+      ocultarModalCostoDiseno,
+    );
+
+    modalCostoDisenoInput?.addEventListener("keydown", (evento) => {
+      if (evento.key === "Enter") {
+        evento.preventDefault();
+        void guardarCostoDiseno();
+      }
+    });
+
+    precioEspecialEditar?.addEventListener("click", () => {
+      mostrarModalPrecioEspecial();
+    });
+
+    precioEspecialQuitar?.addEventListener("click", () => {
+      mostrarModalQuitarPrecioEspecial();
+    });
+
+    modalPrecioEspecialGuardar?.addEventListener("click", () => {
+      void guardarPrecioEspecial();
+    });
+
+    modalPrecioEspecialCancelar?.addEventListener("click", () => {
+      ocultarModalPrecioEspecial();
+    });
+
+    modalPrecioEspecialBackdrop?.addEventListener("click", () => {
+      ocultarModalPrecioEspecial();
+    });
+
+    modalPrecioEspecialInput?.addEventListener("keydown", (evento) => {
+      if (evento.key === "Enter") {
+        evento.preventDefault();
+        void guardarPrecioEspecial();
+      }
+    });
+
+    modalQuitarPrecioEspecialCancelar?.addEventListener("click", () => {
+      ocultarModalQuitarPrecioEspecial();
+    });
+
+    modalQuitarPrecioEspecialBackdrop?.addEventListener("click", () => {
+      ocultarModalQuitarPrecioEspecial();
+    });
+
+    modalQuitarPrecioEspecialConfirmar?.addEventListener("click", () => {
+      void quitarPrecioEspecial();
+    });
+
+    /*
+     * --------------------------------------------------------------------------
+     * Eventos de acciones
+     * --------------------------------------------------------------------------
+     */
+
+    avanzar?.addEventListener("click", () => {
+      if (!pedidoActual) {
+        return;
+      }
+
+      const estadoSiguiente = estadosSiguientes[pedidoActual.estado];
+
+      if (!estadoSiguiente) {
+        return;
+      }
+
+      void cambiarEstado(estadoSiguiente);
+    });
+
+    retroceder?.addEventListener("click", () => {
+      if (!pedidoActual) {
+        return;
+      }
+
+      const estadoAnterior = estadosAnteriores[pedidoActual.estado];
+
+      if (!estadoAnterior) {
+        return;
+      }
+
+      void cambiarEstado(estadoAnterior);
+    });
+
+    cancelar?.addEventListener("click", () => {
+      if (!pedidoActual || procesandoEstado) {
+        return;
+      }
+
+      mostrarModalCancelar();
+    });
+
+    pagoAccion?.addEventListener("click", () => {
+      if (!pedidoActual || pedidoActual.estado !== "ENTREGADO") return;
+      mostrarModalPago(
+        pedidoActual.estadoPago === "PAGADO" ? "revertir" : "registrar",
+      );
+    });
+
+    modalPagoCancelar?.addEventListener("click", ocultarModalPago);
+    modalPagoBackdrop?.addEventListener("click", ocultarModalPago);
+    modalPagoConfirmar?.addEventListener("click", () => {
+      void confirmarAccionPago();
+    });
+
+    /*
+     * --------------------------------------------------------------------------
+     * Editar pedido
+     * --------------------------------------------------------------------------
+     */
+
+    editar?.addEventListener("click", () => {
+      if (!pedidoActual) {
+        return;
+      }
+
+      document.dispatchEvent(
+        new CustomEvent("centro-control:editar-pedido", {
+          detail: {
+            id: pedidoActual.id,
+          },
+        }),
+      );
+    });
+
+    /*
+     * --------------------------------------------------------------------------
+     * Modal de cancelación
+     * --------------------------------------------------------------------------
+     */
+
+    modalCancelarNo?.addEventListener("click", () => {
+      ocultarModalCancelar();
+    });
+
+    modalCancelarBackdrop?.addEventListener("click", () => {
+      ocultarModalCancelar();
+    });
+
+    modalCancelarSi?.addEventListener("click", async () => {
+      if (!pedidoActual || procesandoEstado) {
+        return;
+      }
+
+      ocultarModalCancelar();
+
+      await cambiarEstado("CANCELADO");
+    });
+
+    /*
+     * --------------------------------------------------------------------------
+     * Cierre del detalle
+     * --------------------------------------------------------------------------
+     */
+
+    cerrar?.addEventListener("click", ocultarOverlay);
+
+    backdrop?.addEventListener("click", ocultarOverlay);
+
+    /*
+     * --------------------------------------------------------------------------
+     * Tecla Escape
+     * --------------------------------------------------------------------------
+     */
+
+    document.addEventListener("keydown", (evento) => {
+      if (evento.key !== "Escape") {
+        return;
+      }
+
+      if (
+        modalQuitarPrecioEspecial &&
+        !modalQuitarPrecioEspecial.classList.contains("hidden")
+      ) {
+        ocultarModalQuitarPrecioEspecial();
+        return;
+      }
+
+      if (
+        modalPrecioEspecial &&
+        !modalPrecioEspecial.classList.contains("hidden")
+      ) {
+        ocultarModalPrecioEspecial();
+        return;
+      }
+
+      if (modalCostoDiseno && !modalCostoDiseno.classList.contains("hidden")) {
+        ocultarModalCostoDiseno();
+        return;
+      }
+
+      if (modalPago && !modalPago.classList.contains("hidden")) {
+        ocultarModalPago();
+        return;
+      }
+
+      if (modalCancelar && !modalCancelar.classList.contains("hidden")) {
+        ocultarModalCancelar();
+        return;
+      }
+
+      ocultarOverlay();
+    });
+
+    /*
+     * --------------------------------------------------------------------------
+     * Abrir pedido
+     * --------------------------------------------------------------------------
+     */
+
+    document.addEventListener("centro-control:abrir-pedido", (evento) => {
+      const customEvent = evento as CustomEvent<{ id: number }>;
+      const id = customEvent.detail?.id;
+
+      if (!id) {
+        return;
+      }
+
+      mostrarOverlay();
+      void cargarPedido(id);
+    });
+
+    /*
+     * --------------------------------------------------------------------------
+     * Sincronización con el store
+     * --------------------------------------------------------------------------
+     */
+
+    suscribirsePedidos((pedidos) => {
+      if (!pedidoActual) {
+        return;
+      }
+
+      const pedidoActualizado = pedidos.find(
+        (pedido) => pedido.id === pedidoActual?.id,
+      );
+
+      if (!pedidoActualizado) {
+        return;
+      }
+
+      renderizarPedido(pedidoActualizado);
+    });
+  </script>
+</div>

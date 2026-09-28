@@ -1,0 +1,337 @@
+---
+const navigation = [
+  {
+    label: "Pedidos",
+    icon: "orders",
+    view: "pedidos",
+  },
+  {
+    label: "Historial",
+    icon: "history",
+    view: "historial",
+  },
+  {
+    label: "Clientes",
+    icon: "clients",
+    view: "clientes",
+  },
+  {
+    label: "Usuarios",
+    icon: "users",
+    view: "usuarios",
+  },
+  {
+    label: "Tarifas",
+    icon: "tariffs",
+    view: "tarifas",
+  },
+  {
+    label: "Estadísticas",
+    icon: "stats",
+    view: "estadisticas",
+  },
+];
+---
+
+<aside
+  id="sidebar"
+  class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform lg:static lg:translate-x-0"
+>
+  <div class="flex h-16 shrink-0 items-center border-b border-slate-200 px-5">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white"
+      >
+        <svg
+          class="h-5 w-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M4 7h16M4 12h16M4 17h10"></path>
+        </svg>
+      </div>
+
+      <div>
+        <p class="text-sm font-bold text-slate-900">Centro de Control</p>
+        <p class="text-xs text-slate-400">Producción</p>
+      </div>
+    </div>
+  </div>
+
+  <nav class="flex-1 space-y-1 px-3 py-5">
+    <p
+      class="mb-3 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400"
+    >
+      Gestión
+    </p>
+
+    {
+      navigation.map((item) => (
+        <button
+          type="button"
+          data-view={item.view}
+          class:list={[
+            "sidebar-nav-item group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition",
+            item.view === "pedidos"
+              ? "bg-slate-100 text-slate-900"
+              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
+          ]}
+        >
+          {item.icon === "orders" ? (
+            <svg
+              class="h-5 w-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 8h8M8 12h8M8 16h5"
+              />
+            </svg>
+          ) : item.icon === "history" ? (
+            <svg
+              class="h-5 w-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 8v4l2.5 2.5"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
+              />
+            </svg>
+          ) : item.icon === "clients" ? (
+            <svg
+              class="h-5 w-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2m12-13a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm3 2a3 3 0 0 1 0 6m3 5v-2a4 4 0 0 0-3-3.87"
+              />
+            </svg>
+          ) : item.icon === "users" ? (
+            <svg
+              class="h-5 w-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <circle cx="12" cy="8" r="4" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M5 21a7 7 0 0 1 14 0"
+              />
+            </svg>
+          ) : item.icon === "tariffs" ? (
+            <svg
+              class="h-5 w-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 5h16v14H4zM8 9h8M8 13h3m4 0h1"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 16v-6"
+              />
+            </svg>
+          ) : (
+            <svg
+              class="h-5 w-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 19V5m0 14h16M7 15l4-4 3 2 5-6"
+              />
+            </svg>
+          )}
+
+          <span>{item.label}</span>
+        </button>
+      ))
+    }
+  </nav>
+
+  <div class="shrink-0 border-t border-slate-200 p-3">
+    <div class="flex items-center gap-3 rounded-xl px-3 py-2.5">
+      <div
+        id="sidebar-avatar"
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700"
+      >
+        ?
+      </div>
+
+      <div class="min-w-0 flex-1">
+        <p
+          id="sidebar-username"
+          class="truncate text-sm font-medium text-slate-800"
+        >
+          Usuario
+        </p>
+
+        <p class="truncate text-xs text-slate-400">Usuario</p>
+      </div>
+
+      <button
+        id="sidebar-logout"
+        type="button"
+        title="Cerrar sesión"
+        aria-label="Cerrar sesión"
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+      >
+        <svg
+          class="h-5 w-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14 8l4 4-4 4"
+          ></path>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18 12H9"
+          ></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<div
+  id="sidebar-overlay"
+  class="fixed inset-0 z-30 hidden bg-slate-900/30 lg:hidden"
+>
+</div>
+
+<script>
+  import { cerrarSesion, obtenerUsuario } from "../../services/auth";
+  import { puedeVerVista } from "../../services/permisos";
+
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  const username = document.getElementById("sidebar-username");
+  const avatar = document.getElementById("sidebar-avatar");
+  const logout = document.getElementById("sidebar-logout");
+
+  const usuario = obtenerUsuario();
+
+  if (usuario) {
+    const nombre = usuario.username?.trim() || "Usuario";
+
+    if (username) {
+      username.textContent = nombre;
+    }
+
+    if (avatar) {
+      avatar.textContent = nombre.charAt(0).toUpperCase();
+    }
+  }
+
+  // Navegación entre vistas del dashboard
+  const navItems =
+    document.querySelectorAll<HTMLButtonElement>(".sidebar-nav-item");
+
+  navItems.forEach((item) => {
+    item.classList.toggle(
+      "hidden",
+      !puedeVerVista(item.dataset.view ?? "", usuario),
+    );
+
+    item.addEventListener("click", () => {
+      const view = item.dataset.view;
+
+      if (!view || !puedeVerVista(view, usuario)) return;
+
+      window.dispatchEvent(
+        new CustomEvent("centro-control:cambiar-vista", {
+          detail: {
+            vista: view,
+          },
+        }),
+      );
+
+      navItems.forEach((navItem) => {
+        navItem.classList.remove("bg-slate-100", "text-slate-900");
+        navItem.classList.add(
+          "text-slate-500",
+          "hover:bg-slate-50",
+          "hover:text-slate-900",
+        );
+      });
+
+      item.classList.remove(
+        "text-slate-500",
+        "hover:bg-slate-50",
+        "hover:text-slate-900",
+      );
+
+      item.classList.add("bg-slate-100", "text-slate-900");
+
+      // En móvil, cerrar el sidebar después de seleccionar una vista
+      if (window.innerWidth < 1024) {
+        sidebar?.classList.add("-translate-x-full");
+        overlay?.classList.add("hidden");
+      }
+    });
+  });
+
+  // Abrir / cerrar sidebar en móvil
+  window.addEventListener("centro-control:toggle-sidebar", () => {
+    if (!sidebar || !overlay) return;
+
+    sidebar.classList.toggle("-translate-x-full");
+    overlay.classList.toggle("hidden");
+  });
+
+  // Cerrar al hacer clic en el overlay
+  overlay?.addEventListener("click", () => {
+    sidebar?.classList.add("-translate-x-full");
+    overlay?.classList.add("hidden");
+  });
+
+  // Cerrar sesión
+  logout?.addEventListener("click", () => {
+    cerrarSesion();
+  });
+</script>
