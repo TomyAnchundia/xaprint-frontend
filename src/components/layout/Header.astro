@@ -37,7 +37,9 @@
     <!-- Estado de conexión -->
     <div
       id="estado-api"
-      class="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5"
+      role="status"
+      aria-label="Conectando con el servidor"
+      class="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1.5 sm:px-3"
       title="Estado de conexión con el servidor"
     >
       <span class="relative flex h-2 w-2">
@@ -51,12 +53,54 @@
           class="relative inline-flex h-2 w-2 rounded-full bg-slate-400"></span>
       </span>
 
-      <span id="estado-api-texto" class="text-xs font-medium text-slate-500">
+      <span
+        id="estado-api-texto"
+        class="sr-only text-xs font-medium text-slate-500 sm:not-sr-only"
+      >
         Conectando...
       </span>
     </div>
 
     <!-- Notificaciones -->
+    <button
+      type="button"
+      id="theme-toggle"
+      class="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+      aria-label="Activar modo oscuro"
+      title="Activar modo oscuro"
+    >
+      <svg
+        id="theme-icon-moon"
+        class="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5a8.5 8.5 0 1 0 12 12Z"></path>
+      </svg>
+      <svg
+        id="theme-icon-sun"
+        class="hidden h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="4"></circle>
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"
+        ></path>
+      </svg>
+    </button>
+
     <button
       type="button"
       class="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
@@ -82,6 +126,37 @@
   import { suscribirseConexion } from "../../services/pedidos-store";
 
   const menuButton = document.getElementById("menu-button");
+  const themeToggle = document.getElementById("theme-toggle");
+  const moonIcon = document.getElementById("theme-icon-moon");
+  const sunIcon = document.getElementById("theme-icon-sun");
+
+  function updateThemeControl() {
+    const darkMode = document.documentElement.dataset.theme === "dark";
+    moonIcon?.classList.toggle("hidden", darkMode);
+    sunIcon?.classList.toggle("hidden", !darkMode);
+    themeToggle?.setAttribute(
+      "aria-label",
+      darkMode ? "Activar modo claro" : "Activar modo oscuro",
+    );
+    themeToggle?.setAttribute(
+      "title",
+      darkMode ? "Activar modo claro" : "Activar modo oscuro",
+    );
+  }
+
+  updateThemeControl();
+
+  themeToggle?.addEventListener("click", () => {
+    const nextTheme =
+      document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = nextTheme;
+    try {
+      localStorage.setItem("centro-control:theme", nextTheme);
+    } catch {
+      // El tema también funciona en navegadores que bloquean el almacenamiento.
+    }
+    updateThemeControl();
+  });
 
   const estadoApi = document.getElementById("estado-api");
   const estadoApiPunto = document.getElementById("estado-api-punto");
@@ -99,7 +174,8 @@
 
     if (conectado) {
       estadoApi.className =
-        "flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5";
+        "flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1.5 sm:px-3";
+      estadoApi.setAttribute("aria-label", "Sistema conectado");
 
       estadoApiPunto.className =
         "relative inline-flex h-2 w-2 rounded-full bg-emerald-500";
@@ -107,12 +183,14 @@
       estadoApiPing.className =
         "absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75";
 
-      estadoApiTexto.className = "text-xs font-medium text-emerald-700";
+      estadoApiTexto.className =
+        "sr-only text-xs font-medium text-emerald-700 sm:not-sr-only";
 
       estadoApiTexto.textContent = "Sistema conectado";
     } else {
       estadoApi.className =
-        "flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5";
+        "flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-2 py-1.5 sm:px-3";
+      estadoApi.setAttribute("aria-label", "Sin conexión");
 
       estadoApiPunto.className =
         "relative inline-flex h-2 w-2 rounded-full bg-red-500";
@@ -120,7 +198,8 @@
       estadoApiPing.className =
         "absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75";
 
-      estadoApiTexto.className = "text-xs font-medium text-red-700";
+      estadoApiTexto.className =
+        "sr-only text-xs font-medium text-red-700 sm:not-sr-only";
 
       estadoApiTexto.textContent = "Sin conexión";
     }

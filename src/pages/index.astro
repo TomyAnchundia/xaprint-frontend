@@ -14,22 +14,31 @@ import Estadisticas from "../components/admin/Estadisticas.astro";
 ---
 
 <Layout title="Pedidos | Centro de Control">
-  <div class="flex h-screen overflow-hidden bg-slate-50">
+  <div
+    class="dashboard-shell flex min-h-dvh overflow-x-hidden bg-slate-50 lg:h-dvh lg:overflow-hidden"
+  >
     <Sidebar />
 
-    <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
+    <div class="flex min-w-0 flex-1 flex-col lg:overflow-hidden">
       <Header />
 
-      <main class="min-h-0 flex-1 overflow-hidden">
-        <div class="flex h-full min-h-0 flex-col p-2 sm:p-3 lg:p-4">
+      <main
+        class="dashboard-main min-h-0 flex-1 overflow-y-auto lg:overflow-hidden"
+      >
+        <div
+          class="flex min-h-full flex-col p-2 sm:p-3 lg:h-full lg:min-h-0 lg:p-4"
+        >
           <div
-            class="mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-col"
+            class="dashboard-views mx-auto flex min-h-full w-full max-w-[1600px] flex-col lg:h-full lg:min-h-0"
           >
             <!-- ============================================ -->
             <!-- VISTA: PEDIDOS                               -->
             <!-- ============================================ -->
 
-            <section id="vista-pedidos" class="flex h-full min-h-0 flex-col">
+            <section
+              id="vista-pedidos"
+              class="flex min-h-[calc(100dvh-4rem)] flex-col lg:h-full lg:min-h-0"
+            >
               <!-- Encabezado -->
               <div
                 class="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
@@ -58,26 +67,35 @@ import Estadisticas from "../components/admin/Estadisticas.astro";
 
             <section
               id="vista-historial"
-              class="hidden h-full min-h-0 flex-col"
+              class="hidden min-h-[calc(100dvh-4rem)] flex-col lg:h-full lg:min-h-0"
             >
               <Historial />
             </section>
 
-            <section id="vista-clientes" class="hidden h-full min-h-0 flex-col">
+            <section
+              id="vista-clientes"
+              class="hidden min-h-[calc(100dvh-4rem)] flex-col lg:h-full lg:min-h-0"
+            >
               <Clientes />
             </section>
 
-            <section id="vista-usuarios" class="hidden h-full min-h-0 flex-col">
+            <section
+              id="vista-usuarios"
+              class="hidden min-h-[calc(100dvh-4rem)] flex-col lg:h-full lg:min-h-0"
+            >
               <Usuarios />
             </section>
 
-            <section id="vista-tarifas" class="hidden h-full min-h-0 flex-col">
+            <section
+              id="vista-tarifas"
+              class="hidden min-h-[calc(100dvh-4rem)] flex-col lg:h-full lg:min-h-0"
+            >
               <Tarifas />
             </section>
 
             <section
               id="vista-estadisticas"
-              class="hidden h-full min-h-0 flex-col"
+              class="hidden min-h-[calc(100dvh-4rem)] flex-col lg:h-full lg:min-h-0"
             >
               <Estadisticas />
             </section>
@@ -111,6 +129,7 @@ import Estadisticas from "../components/admin/Estadisticas.astro";
     if (!obtenerToken() || !usuario) {
       window.location.replace("/login");
     } else {
+      const estado = document.getElementById("estado-api");
       const punto = document.getElementById("estado-api-punto");
       const texto = document.getElementById("estado-api-texto");
 
@@ -118,12 +137,16 @@ import Estadisticas from "../components/admin/Estadisticas.astro";
         if (!punto || !texto) return;
 
         if (conectado) {
+          estado?.setAttribute("aria-label", "Sistema conectado");
           punto.className = "h-2 w-2 rounded-full bg-emerald-500";
-          texto.className = "text-emerald-600";
+          texto.className =
+            "sr-only text-xs font-medium text-emerald-600 sm:not-sr-only";
           texto.textContent = "Sistema conectado";
         } else {
+          estado?.setAttribute("aria-label", "Sin conexión");
           punto.className = "h-2 w-2 rounded-full bg-red-500";
-          texto.className = "text-red-600";
+          texto.className =
+            "sr-only text-xs font-medium text-red-600 sm:not-sr-only";
           texto.textContent = "Sin conexión";
         }
       });

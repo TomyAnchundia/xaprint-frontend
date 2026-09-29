@@ -25,6 +25,11 @@ body {
   background: #f8fafc;
 }
 
+.stat-card {
+  border-color: #d7e9e8;
+  background-color: #f7fbfb;
+}
+
 button,
 a,
 input,
@@ -41,4 +46,240 @@ a {
 ::selection {
   background: #dbeafe;
   color: #1e3a8a;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  background: #0b1220;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] .dashboard-shell {
+  background: #0b1220;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .pedido-row:hover,
+html[data-theme="dark"] .pedido-row:focus-visible,
+html[data-theme="dark"] .pedido-row:active {
+  background-color: #1b2a3b;
+}
+
+html[data-theme="dark"] .pedido-row:hover .pedido-cliente,
+html[data-theme="dark"] .pedido-row:focus-visible .pedido-cliente,
+html[data-theme="dark"] .pedido-row:hover .pedido-servicio,
+html[data-theme="dark"] .pedido-row:focus-visible .pedido-servicio {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .pedido-row:hover .pedido-servicio,
+html[data-theme="dark"] .pedido-row:focus-visible .pedido-servicio {
+  background-color: #26364a;
+}
+
+html[data-theme="dark"] .pedido-row:hover .pedido-precio,
+html[data-theme="dark"] .pedido-row:focus-visible .pedido-precio {
+  background-color: #1d3944;
+  color: #a8e5ed;
+}
+
+html[data-theme="dark"] .pedido-row:hover .pedido-accion,
+html[data-theme="dark"] .pedido-row:focus-visible .pedido-accion {
+  border-color: #3b5269;
+  background-color: #26364a;
+  color: #a8e5ed;
+}
+
+html[data-theme="dark"] :is(
+    [class~="bg-white"],
+    [class~="bg-white/70"],
+    [class~="bg-white/80"],
+    [class~="bg-slate-50"],
+    [class~="bg-slate-50/70"],
+    [class~="bg-slate-100"],
+    [class~="bg-gray-50"],
+    [class~="bg-gray-100"]
+  ) {
+  background-color: #172033;
+}
+
+html[data-theme="dark"] :is(
+    [class~="bg-slate-200"],
+    [class~="bg-gray-200"]
+  ) {
+  background-color: #334155;
+}
+
+html[data-theme="dark"] .stat-card {
+  border-color: #2b4149;
+  background-color: #14232c;
+}
+
+html[data-theme="dark"] :is(
+    [class~="text-slate-900"],
+    [class~="text-slate-800"],
+    [class~="text-gray-900"],
+    [class~="text-gray-800"]
+  ) {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] :is(
+    [class~="text-slate-700"],
+    [class~="text-slate-600"],
+    [class~="text-slate-500"],
+    [class~="text-slate-400"],
+    [class~="text-gray-700"],
+    [class~="text-gray-600"],
+    [class~="text-gray-500"],
+    [class~="text-gray-400"]
+  ) {
+  color: #a8b4c7;
+}
+
+html[data-theme="dark"] :is(
+    [class~="border-slate-100"],
+    [class~="border-slate-200"],
+    [class~="border-slate-300"],
+    [class~="border-gray-100"],
+    [class~="border-gray-200"]
+  ) {
+  border-color: #344155;
+}
+
+html[data-theme="dark"] :is(
+    [class~="divide-slate-100"],
+    [class~="divide-slate-200"]
+  ) > :not(:last-child) {
+  border-color: #344155;
+}
+
+html[data-theme="dark"] :is(
+    [class~="bg-cyan-50"],
+    [class~="bg-cyan-50/50"],
+    [class~="bg-cyan-100"]
+  ) {
+  background-color: #123440;
+}
+
+html[data-theme="dark"] :is(
+    [class~="text-cyan-800"],
+    [class~="text-cyan-900"]
+  ) {
+  color: #8de0eb;
+}
+
+html[data-theme="dark"] :is(
+    [class~="bg-emerald-50"],
+    [class~="bg-emerald-100"]
+  ) {
+  background-color: #12382f;
+}
+
+html[data-theme="dark"] :is(
+    [class~="text-emerald-800"],
+    [class~="text-emerald-900"]
+  ) {
+  color: #8be0b9;
+}
+
+html[data-theme="dark"] :is(
+    [class~="bg-amber-50"],
+    [class~="bg-amber-100"]
+  ) {
+  background-color: #3d3020;
+}
+
+html[data-theme="dark"] :is(
+    [class~="text-amber-800"],
+    [class~="text-amber-900"],
+    [class~="text-amber-950"]
+  ) {
+  color: #f5cd83;
+}
+
+html[data-theme="dark"] :is(
+    [class~="bg-red-50"],
+    [class~="bg-red-100"]
+  ) {
+  background-color: #40252b;
+}
+
+html[data-theme="dark"] :is(
+    [class~="text-red-700"],
+    [class~="text-red-600"]
+  ) {
+  color: #f3a2a2;
+}
+
+html[data-theme="dark"] :is(
+    .filtro-pedido,
+    .historial-filtro-estado,
+    .historial-filtro-servicio,
+    .historial-filtro-fecha,
+    .tarifa-filtro
+  )[aria-pressed="true"] {
+  border-color: #52627a;
+  background-color: #334155;
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] :is(
+    .filtro-pedido,
+    .historial-filtro-estado,
+    .historial-filtro-servicio,
+    .historial-filtro-fecha,
+    .tarifa-filtro
+  )[aria-pressed="false"] {
+  background-color: transparent;
+  color: #b8c4d6;
+}
+
+html[data-theme="dark"] :is(
+    .filtro-pedido,
+    .historial-filtro-estado,
+    .historial-filtro-servicio,
+    .historial-filtro-fecha,
+    .tarifa-filtro
+  )[aria-pressed="false"]:hover {
+  background-color: #263449;
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] :is(
+    [class~="hover:bg-white"],
+    [class~="hover:bg-slate-50"],
+    [class~="hover:bg-slate-100"]
+  ):hover {
+  background-color: #263449;
+}
+
+html[data-theme="dark"] :is(input, select, textarea) {
+  color: #e2e8f0;
+  border-color: #475569;
+  background-color: #111a2b;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #94a3b8;
+}
+
+@media (max-width: 1023px) {
+  .dashboard-main {
+    overflow: visible;
+  }
+
+  .dashboard-views > section:not(#vista-pedidos) {
+    height: auto;
+  }
+
+  .dashboard-views > section:not(#vista-pedidos) > :first-child {
+    height: auto;
+  }
+
+  .dashboard-views > section:not(#vista-pedidos) > :first-child > .grid {
+    flex: none;
+  }
 }

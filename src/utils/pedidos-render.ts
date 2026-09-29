@@ -47,7 +47,7 @@ export function crearFilaPedido(pedido: Pedido): string {
       aria-label="Abrir detalle del pedido ${pedido.id}"
       aria-haspopup="dialog"
       title="Abrir detalle del pedido"
-      class="group cursor-pointer transition-colors duration-150 hover:bg-cyan-50/70 focus-visible:bg-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-700 active:bg-cyan-100"
+      class="pedido-row group cursor-pointer transition-colors duration-150 hover:bg-slate-100/70 focus-visible:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-700 active:bg-slate-200"
     >
       <td class="px-5 py-4">
         <div class="flex items-center gap-2">
@@ -76,7 +76,7 @@ export function crearFilaPedido(pedido: Pedido): string {
 
       <td class="px-5 py-4">
         <div>
-          <p class="font-semibold text-slate-800 transition-colors group-hover:text-cyan-950">
+          <p class="pedido-cliente font-semibold text-slate-800">
             ${escaparHtml(pedido.cliente.nombre)}
           </p>
 
@@ -97,7 +97,7 @@ export function crearFilaPedido(pedido: Pedido): string {
       </td>
 
       <td class="px-5 py-4">
-        <span class="inline-flex rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700 transition-colors group-hover:bg-white">
+        <span class="pedido-servicio inline-flex rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
           ${pedido.servicio}
         </span>
       </td>
@@ -107,7 +107,7 @@ export function crearFilaPedido(pedido: Pedido): string {
       </td>
 
       <td class="px-5 py-4">
-        <span class="inline-flex rounded-md bg-cyan-50 px-2 py-1 font-semibold text-cyan-900 transition-colors group-hover:bg-cyan-100">
+        <span class="pedido-precio inline-flex rounded-md bg-cyan-50 px-2 py-1 font-semibold text-cyan-900">
           ${formatearPrecio(pedido.valorCobrar)}
         </span>
 
@@ -136,7 +136,7 @@ export function crearFilaPedido(pedido: Pedido): string {
         <button
           type="button"
           data-pedido-id="${pedido.id}"
-          class="rounded-lg border border-transparent p-2 text-slate-400 transition hover:border-slate-200 hover:bg-white hover:text-cyan-800 group-hover:text-cyan-700"
+          class="pedido-accion rounded-lg border border-transparent p-2 text-slate-400 transition hover:border-slate-200 hover:bg-white hover:text-cyan-800"
           aria-label="Ver pedido ${pedido.id}"
           title="Ver pedido"
         >

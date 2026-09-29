@@ -20,6 +20,17 @@ const { title = "Centro de Control" } = Astro.props;
       content="Centro de Control para gestión y monitoreo de pedidos de impresión."
     />
 
+    <script is:inline>
+      try {
+        const theme = localStorage.getItem("centro-control:theme");
+        if (theme === "dark" || theme === "light") {
+          document.documentElement.dataset.theme = theme;
+        }
+      } catch {
+        // El tema claro permanece como valor predeterminado si storage no está disponible.
+      }
+    </script>
+
     <title>{title}</title>
   </head>
 

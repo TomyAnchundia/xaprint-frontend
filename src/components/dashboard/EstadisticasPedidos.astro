@@ -40,47 +40,71 @@
     </button>
   </div>
 
-  <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+  <div class="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
     <article
       id="stat-articulo-revision"
-      class="rounded-lg border border-amber-200 border-t-4 bg-amber-50/80 p-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      class="stat-card rounded-lg border border-slate-200 bg-white p-3 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4"
     >
-      <p class="text-sm font-semibold text-amber-900">En revisión</p>
-      <p id="stat-en-revision" class="mt-2 text-4xl font-bold text-amber-950">
+      <p class="text-xs font-semibold text-slate-700 sm:text-sm">En revisión</p>
+      <p
+        id="stat-en-revision"
+        class="mt-1 text-3xl font-bold text-slate-900 sm:mt-2 sm:text-4xl"
+      >
         —
       </p>
-      <p class="mt-2 text-xs text-amber-800/80">Requieren atención</p>
+      <p class="mt-1 text-[11px] text-slate-500 sm:mt-2 sm:text-xs">
+        Requieren atención
+      </p>
     </article>
 
     <article
       id="stat-articulo-impresion"
-      class="rounded-lg border border-cyan-200 border-t-4 bg-cyan-50/80 p-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      class="stat-card rounded-lg border border-slate-200 bg-white p-3 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4"
     >
-      <p class="text-sm font-semibold text-cyan-900">En impresión</p>
-      <p id="stat-en-impresion" class="mt-2 text-4xl font-bold text-cyan-950">
+      <p class="text-xs font-semibold text-slate-700 sm:text-sm">
+        En impresión
+      </p>
+      <p
+        id="stat-en-impresion"
+        class="mt-1 text-3xl font-bold text-slate-900 sm:mt-2 sm:text-4xl"
+      >
         —
       </p>
-      <p class="mt-2 text-xs text-cyan-800/80">Trabajos activos</p>
+      <p class="mt-1 text-[11px] text-slate-500 sm:mt-2 sm:text-xs">
+        Trabajos activos
+      </p>
     </article>
 
     <article
       id="stat-articulo-listos"
-      class="rounded-lg border border-emerald-200 border-t-4 bg-emerald-50/80 p-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      class="stat-card rounded-lg border border-slate-200 bg-white p-3 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4"
     >
-      <p class="text-sm font-semibold text-emerald-900">Listos</p>
-      <p id="stat-listos" class="mt-2 text-4xl font-bold text-emerald-950">—</p>
-      <p class="mt-2 text-xs text-emerald-800/80">Esperando entrega</p>
+      <p class="text-xs font-semibold text-slate-700 sm:text-sm">Listos</p>
+      <p
+        id="stat-listos"
+        class="mt-1 text-3xl font-bold text-slate-900 sm:mt-2 sm:text-4xl"
+      >
+        —
+      </p>
+      <p class="mt-1 text-[11px] text-slate-500 sm:mt-2 sm:text-xs">
+        Esperando entrega
+      </p>
     </article>
 
     <article
       id="stat-articulo-entregados"
-      class="rounded-lg border border-slate-300 border-t-4 bg-white p-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      class="stat-card rounded-lg border border-slate-200 bg-white p-3 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4"
     >
-      <p class="text-sm font-semibold text-slate-700">Entregados</p>
-      <p id="stat-entregados" class="mt-2 text-4xl font-bold text-slate-950">
+      <p class="text-xs font-semibold text-slate-700 sm:text-sm">Entregados</p>
+      <p
+        id="stat-entregados"
+        class="mt-1 text-3xl font-bold text-slate-900 sm:mt-2 sm:text-4xl"
+      >
         —
       </p>
-      <p class="mt-2 text-xs text-slate-500">Pedidos completados</p>
+      <p class="mt-1 text-[11px] text-slate-500 sm:mt-2 sm:text-xs">
+        Pedidos completados
+      </p>
     </article>
   </div>
 </section>
