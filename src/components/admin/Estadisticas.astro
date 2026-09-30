@@ -1,3 +1,15 @@
+---
+const periodosFinancieros = [
+  ["hoy", "Hoy"],
+  ["ayer", "Ayer"],
+  ["ultimos-7", "Últimos 7 días"],
+  ["semana", "Esta semana"],
+  ["semana-anterior", "Semana pasada"],
+  ["mes-anterior", "Mes anterior"],
+  ["mes", "Este mes"],
+];
+---
+
 <section class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1">
   <header class="flex flex-wrap items-end justify-between gap-3">
     <div>
@@ -13,6 +25,29 @@
         Producción lista, cobros y saldo pendiente.
       </p>
     </div>
+    <button
+      id="abrir-liquidacion-desarrollador"
+      type="button"
+      class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+      aria-haspopup="dialog"
+      aria-controls="modal-liquidacion-desarrollador"
+    >
+      <svg
+        class="h-4 w-4"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M3 7h18M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm3 8h4m-4 4h8"
+        ></path>
+      </svg>
+      Liquidación desarrollador
+    </button>
   </header>
 
   <div
@@ -22,177 +57,513 @@
   >
   </div>
 
-  <section class="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-    <article
-      class="stat-card rounded-lg border border-slate-200 bg-white p-3 sm:p-4"
-    >
-      <p class="text-xs font-semibold text-slate-700 sm:text-sm">Cobrado hoy</p>
-
-      <p
-        id="estadisticas-cobrado"
-        class="mt-1 text-2xl font-bold text-slate-900 sm:mt-2 sm:text-3xl"
-      >
-        —
-      </p>
-
-      <p class="mt-1 text-[11px] leading-snug text-slate-500 sm:text-xs">
-        Pagos recibidos durante el día de hoy
-      </p>
-    </article>
-
-    <article
-      class="stat-card rounded-lg border border-slate-200 bg-white p-3 sm:p-4"
-    >
-      <p class="text-xs font-semibold text-slate-700 sm:text-sm">
-        Por cobrar total
-      </p>
-
-      <p
-        id="estadisticas-por-cobrar"
-        class="mt-1 text-2xl font-bold text-slate-900 sm:mt-2 sm:text-3xl"
-      >
-        —
-      </p>
-
-      <p
-        id="estadisticas-deudores"
-        class="mt-1 text-[11px] leading-snug text-slate-500 sm:text-xs"
-      >
-        Saldo pendiente de pedidos entregados
-      </p>
-    </article>
-
-    <article
-      class="stat-card col-span-2 rounded-lg border border-slate-200 bg-white p-3 sm:col-span-1 sm:p-4"
-    >
-      <p class="text-xs font-semibold text-slate-700 sm:text-sm">
-        Aporte desarrollador acumulado
-      </p>
-
-      <p
-        id="estadisticas-aporte-acumulado"
-        class="mt-1 text-2xl font-bold text-slate-900 sm:mt-2 sm:text-3xl"
-      >
-        —
-      </p>
-
-      <p class="mt-1 text-[11px] leading-snug text-slate-500 sm:text-xs">
-        Total acumulado de pedidos completamente pagados
-      </p>
-    </article>
-  </section>
-
-  <section class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+  <section class="space-y-2" aria-label="Cobros y saldos por período">
     <div
-      class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3"
+      class="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1"
+      role="group"
+      aria-label="Seleccionar período financiero"
     >
-      <div>
-        <h3 class="text-sm font-bold text-slate-900">Producción lista</h3>
+      {
+        periodosFinancieros.map(([id, titulo]) => (
+          <button
+            id={`estadisticas-tab-${id}`}
+            type="button"
+            data-estadisticas-periodo={id}
+            aria-pressed={id === "hoy"}
+            class={`estadisticas-periodo rounded-md px-3 py-2 text-xs font-medium transition ${id === "hoy" ? "bg-slate-900 font-semibold text-white shadow-sm" : "text-slate-600 hover:bg-white"}`}
+          >
+            {titulo}
+          </button>
+        ))
+      }
+    </div>
 
-        <p id="estadisticas-subtitulo" class="mt-0.5 text-xs text-slate-500">
-          Pedidos que pasaron a Listo en la fecha seleccionada
-        </p>
-      </div>
+    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3 sm:gap-3">
+      {
+        periodosFinancieros.map(([id, titulo]) => (
+          <article
+            data-periodo-card={id}
+            aria-labelledby={`estadisticas-tab-${id}`}
+            class:list={[
+              "stat-card rounded-lg border border-slate-200 bg-white p-3 sm:p-4",
+              { hidden: id !== "hoy" },
+            ]}
+          >
+            <h3 class="text-xs font-semibold text-slate-700 sm:text-sm">
+              {titulo}
+            </h3>
+            <dl class="mt-2 grid grid-cols-2 gap-3">
+              <div>
+                <dt class="text-[11px] text-slate-500">Cobrado</dt>
+                <dd
+                  data-cobrado={id}
+                  class="mt-0.5 text-lg font-bold tabular-nums text-slate-900"
+                >
+                  —
+                </dd>
+              </div>
+              <div>
+                <dt class="text-[11px] text-slate-500">Por cobrar</dt>
+                <dd
+                  data-por-cobrar={id}
+                  class="mt-0.5 text-lg font-bold tabular-nums text-amber-800"
+                >
+                  —
+                </dd>
+              </div>
+            </dl>
+            <p
+              data-pedidos={id}
+              class="mt-1 text-[11px] leading-snug text-slate-500"
+            >
+              — pedidos con saldo
+            </p>
+          </article>
+        ))
+      }
+    </div>
 
-      <div class="flex flex-wrap items-end gap-3">
-        <label class="text-xs font-semibold text-slate-500">
-          Fecha de producción
+    <div
+      id="modal-liquidacion-desarrollador"
+      class="fixed inset-0 z-130 hidden items-center justify-center bg-slate-950/55 p-3 backdrop-blur-sm sm:p-5"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="liquidacion-desarrollador-titulo"
+    >
+      <button
+        id="cerrar-liquidacion-backdrop"
+        type="button"
+        class="absolute inset-0 cursor-default"
+        aria-label="Cerrar liquidación"></button>
+      <section
+        class="relative max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-2xl sm:p-6"
+      >
+        <header class="flex items-start justify-between gap-4">
+          <div>
+            <h3
+              id="liquidacion-desarrollador-titulo"
+              class="text-base font-bold text-slate-900 sm:text-lg"
+            >
+              Liquidación del desarrollador
+            </h3>
+            <p class="mt-1 text-xs text-slate-500">
+              El aporte se devenga al completar el pago del pedido. Liquidación
+              prevista el día 30.
+            </p>
+          </div>
+          <button
+            id="cerrar-liquidacion-desarrollador"
+            type="button"
+            class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+            aria-label="Cerrar liquidación"
+          >
+            <svg
+              class="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path stroke-linecap="round" d="m6 6 12 12M18 6 6 18"></path>
+            </svg>
+          </button>
+        </header>
 
+        <label class="mt-4 block text-xs font-semibold text-slate-500">
+          Mes
           <input
-            id="estadisticas-fecha"
-            type="date"
+            id="estadisticas-aporte-periodo"
+            type="month"
             class="mt-1 block h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
           />
         </label>
 
-        <span
-          id="estadisticas-total-metros"
-          class="mb-0.5 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700"
+        <div
+          class="mt-5 grid grid-cols-1 divide-y divide-slate-200 border-y border-slate-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0"
         >
-          — m producidos
-        </span>
+          <div class="py-3 sm:px-4">
+            <p class="text-xs font-medium text-slate-500">Aporte devengado</p>
+            <p
+              id="aporte-mes-devengado"
+              class="mt-1 text-lg font-bold tabular-nums text-slate-900"
+            >
+              —
+            </p>
+          </div>
+          <div class="py-3 sm:px-4">
+            <p class="text-xs font-medium text-slate-500">Abonado</p>
+            <p
+              id="aporte-mes-pagado"
+              class="mt-1 text-lg font-bold tabular-nums text-emerald-800"
+            >
+              —
+            </p>
+          </div>
+          <div class="py-3 sm:px-4">
+            <p class="text-xs font-medium text-slate-500">Pendiente</p>
+            <p
+              id="aporte-mes-pendiente"
+              class="mt-1 text-lg font-bold tabular-nums text-amber-800"
+            >
+              —
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-5 pt-4 lg:grid-cols-2">
+          <form id="aporte-desarrollador-form" class="max-w-lg">
+            <label
+              for="aporte-desarrollador-monto"
+              class="block text-sm font-semibold text-slate-800"
+            >
+              Registrar abono
+            </label>
+            <p
+              id="aporte-desarrollador-maximo"
+              class="mt-1 text-xs text-slate-500"
+            >
+              Cargando saldo del período...
+            </p>
+            <div class="mt-3 flex items-end gap-2">
+              <input
+                id="aporte-desarrollador-monto"
+                name="monto"
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+                inputmode="decimal"
+                placeholder="0.00"
+                class="h-10 min-w-0 flex-1 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
+              />
+              <button
+                id="aporte-desarrollador-guardar"
+                type="submit"
+                class="h-10 shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Guardar abono
+              </button>
+            </div>
+            <p
+              id="aporte-desarrollador-error"
+              class="mt-2 hidden text-sm text-red-700"
+              role="alert"
+            >
+            </p>
+          </form>
+
+          <div>
+            <h4 class="text-sm font-bold text-slate-900">
+              Historial de abonos
+            </h4>
+            <div id="aporte-desarrollador-historial" class="mt-2">
+              <p class="text-sm text-slate-500">Cargando historial...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section
+      class="overflow-hidden rounded-xl border border-slate-200 bg-white"
+    >
+      <div
+        class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3"
+      >
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Producción lista</h3>
+
+          <p id="estadisticas-subtitulo" class="mt-0.5 text-xs text-slate-500">
+            Pedidos que pasaron a Listo en la fecha seleccionada
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-end gap-3">
+          <label class="text-xs font-semibold text-slate-500">
+            Fecha de producción
+
+            <input
+              id="estadisticas-fecha"
+              type="date"
+              class="mt-1 block h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
+            />
+          </label>
+
+          <span
+            id="estadisticas-total-metros"
+            class="mb-0.5 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700"
+          >
+            — m producidos
+          </span>
+        </div>
       </div>
-    </div>
 
-    <div class="overflow-x-auto">
-      <table class="w-full min-w-[640px] text-left text-sm">
-        <thead class="bg-slate-50 text-xs uppercase text-slate-500">
-          <tr>
-            <th class="px-4 py-3 font-semibold"> Servicio </th>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-160 text-left text-sm">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+              <th class="px-4 py-3 font-semibold"> Servicio </th>
 
-            <th class="px-4 py-3 text-right font-semibold"> Metros </th>
+              <th class="px-4 py-3 text-right font-semibold"> Metros </th>
 
-            <th class="px-4 py-3 text-right font-semibold"> Valor a cobrar </th>
+              <th class="px-4 py-3 text-right font-semibold">
+                Valor a cobrar
+              </th>
 
-            <th class="px-4 py-3 text-right font-semibold"> Aporte </th>
+              <th class="px-4 py-3 text-right font-semibold"> Aporte </th>
 
-            <th class="px-4 py-3 text-right font-semibold">
-              Ingreso negocio
-            </th>
-          </tr>
-        </thead>
+              <th class="px-4 py-3 text-right font-semibold">
+                Ingreso negocio
+              </th>
+            </tr>
+          </thead>
 
-        <tbody id="estadisticas-produccion" class="divide-y divide-slate-100">
-          <tr>
-            <td colspan="5" class="px-4 py-8 text-center text-slate-500">
-              Cargando estadísticas...
-            </td>
-          </tr>
-        </tbody>
+          <tbody id="estadisticas-produccion" class="divide-y divide-slate-100">
+            <tr>
+              <td colspan="5" class="px-4 py-8 text-center text-slate-500">
+                Cargando estadísticas...
+              </td>
+            </tr>
+          </tbody>
 
-        <tfoot
-          id="estadisticas-produccion-total"
-          class="bg-slate-50 font-bold text-slate-900"
-        >
-        </tfoot>
-      </table>
-    </div>
+          <tfoot
+            id="estadisticas-produccion-total"
+            class="bg-slate-50 font-bold text-slate-900"
+          >
+          </tfoot>
+        </table>
+      </div>
+    </section>
   </section>
-</section>
 
-<script>
-  import {
-    obtenerResumenPagos,
-    obtenerResumenProduccion,
-    type ResumenProduccionItem,
-  } from "../../services/api";
+  <script>
+    import {
+      obtenerResumenAporteDesarrollador,
+      obtenerResumenPagosPeriodo,
+      obtenerResumenProduccion,
+      registrarPagoDesarrollador,
+      type ResumenProduccionItem,
+    } from "../../services/api";
+    import { mostrarNotificacion as notificarGlobal } from "../../utils/notificaciones";
 
-  const fechaInput = document.getElementById(
-    "estadisticas-fecha",
-  ) as HTMLInputElement | null;
+    const fechaInput = document.getElementById(
+      "estadisticas-fecha",
+    ) as HTMLInputElement | null;
 
-  const cuerpo = document.getElementById("estadisticas-produccion");
-  const pie = document.getElementById("estadisticas-produccion-total");
-  const error = document.getElementById("estadisticas-error");
+    const cuerpo = document.getElementById("estadisticas-produccion");
+    const pie = document.getElementById("estadisticas-produccion-total");
+    const error = document.getElementById("estadisticas-error");
 
-  const cobrado = document.getElementById("estadisticas-cobrado");
-  const porCobrar = document.getElementById("estadisticas-por-cobrar");
-  const deudores = document.getElementById("estadisticas-deudores");
-  const metrosTotal = document.getElementById("estadisticas-total-metros");
+    const metrosTotal = document.getElementById("estadisticas-total-metros");
+    const periodoAporteInput = document.getElementById(
+      "estadisticas-aporte-periodo",
+    ) as HTMLInputElement | null;
+    const aporteDevengado = document.getElementById("aporte-mes-devengado");
+    const aportePagado = document.getElementById("aporte-mes-pagado");
+    const aportePendiente = document.getElementById("aporte-mes-pendiente");
+    const aporteMaximo = document.getElementById("aporte-desarrollador-maximo");
+    const aporteHistorial = document.getElementById(
+      "aporte-desarrollador-historial",
+    );
+    const aporteForm = document.getElementById(
+      "aporte-desarrollador-form",
+    ) as HTMLFormElement | null;
+    const aporteMontoInput = document.getElementById(
+      "aporte-desarrollador-monto",
+    ) as HTMLInputElement | null;
+    const aporteGuardar = document.getElementById(
+      "aporte-desarrollador-guardar",
+    ) as HTMLButtonElement | null;
+    const aporteError = document.getElementById("aporte-desarrollador-error");
+    const modalAporte = document.getElementById(
+      "modal-liquidacion-desarrollador",
+    );
+    const botonAbrirAporte = document.getElementById(
+      "abrir-liquidacion-desarrollador",
+    );
+    const botonCerrarAporte = document.getElementById(
+      "cerrar-liquidacion-desarrollador",
+    );
+    let solicitudAporte = 0;
+    let solicitudFinanciera = 0;
 
-  function fechaEcuador() {
-    const partes = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/Guayaquil",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).formatToParts(new Date());
+    function fechaEcuador() {
+      const partes = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Guayaquil",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(new Date());
 
-    const obtener = (tipo: string) =>
-      partes.find((parte) => parte.type === tipo)?.value ?? "";
+      const obtener = (tipo: string) =>
+        partes.find((parte) => parte.type === tipo)?.value ?? "";
 
-    return `${obtener("year")}-${obtener("month")}-${obtener("day")}`;
-  }
+      return `${obtener("year")}-${obtener("month")}-${obtener("day")}`;
+    }
 
-  function moneda(valor: number) {
-    return new Intl.NumberFormat("es-EC", {
-      style: "currency",
-      currency: "USD",
-    }).format(valor);
-  }
+    function moneda(valor: number) {
+      return new Intl.NumberFormat("es-EC", {
+        style: "currency",
+        currency: "USD",
+      }).format(valor);
+    }
 
-  function fila(nombre: string, datos: ResumenProduccionItem) {
-    return `
+    function sumarDias(fecha: string, dias: number) {
+      const resultado = new Date(`${fecha}T00:00:00Z`);
+      resultado.setUTCDate(resultado.getUTCDate() + dias);
+      return resultado.toISOString().slice(0, 10);
+    }
+
+    function obtenerPeriodos(fecha: string) {
+      const fechaUtc = new Date(`${fecha}T00:00:00Z`);
+      const diaSemana = (fechaUtc.getUTCDay() + 6) % 7;
+      const inicioSemana = sumarDias(fecha, -diaSemana);
+      const finSemanaAnterior = sumarDias(inicioSemana, -1);
+      const inicioSemanaAnterior = sumarDias(finSemanaAnterior, -6);
+      const primerDiaMes = `${fecha.slice(0, 7)}-01`;
+      const primerDiaMesAnterior =
+        sumarDias(primerDiaMes, -1).slice(0, 7) + "-01";
+      const ultimoDiaMesAnterior = sumarDias(primerDiaMes, -1);
+
+      return [
+        { id: "hoy", desde: fecha, hasta: fecha },
+        {
+          id: "ayer",
+          desde: sumarDias(fecha, -1),
+          hasta: sumarDias(fecha, -1),
+        },
+        { id: "ultimos-7", desde: sumarDias(fecha, -6), hasta: fecha },
+        { id: "semana", desde: inicioSemana, hasta: fecha },
+        {
+          id: "semana-anterior",
+          desde: inicioSemanaAnterior,
+          hasta: finSemanaAnterior,
+        },
+        {
+          id: "mes-anterior",
+          desde: primerDiaMesAnterior,
+          hasta: ultimoDiaMesAnterior,
+        },
+        { id: "mes", desde: primerDiaMes, hasta: fecha },
+      ];
+    }
+
+    document
+      .querySelectorAll<HTMLButtonElement>("[data-estadisticas-periodo]")
+      .forEach((boton) => {
+        boton.addEventListener("click", () => {
+          const idSeleccionado = boton.dataset.estadisticasPeriodo;
+          if (!idSeleccionado) return;
+
+          document
+            .querySelectorAll<HTMLButtonElement>("[data-estadisticas-periodo]")
+            .forEach((otroBoton) => {
+              const activo = otroBoton === boton;
+              otroBoton.setAttribute("aria-pressed", String(activo));
+              otroBoton.className = activo
+                ? "estadisticas-periodo rounded-md bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-sm"
+                : "estadisticas-periodo rounded-md px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white";
+            });
+
+          document
+            .querySelectorAll<HTMLElement>("[data-periodo-card]")
+            .forEach((tarjeta) => {
+              tarjeta.classList.toggle(
+                "hidden",
+                tarjeta.dataset.periodoCard !== idSeleccionado,
+              );
+            });
+        });
+      });
+
+    function mostrarNotificacion(mensaje: string, esError = false) {
+      notificarGlobal(mensaje, esError ? "error" : "success");
+    }
+
+    function cerrarModalAporte() {
+      modalAporte?.classList.add("hidden");
+      modalAporte?.classList.remove("flex");
+      botonAbrirAporte?.focus();
+    }
+
+    botonAbrirAporte?.addEventListener("click", () => {
+      modalAporte?.classList.remove("hidden");
+      modalAporte?.classList.add("flex");
+      void cargarAporteDesarrollador(periodoAporteInput?.value ?? "");
+      periodoAporteInput?.focus();
+    });
+    botonCerrarAporte?.addEventListener("click", cerrarModalAporte);
+    document
+      .getElementById("cerrar-liquidacion-backdrop")
+      ?.addEventListener("click", cerrarModalAporte);
+    window.addEventListener("keydown", (event) => {
+      if (
+        event.key === "Escape" &&
+        !modalAporte?.classList.contains("hidden")
+      ) {
+        cerrarModalAporte();
+      }
+    });
+    function escaparHtml(texto: string) {
+      const span = document.createElement("span");
+      span.textContent = texto;
+      return span.innerHTML;
+    }
+
+    async function cargarAporteDesarrollador(periodo: string) {
+      if (!periodo) return;
+      const solicitud = ++solicitudAporte;
+      aporteError?.classList.add("hidden");
+      if (aporteHistorial) {
+        aporteHistorial.innerHTML = `<p class="text-sm text-slate-500">Cargando historial...</p>`;
+      }
+
+      try {
+        const resumen = await obtenerResumenAporteDesarrollador(periodo);
+        if (solicitud !== solicitudAporte) return;
+
+        if (aporteDevengado) {
+          aporteDevengado.textContent = moneda(resumen.aporteDevengado);
+        }
+        if (aportePagado)
+          aportePagado.textContent = moneda(resumen.totalPagado);
+        if (aportePendiente)
+          aportePendiente.textContent = moneda(resumen.pendiente);
+        if (aporteMaximo) {
+          aporteMaximo.textContent = `Máximo por abonar: ${moneda(resumen.pendiente)}`;
+        }
+        if (aporteMontoInput) {
+          aporteMontoInput.max = resumen.pendiente.toFixed(2);
+          aporteMontoInput.disabled = resumen.pendiente <= 0;
+        }
+        if (aporteGuardar) aporteGuardar.disabled = resumen.pendiente <= 0;
+
+        if (aporteHistorial) {
+          aporteHistorial.innerHTML = resumen.pagos.length
+            ? `<ul class="divide-y divide-slate-100 rounded-lg border border-slate-200">${resumen.pagos
+                .map(
+                  (pago) =>
+                    `<li class="flex items-center justify-between gap-3 px-3 py-2.5"><span class="text-sm font-semibold text-slate-800">${moneda(pago.monto)}</span><span class="text-right text-xs text-slate-500">${new Intl.DateTimeFormat("es-EC", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guayaquil" }).format(new Date(pago.fecha))} · ${escaparHtml(pago.usuario.username)}</span></li>`,
+                )
+                .join("")}</ul>`
+            : `<p class="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">No hay abonos registrados en este período.</p>`;
+        }
+      } catch (caught) {
+        if (solicitud !== solicitudAporte) return;
+        if (aporteError) {
+          aporteError.textContent =
+            caught instanceof Error
+              ? caught.message
+              : "No se pudo cargar el aporte del período.";
+          aporteError.classList.remove("hidden");
+        }
+        if (aporteHistorial) aporteHistorial.innerHTML = "";
+      }
+    }
+
+    function fila(nombre: string, datos: ResumenProduccionItem) {
+      return `
       <tr>
         <td class="px-4 py-3 font-semibold text-slate-800">
           ${nombre}
@@ -215,14 +586,14 @@
         </td>
       </tr>
     `;
-  }
+    }
 
-  async function cargarProduccion(fecha: string) {
-    if (!cuerpo || !pie) return;
+    async function cargarProduccion(fecha: string) {
+      if (!cuerpo || !pie) return;
 
-    error?.classList.add("hidden");
+      error?.classList.add("hidden");
 
-    cuerpo.innerHTML = `
+      cuerpo.innerHTML = `
       <tr>
         <td
           colspan="5"
@@ -233,16 +604,16 @@
       </tr>
     `;
 
-    try {
-      const produccion = await obtenerResumenProduccion(fecha);
+      try {
+        const produccion = await obtenerResumenProduccion(fecha);
 
-      cuerpo.innerHTML = [
-        fila("DTF Textil · 31 cm", produccion.textil31),
-        fila("DTF Textil · 58 cm", produccion.textil58),
-        fila("DTF UV · 29 cm", produccion.uv),
-      ].join("");
+        cuerpo.innerHTML = [
+          fila("DTF Textil · 31 cm", produccion.textil31),
+          fila("DTF Textil · 58 cm", produccion.textil58),
+          fila("DTF UV · 29 cm", produccion.uv),
+        ].join("");
 
-      pie.innerHTML = `
+        pie.innerHTML = `
         <tr>
           <td class="px-4 py-3">
             Total producción
@@ -266,83 +637,137 @@
         </tr>
       `;
 
-      if (metrosTotal) {
-        metrosTotal.textContent = `${produccion.totalGeneral.metros.toFixed(2)} m producidos`;
-      }
-    } catch (caught) {
-      console.error("No se pudieron cargar las estadísticas:", caught);
+        if (metrosTotal) {
+          metrosTotal.textContent = `${produccion.totalGeneral.metros.toFixed(2)} m producidos`;
+        }
+      } catch (caught) {
+        console.error("No se pudieron cargar las estadísticas:", caught);
 
-      cuerpo.innerHTML = "";
-      pie.innerHTML = "";
+        cuerpo.innerHTML = "";
+        pie.innerHTML = "";
 
-      if (error) {
-        error.textContent =
-          caught instanceof Error
-            ? caught.message
-            : "No se pudieron cargar las estadísticas.";
+        if (error) {
+          error.textContent =
+            caught instanceof Error
+              ? caught.message
+              : "No se pudieron cargar las estadísticas.";
 
-        error.classList.remove("hidden");
+          error.classList.remove("hidden");
+        }
       }
     }
-  }
 
-  async function cargarResumenFinanciero() {
-    try {
-      const pagos = await obtenerResumenPagos(fechaEcuador());
-
-      if (cobrado) {
-        cobrado.textContent = moneda(pagos.cobradoHoy);
-      }
-
-      if (porCobrar) {
-        porCobrar.textContent = moneda(pagos.porCobrar);
-      }
-
-      if (deudores) {
-        deudores.textContent = `${pagos.pedidosPorCobrar} pedidos entregados con saldo pendiente`;
-      }
-
-      const aporteAcumulado = document.getElementById(
-        "estadisticas-aporte-acumulado",
-      );
-
-      if (aporteAcumulado) {
-        aporteAcumulado.textContent = moneda(
-          pagos.aporteDesarrolladorAcumulado,
+    async function cargarResumenFinanciero(fecha: string) {
+      const solicitud = ++solicitudFinanciera;
+      try {
+        const periodos = obtenerPeriodos(fecha);
+        const resumenes = await Promise.all(
+          periodos.map((periodo) =>
+            obtenerResumenPagosPeriodo(periodo.desde, periodo.hasta),
+          ),
         );
-      }
-    } catch (caught) {
-      console.error("No se pudo cargar el resumen financiero:", caught);
+        if (solicitud !== solicitudFinanciera) return;
 
-      if (error) {
-        error.textContent =
-          caught instanceof Error
-            ? caught.message
-            : "No se pudo cargar el resumen financiero.";
+        periodos.forEach(({ id }, indice) => {
+          const resumen = resumenes[indice];
+          const cobrado = document.querySelector(`[data-cobrado="${id}"]`);
+          const porCobrar = document.querySelector(`[data-por-cobrar="${id}"]`);
+          const pedidos = document.querySelector(`[data-pedidos="${id}"]`);
+          if (cobrado) cobrado.textContent = moneda(resumen.cobrado);
+          if (porCobrar) porCobrar.textContent = moneda(resumen.porCobrar);
+          if (pedidos) {
+            pedidos.textContent = `${resumen.pedidosPorCobrar} pedidos entregados con saldo`;
+          }
+        });
+      } catch (caught) {
+        console.error("No se pudo cargar el resumen financiero:", caught);
 
-        error.classList.remove("hidden");
+        if (error) {
+          error.textContent =
+            caught instanceof Error
+              ? caught.message
+              : "No se pudo cargar el resumen financiero.";
+
+          error.classList.remove("hidden");
+        }
       }
     }
-  }
 
-  if (fechaInput) {
-    fechaInput.value = fechaEcuador();
+    if (fechaInput) {
+      fechaInput.value = fechaEcuador();
 
-    fechaInput.addEventListener("change", () => {
-      if (fechaInput.value) {
-        void cargarProduccion(fechaInput.value);
+      fechaInput.addEventListener("change", () => {
+        if (fechaInput.value) {
+          void cargarProduccion(fechaInput.value);
+        }
+      });
+
+      void cargarProduccion(fechaInput.value);
+    }
+
+    if (periodoAporteInput) {
+      periodoAporteInput.value = fechaEcuador().slice(0, 7);
+      periodoAporteInput.addEventListener("change", () => {
+        void cargarAporteDesarrollador(periodoAporteInput.value);
+      });
+    }
+
+    aporteForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!periodoAporteInput || !aporteMontoInput || !aporteGuardar) return;
+
+      const monto = Number(aporteMontoInput.value);
+      if (!Number.isFinite(monto) || monto <= 0) {
+        aporteMontoInput.setCustomValidity("Ingresa un monto mayor a 0.");
+        aporteMontoInput.reportValidity();
+        return;
+      }
+
+      aporteMontoInput.setCustomValidity("");
+      aporteGuardar.disabled = true;
+      aporteGuardar.textContent = "Guardando...";
+      aporteError?.classList.add("hidden");
+
+      try {
+        await registrarPagoDesarrollador(periodoAporteInput.value, monto);
+        aporteMontoInput.value = "";
+        await cargarAporteDesarrollador(periodoAporteInput.value);
+        mostrarNotificacion(
+          `Abono de ${moneda(monto)} registrado correctamente.`,
+        );
+      } catch (caught) {
+        const mensaje =
+          caught instanceof Error
+            ? caught.message
+            : "No se pudo registrar el abono.";
+        if (aporteError) {
+          aporteError.textContent = mensaje;
+          aporteError.classList.remove("hidden");
+        }
+        mostrarNotificacion(mensaje, true);
+      } finally {
+        aporteGuardar.textContent = "Guardar abono";
+        aporteGuardar.disabled = Number(aporteMontoInput.max) <= 0;
       }
     });
 
-    void cargarProduccion(fechaInput.value);
-  }
+    aporteMontoInput?.addEventListener("input", () => {
+      aporteMontoInput.setCustomValidity("");
+    });
 
-  void cargarResumenFinanciero();
+    void cargarResumenFinanciero(fechaEcuador());
 
-  window.addEventListener("centro-control:actualizar-datos", () => {
-    if (fechaInput?.value) {
-      void cargarProduccion(fechaInput.value);
-    }
-    void cargarResumenFinanciero();
-  });
-</script>
+    window.addEventListener("centro-control:actualizar-datos", () => {
+      if (fechaInput?.value) {
+        void cargarProduccion(fechaInput.value);
+      }
+      void cargarResumenFinanciero(fechaEcuador());
+      if (
+        periodoAporteInput?.value &&
+        !modalAporte?.classList.contains("hidden")
+      ) {
+        void cargarAporteDesarrollador(periodoAporteInput.value);
+      }
+    });
+  </script>
+</section>

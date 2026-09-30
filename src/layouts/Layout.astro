@@ -37,8 +37,71 @@ const { title = "Centro de Control" } = Astro.props;
   <body>
     <slot />
 
+    <div
+      id="notificaciones-globales"
+      class="pointer-events-none fixed left-1/2 top-4 z-200 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+    </div>
+
     <script>
       import "flowbite";
+      import { Dismiss } from "flowbite";
+
+      const notificaciones = document.getElementById("notificaciones-globales");
+      let dismissActual: Dismiss | null = null;
+      let temporizadorNotificacion = 0;
+
+      window.addEventListener("centro-control:notificacion", (evento) => {
+        const detalle = (
+          evento as CustomEvent<{
+            mensaje?: string;
+            tipo?: "success" | "error" | "info";
+          }>
+        ).detail;
+        if (!notificaciones || !detalle?.mensaje) return;
+
+        window.clearTimeout(temporizadorNotificacion);
+        dismissActual?.destroyAndRemoveInstance();
+
+        const esError = detalle.tipo === "error";
+        const toast = document.createElement("div");
+        toast.className = esError
+          ? "pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-red-200 bg-white p-4 text-sm text-slate-700 shadow-lg transition-opacity"
+          : "pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-emerald-200 bg-white p-4 text-sm text-slate-700 shadow-lg transition-opacity";
+        toast.setAttribute("role", esError ? "alert" : "status");
+
+        const icono = document.createElement("span");
+        icono.className = esError
+          ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 font-bold text-red-700"
+          : "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700";
+        icono.textContent = esError ? "!" : detalle.tipo === "info" ? "i" : "✓";
+        icono.setAttribute("aria-hidden", "true");
+
+        const texto = document.createElement("p");
+        texto.className = "min-w-0 flex-1 font-medium";
+        texto.textContent = detalle.mensaje;
+
+        const cerrar = document.createElement("button");
+        cerrar.type = "button";
+        cerrar.className =
+          "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800";
+        cerrar.setAttribute("aria-label", "Cerrar notificación");
+        cerrar.innerHTML =
+          '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="m6 6 12 12M18 6 6 18"></path></svg>';
+        toast.append(icono, texto, cerrar);
+        notificaciones.replaceChildren(toast);
+
+        dismissActual = new Dismiss(toast, cerrar, {
+          duration: 250,
+          onHide: () => window.setTimeout(() => toast.remove(), 260),
+        });
+        temporizadorNotificacion = window.setTimeout(
+          () => dismissActual?.hide(),
+          4500,
+        );
+      });
     </script>
   </body>
 </html>

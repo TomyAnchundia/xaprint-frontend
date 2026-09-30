@@ -50,45 +50,45 @@ a {
 
 html[data-theme="dark"] {
   color-scheme: dark;
-  background: #0b1220;
-  color: #e2e8f0;
+  background: #0b0d0b;
+  color: #e6e9e3;
 }
 
 html[data-theme="dark"] body,
 html[data-theme="dark"] .dashboard-shell {
-  background: #0b1220;
-  color: #e2e8f0;
+  background: #0b0d0b;
+  color: #e6e9e3;
 }
 
 html[data-theme="dark"] .pedido-row:hover,
 html[data-theme="dark"] .pedido-row:focus-visible,
 html[data-theme="dark"] .pedido-row:active {
-  background-color: #1b2a3b;
+  background-color: #1b1f1b;
 }
 
 html[data-theme="dark"] .pedido-row:hover .pedido-cliente,
 html[data-theme="dark"] .pedido-row:focus-visible .pedido-cliente,
 html[data-theme="dark"] .pedido-row:hover .pedido-servicio,
 html[data-theme="dark"] .pedido-row:focus-visible .pedido-servicio {
-  color: #e2e8f0;
+  color: #e6e9e3;
 }
 
 html[data-theme="dark"] .pedido-row:hover .pedido-servicio,
 html[data-theme="dark"] .pedido-row:focus-visible .pedido-servicio {
-  background-color: #26364a;
+  background-color: #252a25;
 }
 
 html[data-theme="dark"] .pedido-row:hover .pedido-precio,
 html[data-theme="dark"] .pedido-row:focus-visible .pedido-precio {
-  background-color: #1d3944;
-  color: #a8e5ed;
+  background-color: #1a251c;
+  color: #b8ddc3;
 }
 
 html[data-theme="dark"] .pedido-row:hover .pedido-accion,
 html[data-theme="dark"] .pedido-row:focus-visible .pedido-accion {
-  border-color: #3b5269;
-  background-color: #26364a;
-  color: #a8e5ed;
+  border-color: #4a5549;
+  background-color: #252a25;
+  color: #b8ddc3;
 }
 
 html[data-theme="dark"] :is(
@@ -101,19 +101,19 @@ html[data-theme="dark"] :is(
     [class~="bg-gray-50"],
     [class~="bg-gray-100"]
   ) {
-  background-color: #172033;
+  background-color: #171a17;
 }
 
 html[data-theme="dark"] :is(
     [class~="bg-slate-200"],
     [class~="bg-gray-200"]
   ) {
-  background-color: #334155;
+  background-color: #292d29;
 }
 
 html[data-theme="dark"] .stat-card {
-  border-color: #2b4149;
-  background-color: #14232c;
+  border-color: #303a30;
+  background-color: #151915;
 }
 
 html[data-theme="dark"] :is(
@@ -122,7 +122,7 @@ html[data-theme="dark"] :is(
     [class~="text-gray-900"],
     [class~="text-gray-800"]
   ) {
-  color: #e2e8f0;
+  color: #e6e9e3;
 }
 
 html[data-theme="dark"] :is(
@@ -135,7 +135,7 @@ html[data-theme="dark"] :is(
     [class~="text-gray-500"],
     [class~="text-gray-400"]
   ) {
-  color: #a8b4c7;
+  color: #b2b9ae;
 }
 
 html[data-theme="dark"] :is(
@@ -145,14 +145,14 @@ html[data-theme="dark"] :is(
     [class~="border-gray-100"],
     [class~="border-gray-200"]
   ) {
-  border-color: #344155;
+  border-color: #3b423a;
 }
 
 html[data-theme="dark"] :is(
     [class~="divide-slate-100"],
     [class~="divide-slate-200"]
   ) > :not(:last-child) {
-  border-color: #344155;
+  border-color: #3b423a;
 }
 
 html[data-theme="dark"] :is(
@@ -160,14 +160,14 @@ html[data-theme="dark"] :is(
     [class~="bg-cyan-50/50"],
     [class~="bg-cyan-100"]
   ) {
-  background-color: #123440;
+  background-color: #1a251c;
 }
 
 html[data-theme="dark"] :is(
     [class~="text-cyan-800"],
     [class~="text-cyan-900"]
   ) {
-  color: #8de0eb;
+  color: #b8ddc3;
 }
 
 html[data-theme="dark"] :is(
@@ -220,9 +220,9 @@ html[data-theme="dark"] :is(
     .historial-filtro-fecha,
     .tarifa-filtro
   )[aria-pressed="true"] {
-  border-color: #52627a;
-  background-color: #334155;
-  color: #f1f5f9;
+  border-color: #576052;
+  background-color: #252a25;
+  color: #f0f2ed;
 }
 
 html[data-theme="dark"] :is(
@@ -233,7 +233,7 @@ html[data-theme="dark"] :is(
     .tarifa-filtro
   )[aria-pressed="false"] {
   background-color: transparent;
-  color: #b8c4d6;
+  color: #b7bdb3;
 }
 
 html[data-theme="dark"] :is(
@@ -243,8 +243,8 @@ html[data-theme="dark"] :is(
     .historial-filtro-fecha,
     .tarifa-filtro
   )[aria-pressed="false"]:hover {
-  background-color: #263449;
-  color: #f1f5f9;
+  background-color: #252a25;
+  color: #f0f2ed;
 }
 
 html[data-theme="dark"] :is(
@@ -252,18 +252,42 @@ html[data-theme="dark"] :is(
     [class~="hover:bg-slate-50"],
     [class~="hover:bg-slate-100"]
   ):hover {
-  background-color: #263449;
+  background-color: #252a25;
+}
+
+html[data-theme="dark"] :is(
+    [id^="modal-"],
+    [id$="-modal"],
+    [role="dialog"]
+  ) :is(
+    [class~="hover:bg-white"],
+    [class~="hover:bg-slate-50"],
+    [class~="hover:bg-slate-100"],
+    [class~="hover:bg-slate-200"],
+    [class~="hover:bg-cyan-50"],
+    [class~="hover:bg-amber-50"],
+    [class~="hover:bg-red-50"],
+    [class~="hover:bg-red-100"],
+    [class~="hover:bg-emerald-50"],
+    [class~="hover:bg-emerald-100"],
+    [class~="hover:bg-violet-50"],
+    [class~="hover:bg-violet-100"],
+    [class~="hover:bg-violet-200"]
+  ):hover {
+  border-color: #4b5348;
+  background-color: #252a25;
+  color: #ecefe9;
 }
 
 html[data-theme="dark"] :is(input, select, textarea) {
-  color: #e2e8f0;
-  border-color: #475569;
-  background-color: #111a2b;
+  color: #e6e9e3;
+  border-color: #3b413b;
+  background-color: #121512;
 }
 
 html[data-theme="dark"] input::placeholder,
 html[data-theme="dark"] textarea::placeholder {
-  color: #94a3b8;
+  color: #9da599;
 }
 
 @media (max-width: 1023px) {

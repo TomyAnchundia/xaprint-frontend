@@ -123,6 +123,49 @@
       </div>
     </form>
   </div>
+  <div
+    id="cliente-eliminar-modal"
+    class="fixed inset-0 z-120 hidden items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cliente-eliminar-titulo"
+  >
+    <button
+      id="cliente-eliminar-backdrop"
+      type="button"
+      class="absolute inset-0 cursor-default"
+      aria-label="Cerrar confirmación de eliminación"></button>
+    <section
+      class="relative w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-2xl"
+    >
+      <h3
+        id="cliente-eliminar-titulo"
+        class="text-base font-bold text-slate-900"
+      >
+        Eliminar cliente
+      </h3>
+      <p class="mt-2 text-sm leading-6 text-slate-600">
+        ¿Confirmas que deseas eliminar a <strong
+          id="cliente-eliminar-nombre"
+          class="font-semibold text-slate-900"></strong>? Esta acción no se
+        puede deshacer.
+      </p>
+      <div class="mt-5 flex justify-end gap-2">
+        <button
+          id="cliente-eliminar-cancelar"
+          type="button"
+          class="h-9 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >No, conservar</button
+        >
+        <button
+          id="cliente-eliminar-confirmar"
+          type="button"
+          class="h-9 rounded-lg bg-red-700 px-4 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >Sí, eliminar</button
+        >
+      </div>
+    </section>
+  </div>
   <p
     id="clientes-notificacion"
     class="hidden rounded-lg border px-4 py-3 text-sm"
@@ -145,6 +188,7 @@
     type Cliente,
     type ResumenDeudaCliente,
   } from "../../services/api";
+  import { mostrarNotificacion } from "../../utils/notificaciones";
 
   const lista = document.getElementById("clientes-lista");
   const detalle = document.getElementById("cliente-detalle");
@@ -164,12 +208,18 @@
   const formTitulo = document.getElementById("cliente-form-titulo");
   const error = document.getElementById("cliente-form-error");
   const notificacion = document.getElementById("clientes-notificacion");
+  const modalEliminar = document.getElementById("cliente-eliminar-modal");
+  const nombreEliminar = document.getElementById("cliente-eliminar-nombre");
+  const botonEliminarConfirmar = document.getElementById(
+    "cliente-eliminar-confirmar",
+  ) as HTMLButtonElement | null;
 
   let clientes: Cliente[] = [];
   let resumenesDeuda: ResumenDeudaCliente[] = [];
   let clienteSeleccionado: Cliente | null = null;
   let editandoId: number | null = null;
   let solicitudDetalle = 0;
+  let clientePendienteEliminar: Cliente | null = null;
 
   function normalizar(texto: string) {
     return texto
@@ -185,6 +235,23 @@
     notificacion.className = esError
       ? "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
       : "rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800";
+  }
+
+  function abrirConfirmacionEliminar(cliente: Cliente) {
+    clientePendienteEliminar = cliente;
+    if (nombreEliminar) nombreEliminar.textContent = cliente.nombre;
+    modalEliminar?.classList.remove("hidden");
+    modalEliminar?.classList.add("flex");
+    document.getElementById("cliente-eliminar-cancelar")?.focus();
+  }
+
+  function cerrarConfirmacionEliminar(notificarCancelacion = true) {
+    modalEliminar?.classList.add("hidden");
+    modalEliminar?.classList.remove("flex");
+    clientePendienteEliminar = null;
+    if (notificarCancelacion) {
+      mostrarNotificacion("Eliminación de cliente cancelada.", "info");
+    }
   }
 
   function renderLista() {
@@ -258,7 +325,7 @@
       ?.addEventListener("click", () => abrirFormulario(cliente));
     detalle
       .querySelector("#cliente-eliminar")
-      ?.addEventListener("click", () => void borrarCliente(cliente));
+      ?.addEventListener("click", () => abrirConfirmacionEliminar(cliente));
 
     try {
       const [deuda, pagosCliente] = await Promise.all([
@@ -390,22 +457,48 @@
     }
   }
 
-  async function borrarCliente(cliente: Cliente) {
-    if (!window.confirm(`¿Eliminar a ${cliente.nombre}?`)) return;
+  async function borrarCliente() {
+    const cliente = clientePendienteEliminar;
+    if (!cliente || !botonEliminarConfirmar) return;
+    botonEliminarConfirmar.disabled = true;
+    botonEliminarConfirmar.textContent = "Eliminando...";
     try {
       await eliminarCliente(cliente.id);
+      cerrarConfirmacionEliminar(false);
       clienteSeleccionado = null;
       await cargar();
       avisar("Cliente eliminado.");
+      mostrarNotificacion(`Cliente ${cliente.nombre} eliminado.`);
     } catch (caught) {
-      avisar(
+      const mensaje =
         caught instanceof Error
           ? caught.message
-          : "No se pudo eliminar el cliente.",
-        true,
-      );
+          : "No se pudo eliminar el cliente.";
+      avisar(mensaje, true);
+      mostrarNotificacion(mensaje, "error");
+    } finally {
+      botonEliminarConfirmar.disabled = false;
+      botonEliminarConfirmar.textContent = "Sí, eliminar";
     }
   }
+
+  botonEliminarConfirmar?.addEventListener("click", () => {
+    void borrarCliente();
+  });
+  document
+    .getElementById("cliente-eliminar-cancelar")
+    ?.addEventListener("click", () => cerrarConfirmacionEliminar());
+  document
+    .getElementById("cliente-eliminar-backdrop")
+    ?.addEventListener("click", () => cerrarConfirmacionEliminar());
+  window.addEventListener("keydown", (event) => {
+    if (
+      event.key === "Escape" &&
+      !modalEliminar?.classList.contains("hidden")
+    ) {
+      cerrarConfirmacionEliminar();
+    }
+  });
 
   document
     .getElementById("clientes-nuevo")

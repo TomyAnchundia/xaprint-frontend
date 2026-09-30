@@ -57,6 +57,14 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         </div>
 
         <div class="flex shrink-0 items-center gap-2">
+          <button
+            id="detalle-eliminar"
+            type="button"
+            class="hidden h-9 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 transition hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-200"
+          >
+            Eliminar
+          </button>
+
           <!-- Editar -->
           <button
             id="detalle-editar"
@@ -642,6 +650,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       actualizarPedido,
       cambiarEstadoPedido,
       cambiarPrecioEspecial,
+      eliminarPedido,
       obtenerHistorialPedido,
       obtenerPedido,
       registrarPagoPedido,
@@ -649,6 +658,8 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     } from "../../services/api";
 
     import { suscribirsePedidos } from "../../services/pedidos-store";
+    import { obtenerUsuario } from "../../services/auth";
+    import { mostrarNotificacion } from "../../utils/notificaciones";
     import { formatearFecha } from "../../utils/fecha";
     import {
       copiarMensaje,
@@ -690,6 +701,14 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     const editar = document.getElementById(
       "detalle-editar",
     ) as HTMLButtonElement | null;
+    const eliminar = document.getElementById(
+      "detalle-eliminar",
+    ) as HTMLButtonElement | null;
+
+    if (obtenerUsuario()?.rol === "ADMIN") {
+      eliminar?.classList.remove("hidden");
+      eliminar?.classList.add("inline-flex");
+    }
 
     const titulo = document.getElementById("detalle-titulo");
     const loading = document.getElementById("detalle-loading");
@@ -936,6 +955,18 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     const modalPagoConfirmar = document.getElementById(
       "modal-confirmar-pago-confirmar",
     ) as HTMLButtonElement | null;
+    const modalEliminarPedido = document.getElementById(
+      "modal-eliminar-pedido",
+    );
+    const modalEliminarPedidoTexto = document.getElementById(
+      "modal-eliminar-pedido-texto",
+    );
+    const modalEliminarPedidoCancelar = document.getElementById(
+      "modal-eliminar-pedido-cancelar",
+    );
+    const modalEliminarPedidoConfirmar = document.getElementById(
+      "modal-eliminar-pedido-confirmar",
+    ) as HTMLButtonElement | null;
 
     /*
      * --------------------------------------------------------------------------
@@ -949,6 +980,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     let procesandoPrecioEspecial = false;
     let procesandoCostoDiseno = false;
     let procesandoPago = false;
+    let procesandoEliminacion = false;
     let modoModalPago: "registrar" | "revertir" = "registrar";
 
     /*
@@ -1231,6 +1263,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
         renderizarPedido(pedidoActualizado);
         ocultarModalQuitarPrecioEspecial();
+        mostrarNotificacion("El precio especial fue eliminado.");
       } catch (errorApi) {
         console.error("No se pudo quitar el precio especial:", errorApi);
 
@@ -1248,6 +1281,12 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
             precioEspecialError.classList.add("hidden");
           }, 4000);
         }
+        mostrarNotificacion(
+          errorApi instanceof Error
+            ? errorApi.message
+            : "No se pudo quitar el precio especial.",
+          "error",
+        );
       } finally {
         procesandoPrecioEspecial = false;
 
@@ -1344,6 +1383,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         const registros = await obtenerHistorialPedido(pedidoActualizado.id);
         renderizarHistorial(registros);
         ocultarModalPago();
+        mostrarNotificacion(
+          modoModalPago === "revertir"
+            ? "Último pago revertido."
+            : "Pago registrado correctamente.",
+        );
       } catch (errorApi) {
         console.error("No se pudo actualizar el pago del pedido:", errorApi);
         if (modalPagoError) {
@@ -1353,6 +1397,12 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
               : "No se pudo actualizar el estado de pago.";
           modalPagoError.classList.remove("hidden");
         }
+        mostrarNotificacion(
+          errorApi instanceof Error
+            ? errorApi.message
+            : "No se pudo actualizar el estado de pago.",
+          "error",
+        );
       } finally {
         procesandoPago = false;
         modalPagoConfirmar.disabled = false;
@@ -1759,11 +1809,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
     async function cambiarEstado(nuevoEstado: EstadoPedido) {
       if (!pedidoActual || procesandoEstado) {
-        return;
+        return false;
       }
 
       if (pedidoActual.estado === nuevoEstado) {
-        return;
+        return false;
       }
 
       procesandoEstado = true;
@@ -1801,6 +1851,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         const nuevoHistorial = await obtenerHistorialPedido(pedidoActual.id);
 
         renderizarHistorial(nuevoHistorial);
+        if (nuevoEstado !== "CANCELADO") {
+          mostrarNotificacion(
+            `Pedido #${pedidoActual.id}: estado actualizado.`,
+          );
+        }
 
         if (
           nuevoEstado === "ENTREGADO" &&
@@ -1808,6 +1863,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         ) {
           mostrarModalPago("registrar");
         }
+        return true;
       } catch (errorApi) {
         console.error("No se pudo cambiar el estado:", errorApi);
 
@@ -1819,6 +1875,13 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
           accionesError.classList.remove("hidden");
         }
+        mostrarNotificacion(
+          errorApi instanceof Error
+            ? errorApi.message
+            : "No se pudo cambiar el estado.",
+          "error",
+        );
+        return false;
       } finally {
         procesandoEstado = false;
 
@@ -1921,10 +1984,12 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
     modalQuitarPrecioEspecialCancelar?.addEventListener("click", () => {
       ocultarModalQuitarPrecioEspecial();
+      mostrarNotificacion("Se conservó el precio especial.", "info");
     });
 
     modalQuitarPrecioEspecialBackdrop?.addEventListener("click", () => {
       ocultarModalQuitarPrecioEspecial();
+      mostrarNotificacion("Se conservó el precio especial.", "info");
     });
 
     modalQuitarPrecioEspecialConfirmar?.addEventListener("click", () => {
@@ -1980,10 +2045,29 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       );
     });
 
-    modalPagoCancelar?.addEventListener("click", ocultarModalPago);
-    modalPagoBackdrop?.addEventListener("click", ocultarModalPago);
+    modalPagoCancelar?.addEventListener("click", () => {
+      ocultarModalPago();
+      mostrarNotificacion("No se hicieron cambios en el pago.", "info");
+    });
+    modalPagoBackdrop?.addEventListener("click", () => {
+      ocultarModalPago();
+      mostrarNotificacion("No se hicieron cambios en el pago.", "info");
+    });
     modalPagoConfirmar?.addEventListener("click", () => {
       void confirmarAccionPago();
+    });
+    modalEliminarPedidoCancelar?.addEventListener("click", () => {
+      ocultarModalElement(modalEliminarPedido);
+      mostrarNotificacion("Eliminación del pedido cancelada.", "info");
+    });
+    document
+      .getElementById("modal-eliminar-pedido-backdrop")
+      ?.addEventListener("click", () => {
+        ocultarModalElement(modalEliminarPedido);
+        mostrarNotificacion("Eliminación del pedido cancelada.", "info");
+      });
+    modalEliminarPedidoConfirmar?.addEventListener("click", () => {
+      void confirmarEliminacionPedido();
     });
 
     /*
@@ -2006,6 +2090,51 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       );
     });
 
+    eliminar?.addEventListener("click", () => {
+      if (!pedidoActual || procesandoEliminacion) return;
+      if (modalEliminarPedidoTexto) {
+        modalEliminarPedidoTexto.textContent = `¿Eliminar el pedido #${pedidoActual.id} de ${pedidoActual.cliente?.nombre ?? "este cliente"}? Esta acción no se puede deshacer.`;
+      }
+      mostrarModalElement(modalEliminarPedido);
+    });
+
+    async function confirmarEliminacionPedido() {
+      const botonEliminar = eliminar;
+      if (
+        !pedidoActual ||
+        procesandoEliminacion ||
+        !modalEliminarPedidoConfirmar ||
+        !botonEliminar
+      )
+        return;
+      procesandoEliminacion = true;
+      modalEliminarPedidoConfirmar.disabled = true;
+      modalEliminarPedidoConfirmar.textContent = "Eliminando...";
+      botonEliminar.disabled = true;
+      botonEliminar.textContent = "Eliminando...";
+
+      try {
+        const pedidoId = pedidoActual.id;
+        await eliminarPedido(pedidoId);
+        ocultarModalElement(modalEliminarPedido);
+        ocultarOverlay();
+        mostrarNotificacion(`Pedido #${pedidoId} eliminado.`);
+      } catch (caught) {
+        mostrarNotificacion(
+          caught instanceof Error
+            ? caught.message
+            : "No se pudo eliminar el pedido.",
+          "error",
+        );
+      } finally {
+        procesandoEliminacion = false;
+        botonEliminar.disabled = false;
+        botonEliminar.textContent = "Eliminar";
+        modalEliminarPedidoConfirmar.disabled = false;
+        modalEliminarPedidoConfirmar.textContent = "Eliminar";
+      }
+    }
+
     /*
      * --------------------------------------------------------------------------
      * Modal de cancelación
@@ -2014,10 +2143,12 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
     modalCancelarNo?.addEventListener("click", () => {
       ocultarModalCancelar();
+      mostrarNotificacion("El pedido no fue cancelado.", "info");
     });
 
     modalCancelarBackdrop?.addEventListener("click", () => {
       ocultarModalCancelar();
+      mostrarNotificacion("El pedido no fue cancelado.", "info");
     });
 
     modalCancelarSi?.addEventListener("click", async () => {
@@ -2027,7 +2158,10 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
       ocultarModalCancelar();
 
-      await cambiarEstado("CANCELADO");
+      const pedidoId = pedidoActual.id;
+      if (await cambiarEstado("CANCELADO")) {
+        mostrarNotificacion(`Pedido #${pedidoId} cancelado.`);
+      }
     });
 
     /*
@@ -2052,10 +2186,20 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       }
 
       if (
+        modalEliminarPedido &&
+        !modalEliminarPedido.classList.contains("hidden")
+      ) {
+        ocultarModalElement(modalEliminarPedido);
+        mostrarNotificacion("Eliminación del pedido cancelada.", "info");
+        return;
+      }
+
+      if (
         modalQuitarPrecioEspecial &&
         !modalQuitarPrecioEspecial.classList.contains("hidden")
       ) {
         ocultarModalQuitarPrecioEspecial();
+        mostrarNotificacion("Se conservó el precio especial.", "info");
         return;
       }
 
@@ -2074,11 +2218,13 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
       if (modalPago && !modalPago.classList.contains("hidden")) {
         ocultarModalPago();
+        mostrarNotificacion("No se hicieron cambios en el pago.", "info");
         return;
       }
 
       if (modalCancelar && !modalCancelar.classList.contains("hidden")) {
         ocultarModalCancelar();
+        mostrarNotificacion("El pedido no fue cancelado.", "info");
         return;
       }
 

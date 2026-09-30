@@ -76,7 +76,15 @@ export async function cargarPedidos() {
   }
 }
 
-function actualizarPedido(pedidoActualizado: Pedido) {
+function actualizarPedido(
+  pedidoActualizado: Pedido | { id: number; eliminado: true },
+) {
+  if ("eliminado" in pedidoActualizado && pedidoActualizado.eliminado) {
+    pedidos = pedidos.filter((pedido) => pedido.id !== pedidoActualizado.id);
+    notificarPedidos();
+    return;
+  }
+
   const indice = pedidos.findIndex(
     (pedido) => pedido.id === pedidoActualizado.id,
   );

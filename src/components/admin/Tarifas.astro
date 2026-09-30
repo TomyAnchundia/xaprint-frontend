@@ -66,14 +66,16 @@
             ><th class="px-4 py-3 font-semibold">Servicio</th><th
               class="px-4 py-3 font-semibold">Ancho</th
             ><th class="px-4 py-3 font-semibold">Rango</th><th
-              class="px-4 py-3 text-right font-semibold">Precio</th
+              class="px-4 py-3 text-right font-semibold">Precio / m</th
+            ><th class="px-4 py-3 text-right font-semibold"
+              >A cobrar (referencia)</th
             ><th class="px-4 py-3 font-semibold">Estado</th><th
               class="px-4 py-3"></th></tr
           >
         </thead>
         <tbody id="tarifas-body" class="divide-y divide-slate-100"
           ><tr
-            ><td colspan="6" class="px-4 py-8 text-center text-slate-500"
+            ><td colspan="7" class="px-4 py-8 text-center text-slate-500"
               >Cargando tarifas...</td
             ></tr
           ></tbody
@@ -194,6 +196,7 @@
   import {
     actualizarTarifa,
     cambiarTarifaActiva,
+    calcularCotizacionTarifa,
     crearTarifa,
     obtenerTarifas,
     type Tarifa,
@@ -226,6 +229,13 @@
   let servicioFiltro = "TODOS";
   let editandoId: number | null = null;
 
+  function moneda(valor: number) {
+    return new Intl.NumberFormat("es-EC", {
+      style: "currency",
+      currency: "USD",
+    }).format(valor);
+  }
+
   function mostrarAviso(texto: string, esError = false) {
     if (!aviso) return;
     aviso.textContent = texto;
@@ -246,10 +256,39 @@
       ? filtradas
           .map(
             (tarifa) =>
-              `<tr class="transition hover:bg-amber-50/50"><td class="px-4 py-3 font-semibold text-slate-800">${tarifa.servicio === "TEXTIL" ? "DTF Textil" : "DTF UV"}</td><td class="px-4 py-3 text-slate-600">${tarifa.ancho} cm</td><td class="px-4 py-3 text-slate-600">${tarifa.desde} – ${tarifa.hasta ?? "∞"} cm</td><td class="px-4 py-3 text-right font-bold text-slate-900">$${tarifa.precio.toFixed(2)}</td><td class="px-4 py-3"><span class="rounded-full px-2.5 py-1 text-xs font-semibold ${tarifa.activo ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-500"}">${tarifa.activo ? "Activa" : "Inactiva"}</span></td><td class="px-4 py-3 text-right"><div class="flex justify-end gap-2"><button type="button" data-editar="${tarifa.id}" class="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-white">Editar</button><button type="button" data-activa="${tarifa.id}" data-valor="${!tarifa.activo}" class="rounded-md border px-2.5 py-1.5 text-xs font-semibold ${tarifa.activo ? "border-red-200 text-red-700 hover:bg-red-50" : "border-emerald-200 text-emerald-800 hover:bg-emerald-50"}">${tarifa.activo ? "Desactivar" : "Activar"}</button></div></td></tr>`,
+              `<tr class="transition hover:bg-amber-50/50"><td class="px-4 py-3 font-semibold text-slate-800">${tarifa.servicio === "TEXTIL" ? "DTF Textil" : "DTF UV"}</td><td class="px-4 py-3 text-slate-600">${tarifa.ancho} cm</td><td class="px-4 py-3 text-slate-600">${tarifa.desde} – ${tarifa.hasta ?? "∞"} cm</td><td class="px-4 py-3 text-right font-bold text-slate-900">${moneda(tarifa.precio)}</td><td class="px-4 py-3 text-right"><span data-cotizacion="${tarifa.id}" class="font-bold tabular-nums text-slate-900">Calculando...</span><span data-cotizacion-largo="${tarifa.id}" class="mt-0.5 block text-[10px] text-slate-500"></span></td><td class="px-4 py-3"><span class="rounded-full px-2.5 py-1 text-xs font-semibold ${tarifa.activo ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-500"}">${tarifa.activo ? "Activa" : "Inactiva"}</span></td><td class="px-4 py-3 text-right"><div class="flex justify-end gap-2"><button type="button" data-editar="${tarifa.id}" class="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-white">Editar</button><button type="button" data-activa="${tarifa.id}" data-valor="${!tarifa.activo}" class="rounded-md border px-2.5 py-1.5 text-xs font-semibold ${tarifa.activo ? "border-red-200 text-red-700 hover:bg-red-50" : "border-emerald-200 text-emerald-800 hover:bg-emerald-50"}">${tarifa.activo ? "Desactivar" : "Activar"}</button></div></td></tr>`,
           )
           .join("")
-      : `<tr><td colspan="6" class="px-4 py-10 text-center text-sm text-slate-500">No hay tarifas para este filtro.</td></tr>`;
+      : `<tr><td colspan="7" class="px-4 py-10 text-center text-sm text-slate-500">No hay tarifas para este filtro.</td></tr>`;
+    filtradas.forEach((tarifa) => {
+      const largoMinimo = Math.max(tarifa.desde, 0.01);
+      const largo =
+        tarifa.hasta !== null && largoMinimo >= tarifa.hasta
+          ? (tarifa.desde + tarifa.hasta) / 2
+          : largoMinimo;
+      const valor = cuerpo.querySelector<HTMLElement>(
+        `[data-cotizacion="${tarifa.id}"]`,
+      );
+      const referencia = cuerpo.querySelector<HTMLElement>(
+        `[data-cotizacion-largo="${tarifa.id}"]`,
+      );
+      if (referencia) referencia.textContent = `a ${largo} cm · sin diseño`;
+      void calcularCotizacionTarifa(tarifa.id, largo)
+        .then((cotizacion) => {
+          if (!valor?.isConnected) return;
+          const importe = Number(
+            cotizacion.valorCobrar ??
+              cotizacion.valor_cobrar ??
+              cotizacion.precio,
+          );
+          valor.textContent = Number.isFinite(importe)
+            ? moneda(importe)
+            : "No disponible";
+        })
+        .catch(() => {
+          if (valor?.isConnected) valor.textContent = "No disponible";
+        });
+    });
     cuerpo
       .querySelectorAll<HTMLButtonElement>("[data-editar]")
       .forEach((boton) =>
@@ -275,13 +314,13 @@
 
   async function cargar() {
     if (cuerpo)
-      cuerpo.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">Cargando tarifas...</td></tr>`;
+      cuerpo.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">Cargando tarifas...</td></tr>`;
     try {
       tarifas = await obtenerTarifas();
       renderizar();
     } catch (caught) {
       if (cuerpo)
-        cuerpo.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-red-700">${caught instanceof Error ? caught.message : "No se pudieron cargar las tarifas."}</td></tr>`;
+        cuerpo.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-700">${caught instanceof Error ? caught.message : "No se pudieron cargar las tarifas."}</td></tr>`;
     }
   }
 

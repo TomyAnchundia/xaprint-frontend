@@ -78,6 +78,29 @@ export interface ResumenPagos {
   aporteDesarrolladorAcumulado: number;
 }
 
+export interface ResumenPagosPeriodo {
+  desde: string;
+  hasta: string;
+  cobrado: number;
+  porCobrar: number;
+  pedidosPorCobrar: number;
+}
+
+export interface PagoDesarrollador {
+  id: number;
+  monto: number;
+  fecha: string;
+  usuario: { id: number; username: string };
+}
+
+export interface ResumenAporteDesarrollador {
+  periodo: string;
+  aporteDevengado: number;
+  totalPagado: number;
+  pendiente: number;
+  pagos: PagoDesarrollador[];
+}
+
 export interface ResultadoPagoPedido {
   pagoId?: number;
   pagoRevertido?: number;
@@ -238,6 +261,10 @@ export async function obtenerPedido(id: number): Promise<Pedido> {
   return request<Pedido>(`/pedidos/${id}`);
 }
 
+export async function eliminarPedido(id: number): Promise<Pedido> {
+  return request<Pedido>(`/pedidos/${id}`, { method: "DELETE" });
+}
+
 export async function obtenerHistorialPedido(
   id: number,
 ): Promise<HistorialPedido[]> {
@@ -377,6 +404,35 @@ export async function obtenerResumenPagos(
   );
 }
 
+export async function obtenerResumenPagosPeriodo(
+  desde: string,
+  hasta: string,
+): Promise<ResumenPagosPeriodo> {
+  const params = new URLSearchParams({ desde, hasta });
+  return request<ResumenPagosPeriodo>(`/pagos/resumen-periodo?${params}`);
+}
+
+export async function obtenerResumenAporteDesarrollador(
+  periodo: string,
+): Promise<ResumenAporteDesarrollador> {
+  return request<ResumenAporteDesarrollador>(
+    `/pagos/desarrollador?periodo=${encodeURIComponent(periodo)}`,
+  );
+}
+
+export async function registrarPagoDesarrollador(
+  periodo: string,
+  monto: number,
+): Promise<{ pagoId: number; periodo: string; monto: number }> {
+  return request<{ pagoId: number; periodo: string; monto: number }>(
+    "/pagos/desarrollador",
+    {
+      method: "POST",
+      body: JSON.stringify({ periodo, monto }),
+    },
+  );
+}
+
 export async function crearCliente(data: CrearClienteData): Promise<Cliente> {
   return request<Cliente>("/clientes", {
     method: "POST",
@@ -398,6 +454,15 @@ export async function calcularPrecio(
     method: "POST",
     body: JSON.stringify(data),
   });
+}
+
+export async function calcularCotizacionTarifa(
+  tarifaId: number,
+  largo: number,
+): Promise<CalcularPrecioResponse> {
+  return request<CalcularPrecioResponse>(
+    `/precios/tarifa/${tarifaId}?largo=${encodeURIComponent(largo)}`,
+  );
 }
 
 export async function cambiarEstadoPedido(

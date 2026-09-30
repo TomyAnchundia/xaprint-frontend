@@ -128,6 +128,49 @@
       </div>
     </form>
   </div>
+  <div
+    id="usuario-eliminar-modal"
+    class="fixed inset-0 z-120 hidden items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="usuario-eliminar-titulo"
+  >
+    <button
+      id="usuario-eliminar-backdrop"
+      type="button"
+      class="absolute inset-0 cursor-default"
+      aria-label="Cerrar confirmación de eliminación"></button>
+    <section
+      class="relative w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-2xl"
+    >
+      <h3
+        id="usuario-eliminar-titulo"
+        class="text-base font-bold text-slate-900"
+      >
+        Eliminar usuario
+      </h3>
+      <p class="mt-2 text-sm leading-6 text-slate-600">
+        ¿Confirmas que deseas eliminar a <strong
+          id="usuario-eliminar-nombre"
+          class="font-semibold text-slate-900"></strong>? Esta acción no se
+        puede deshacer.
+      </p>
+      <div class="mt-5 flex justify-end gap-2">
+        <button
+          id="usuario-eliminar-cancelar"
+          type="button"
+          class="h-9 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >No, conservar</button
+        >
+        <button
+          id="usuario-eliminar-confirmar"
+          type="button"
+          class="h-9 rounded-lg bg-red-700 px-4 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >Sí, eliminar</button
+        >
+      </div>
+    </section>
+  </div>
   <p
     id="usuarios-notificacion"
     class="hidden rounded-lg border px-4 py-3 text-sm"
@@ -143,8 +186,10 @@
     crearUsuario,
     eliminarUsuario,
     obtenerUsuarios,
+    type CrearUsuarioData,
     type Usuario,
   } from "../../services/api";
+  import { mostrarNotificacion } from "../../utils/notificaciones";
 
   const lista = document.getElementById("usuarios-lista");
   const detalle = document.getElementById("usuario-detalle");
@@ -170,9 +215,15 @@
   const titulo = document.getElementById("usuario-form-titulo");
   const error = document.getElementById("usuario-form-error");
   const aviso = document.getElementById("usuarios-notificacion");
+  const modalEliminar = document.getElementById("usuario-eliminar-modal");
+  const nombreEliminar = document.getElementById("usuario-eliminar-nombre");
+  const confirmarEliminar = document.getElementById(
+    "usuario-eliminar-confirmar",
+  ) as HTMLButtonElement | null;
   let usuarios: Usuario[] = [];
   let seleccionado: Usuario | null = null;
   let editandoId: number | null = null;
+  let usuarioPendienteEliminar: Usuario | null = null;
 
   function escapar(texto: string) {
     const span = document.createElement("span");
@@ -268,21 +319,63 @@
   }
 
   async function borrar(usuario: Usuario) {
-    if (!window.confirm(`¿Eliminar el usuario ${usuario.username}?`)) return;
+    usuarioPendienteEliminar = usuario;
+    if (nombreEliminar) nombreEliminar.textContent = usuario.username;
+    modalEliminar?.classList.remove("hidden");
+    modalEliminar?.classList.add("flex");
+    document.getElementById("usuario-eliminar-cancelar")?.focus();
+  }
+
+  function cancelarBorrado(notificar = true) {
+    modalEliminar?.classList.add("hidden");
+    modalEliminar?.classList.remove("flex");
+    usuarioPendienteEliminar = null;
+    if (notificar)
+      mostrarNotificacion("Eliminación de usuario cancelada.", "info");
+  }
+
+  async function confirmarBorrado() {
+    const usuario = usuarioPendienteEliminar;
+    if (!usuario || !confirmarEliminar) return;
+    confirmarEliminar.disabled = true;
+    confirmarEliminar.textContent = "Eliminando...";
     try {
       await eliminarUsuario(usuario.id);
+      cancelarBorrado(false);
       seleccionado = null;
       await cargar();
       notificar("Usuario eliminado.");
+      mostrarNotificacion(`Usuario ${usuario.username} eliminado.`);
     } catch (caught) {
-      notificar(
+      const mensaje =
         caught instanceof Error
           ? caught.message
-          : "No se pudo eliminar el usuario.",
-        true,
-      );
+          : "No se pudo eliminar el usuario.";
+      notificar(mensaje, true);
+      mostrarNotificacion(mensaje, "error");
+    } finally {
+      confirmarEliminar.disabled = false;
+      confirmarEliminar.textContent = "Sí, eliminar";
     }
   }
+
+  confirmarEliminar?.addEventListener("click", () => {
+    void confirmarBorrado();
+  });
+  document
+    .getElementById("usuario-eliminar-cancelar")
+    ?.addEventListener("click", () => cancelarBorrado());
+  document
+    .getElementById("usuario-eliminar-backdrop")
+    ?.addEventListener("click", () => cancelarBorrado());
+  window.addEventListener("keydown", (event) => {
+    if (
+      event.key === "Escape" &&
+      !modalEliminar?.classList.contains("hidden")
+    ) {
+      cancelarBorrado();
+    }
+  });
 
   document
     .getElementById("usuarios-nuevo")
@@ -297,7 +390,7 @@
     const datos = {
       username: username.value.trim(),
       password: password.value,
-      rol: rol.value as Usuario["rol"],
+      rol: rol.value as CrearUsuarioData["rol"],
       area: area.value as Usuario["area"],
     };
     const guardar = document.getElementById(
