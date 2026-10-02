@@ -34,11 +34,42 @@ export function crearBotonCopiarTelefono(telefono: string): string {
   `;
 }
 
+export function crearBotonCopiarEtiqueta(pedido: Pedido): string {
+  const etiqueta = `${pedido.cliente.nombre} ${formatearMedidas(pedido)} ${formatearPrecio(pedido.valorCobrar)}`;
+
+  return `
+    <button
+      type="button"
+      class="inline-flex items-center justify-center rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+      title="Copiar etiqueta de impresión"
+      aria-label="Copiar etiqueta de impresión"
+      data-etiqueta="${encodeURIComponent(etiqueta)}"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M7.5 7.5h.008v.008H7.5V7.5zM3 3h6.586a2 2 0 011.414.586l9.414 9.414a2 2 0 010 2.828l-5.172 5.172a2 2 0 01-2.828 0L3.586 11.586A2 2 0 013 10.172V3z"
+        />
+      </svg>
+    </button>
+  `;
+}
+
 export function crearFilaPedido(pedido: Pedido): string {
   const estado = estados[pedido.estado];
   const botonCopiarTelefono = pedido.cliente.telefono
     ? crearBotonCopiarTelefono(pedido.cliente.telefono)
     : "";
+  const botonCopiarEtiqueta = crearBotonCopiarEtiqueta(pedido);
 
   return `
     <tr
@@ -80,19 +111,20 @@ export function crearFilaPedido(pedido: Pedido): string {
             ${escaparHtml(pedido.cliente.nombre)}
           </p>
 
-          ${
-            pedido.cliente.telefono
-              ? `
-                <div class="mt-0.5 flex items-center gap-1">
+          <div class="mt-0.5 flex flex-wrap items-center gap-1">
+            ${
+              pedido.cliente.telefono
+                ? `
                   <span class="text-xs text-slate-400">
                     ${escaparHtml(pedido.cliente.telefono)}
                   </span>
 
                   ${botonCopiarTelefono}
-                </div>
-              `
-              : ""
-          }
+                `
+                : ""
+            }
+            ${botonCopiarEtiqueta}
+          </div>
         </div>
       </td>
 

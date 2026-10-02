@@ -43,46 +43,83 @@
           </p>
         </div>
 
-        <div
-          class="mt-2 inline-flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1"
-          role="group"
-          aria-label="Filtrar pedidos por estado"
-        >
-          <button
-            type="button"
-            data-filtro="TODOS"
-            aria-pressed="true"
-            class="filtro-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600"
-            >Todos</button
+        <div class="mt-2 flex max-w-full flex-nowrap items-center gap-2 overflow-x-auto pb-1">
+          <div
+            class="inline-flex shrink-0 flex-nowrap items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1"
+            role="group"
+            aria-label="Filtrar pedidos por estado"
           >
-          <button
-            type="button"
-            data-filtro="REVISION"
-            aria-pressed="false"
-            class="filtro-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
-            >Por confirmar</button
+            <button
+              type="button"
+              data-filtro="TODOS"
+              aria-pressed="true"
+              class="filtro-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600"
+              >Todos</button
+            >
+            <button
+              type="button"
+              data-filtro="REVISION"
+              aria-pressed="false"
+              class="filtro-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+              >Por confirmar</button
+            >
+            <button
+              type="button"
+              data-filtro="IMPRIMIENDO"
+              aria-pressed="false"
+              class="filtro-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600"
+              >Imprimiendo</button
+            >
+            <button
+              type="button"
+              data-filtro="LISTO"
+              aria-pressed="false"
+              class="filtro-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+              >Listos</button
+            >
+            <button
+              type="button"
+              data-filtro="ENTREGADO"
+              aria-pressed="false"
+              class="filtro-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-700"
+              >Entregados</button
+            >
+          </div>
+
+          <div
+            class="inline-flex shrink-0 flex-nowrap items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1"
+            role="group"
+            aria-label="Filtrar pedidos por servicio y ancho"
           >
-          <button
-            type="button"
-            data-filtro="IMPRIMIENDO"
-            aria-pressed="false"
-            class="filtro-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600"
-            >Imprimiendo</button
-          >
-          <button
-            type="button"
-            data-filtro="LISTO"
-            aria-pressed="false"
-            class="filtro-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
-            >Listos</button
-          >
-          <button
-            type="button"
-            data-filtro="ENTREGADO"
-            aria-pressed="false"
-            class="filtro-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-700"
-            >Entregados</button
-          >
+            <button
+              type="button"
+              data-servicio-filtro="TODOS"
+              aria-pressed="true"
+              class="filtro-servicio-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600"
+              >Todos los servicios</button
+            >
+            <button
+              type="button"
+              data-servicio-filtro="UV"
+              aria-pressed="false"
+              class="filtro-servicio-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600"
+              >UV</button
+            >
+            <button
+              type="button"
+              data-servicio-filtro="TEXTIL_31"
+              aria-pressed="false"
+              class="filtro-servicio-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600"
+              >Textil 31 cm</button
+            >
+            <button
+              type="button"
+              data-servicio-filtro="TEXTIL_58"
+              aria-pressed="false"
+              class="filtro-servicio-pedido rounded-lg bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600"
+              >Textil 58 cm</button
+            >
+          </div>
         </div>
       </div>
 
@@ -94,6 +131,7 @@
         + Nuevo pedido
       </button>
     </div>
+
   </div>
 
   <!-- Contenedor scrolleable -->
@@ -162,7 +200,7 @@
   } from "../../services/pedidos-store";
 
   import type { Pedido } from "../../types/pedido";
-  import { copiarTelefono } from "../../utils/copiar-telefono";
+  import { copiarTelefono, copiarTexto } from "../../utils/copiar-telefono";
   import { crearFilaPedido } from "../../utils/pedidos-render";
   import { obtenerUsuario } from "../../services/auth";
   import { pedidoPerteneceAlArea } from "../../services/permisos";
@@ -170,6 +208,7 @@
     estados,
     obtenerPedidosFiltrados as obtenerPedidosFiltradosLista,
     type FiltroPedido,
+    type FiltroServicioPedido,
   } from "../../utils/pedidos-lista";
 
   const loading = document.getElementById("pedidos-loading");
@@ -187,6 +226,7 @@
   );
 
   let filtroActual: FiltroPedido = "TODOS";
+  let filtroServicioActual: FiltroServicioPedido = "TODOS";
   let nombreBuscado = "";
 
   /*
@@ -227,6 +267,7 @@
         pedidoPerteneceAlArea(pedido, obtenerUsuario()),
       ),
       filtroActual,
+      filtroServicioActual,
     );
     const consulta = normalizarTexto(nombreBuscado);
 
@@ -303,12 +344,48 @@
     });
   }
 
+  function actualizarEstadoBotonesServicio() {
+    const botones = document.querySelectorAll<HTMLButtonElement>(
+      "[data-servicio-filtro]",
+    );
+    const clasesActivas = [
+      "bg-slate-900",
+      "text-white",
+      "shadow-sm",
+      "hover:bg-slate-800",
+    ];
+    const clasesInactivas = [
+      "bg-white/70",
+      "text-slate-600",
+      "hover:bg-white",
+    ];
+
+    botones.forEach((boton) => {
+      const activo = boton.dataset.servicioFiltro === filtroServicioActual;
+      boton.classList.remove(...clasesActivas, ...clasesInactivas);
+      boton.classList.add(...(activo ? clasesActivas : clasesInactivas));
+      boton.setAttribute("aria-pressed", String(activo));
+    });
+  }
+
   /*
    * Mensaje para cuando no existen
    * pedidos que mostrar.
    */
   function actualizarMensajeVacio() {
     if (!vacioTitulo || !vacioDescripcion) {
+      return;
+    }
+
+    if (filtroServicioActual !== "TODOS") {
+      const etiquetaServicio = {
+        UV: "UV",
+        TEXTIL_31: "Textil 31 cm",
+        TEXTIL_58: "Textil 58 cm",
+      }[filtroServicioActual];
+      vacioTitulo.textContent = `No hay pedidos de ${etiquetaServicio}`;
+      vacioDescripcion.textContent =
+        "Prueba con otro servicio o ajusta los filtros seleccionados.";
       return;
     }
 
@@ -369,6 +446,7 @@
     const pedidos = obtenerPedidosFiltrados();
 
     actualizarEstadoBotonesFiltro();
+    actualizarEstadoBotonesServicio();
     actualizarMensajeVacio();
 
     if (resultadosBusqueda) {
@@ -472,6 +550,22 @@
       });
     });
 
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-servicio-filtro]")
+    .forEach((boton) => {
+      boton.addEventListener("click", () => {
+        const filtro = boton.dataset
+          .servicioFiltro as FiltroServicioPedido | undefined;
+
+        if (!filtro) {
+          return;
+        }
+
+        filtroServicioActual = filtro;
+        renderizarPedidos();
+      });
+    });
+
   /*
    * Copiar teléfono.
    *
@@ -480,6 +574,26 @@
    */
   document.addEventListener("click", async (event) => {
     const target = event.target as HTMLElement;
+
+    const botonEtiqueta =
+      target.closest<HTMLButtonElement>("button[data-etiqueta]");
+
+    if (botonEtiqueta) {
+      event.stopPropagation();
+      const etiqueta = botonEtiqueta.dataset.etiqueta
+        ? decodeURIComponent(botonEtiqueta.dataset.etiqueta)
+        : "";
+      if (etiqueta) {
+        await copiarTexto(
+          botonEtiqueta,
+          etiqueta,
+          "la etiqueta de impresión",
+          "Etiqueta copiada",
+          "Copiar etiqueta de impresión",
+        );
+      }
+      return;
+    }
 
     const boton = target.closest<HTMLButtonElement>("button[data-telefono]");
 

@@ -7,6 +7,12 @@ export type FiltroPedido =
   | "LISTO"
   | "ENTREGADO";
 
+export type FiltroServicioPedido =
+  | "TODOS"
+  | "UV"
+  | "TEXTIL_31"
+  | "TEXTIL_58";
+
 export const estados: Record<
   EstadoPedido,
   {
@@ -93,8 +99,21 @@ function fechaEsDeHoy(fecha: string | null): boolean {
 export function obtenerPedidosFiltrados(
   pedidosActuales: Pedido[],
   filtroActual: FiltroPedido,
+  filtroServicio: FiltroServicioPedido = "TODOS",
 ): Pedido[] {
   let pedidos = [...pedidosActuales];
+
+  if (filtroServicio === "UV") {
+    pedidos = pedidos.filter((pedido) => pedido.servicio === "UV");
+  } else if (filtroServicio === "TEXTIL_31") {
+    pedidos = pedidos.filter(
+      (pedido) => pedido.servicio === "TEXTIL" && pedido.ancho === 31,
+    );
+  } else if (filtroServicio === "TEXTIL_58") {
+    pedidos = pedidos.filter(
+      (pedido) => pedido.servicio === "TEXTIL" && pedido.ancho === 58,
+    );
+  }
 
   if (filtroActual === "TODOS") {
     pedidos = pedidos.filter(

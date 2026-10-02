@@ -1,6 +1,9 @@
-export async function copiarTelefono(
+export async function copiarTexto(
   boton: HTMLButtonElement,
-  telefono: string,
+  texto: string,
+  descripcion: string,
+  tituloCopiado: string,
+  tituloOriginal: string,
 ): Promise<void> {
   try {
     let copiado = false;
@@ -10,7 +13,7 @@ export async function copiarTelefono(
       typeof navigator.clipboard.writeText === "function"
     ) {
       try {
-        await navigator.clipboard.writeText(telefono);
+        await navigator.clipboard.writeText(texto);
         copiado = true;
       } catch {
         // El navegador puede bloquear Clipboard API cuando la app se abre por HTTP.
@@ -20,7 +23,7 @@ export async function copiarTelefono(
     if (!copiado) {
       const textarea = document.createElement("textarea");
 
-      textarea.value = telefono;
+      textarea.value = texto;
       textarea.setAttribute("readonly", "");
       textarea.style.position = "fixed";
       textarea.style.top = "0";
@@ -46,7 +49,7 @@ export async function copiarTelefono(
     }
 
     if (!copiado) {
-      throw new Error("El navegador no permitió copiar el número.");
+      throw new Error(`El navegador no permitió copiar ${descripcion}.`);
     }
 
     const contenidoOriginal = boton.innerHTML;
@@ -76,7 +79,7 @@ export async function copiarTelefono(
     );
 
     boton.classList.add("text-emerald-600", "bg-emerald-50");
-    boton.title = "Número copiado";
+    boton.title = tituloCopiado;
 
     setTimeout(() => {
       boton.innerHTML = contenidoOriginal;
@@ -86,10 +89,10 @@ export async function copiarTelefono(
         "hover:bg-slate-100",
         "hover:text-slate-700",
       );
-      boton.title = tituloOriginal || "Copiar número";
+      boton.title = tituloOriginal;
     }, 1500);
   } catch (error) {
-    console.error("No se pudo copiar el teléfono:", error);
+    console.error(`No se pudo copiar ${descripcion}:`, error);
 
     const contenidoOriginal = boton.innerHTML;
     const tituloOriginal = boton.title;
@@ -110,7 +113,20 @@ export async function copiarTelefono(
         "hover:bg-slate-100",
         "hover:text-slate-700",
       );
-      boton.title = tituloOriginal || "Copiar número";
+      boton.title = tituloOriginal;
     }, 1800);
   }
+}
+
+export async function copiarTelefono(
+  boton: HTMLButtonElement,
+  telefono: string,
+): Promise<void> {
+  await copiarTexto(
+    boton,
+    telefono,
+    "el teléfono",
+    "Número copiado",
+    "Copiar número",
+  );
 }
