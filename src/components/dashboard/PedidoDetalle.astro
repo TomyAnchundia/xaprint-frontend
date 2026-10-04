@@ -114,6 +114,15 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
               </button>
 
               <button
+                id="detalle-imprimir-etiqueta"
+                type="button"
+                class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+                role="menuitem"
+              >
+                Imprimir etiqueta
+              </button>
+
+              <button
                 id="detalle-cancelar"
                 type="button"
                 class="hidden w-full items-center gap-2.5 px-3 py-2 text-left text-sm font-medium text-red-700 transition hover:bg-slate-50 focus:bg-red-50 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
@@ -744,6 +753,9 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     const editar = document.getElementById(
       "detalle-editar",
     ) as HTMLButtonElement | null;
+    const imprimirEtiqueta = document.getElementById(
+      "detalle-imprimir-etiqueta",
+    ) as HTMLButtonElement | null;
     const eliminar = document.getElementById(
       "detalle-eliminar",
     ) as HTMLButtonElement | null;
@@ -1023,6 +1035,80 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     let procesandoPago = false;
     let procesandoEliminacion = false;
     let modoModalPago: "registrar" | "revertir" = "registrar";
+
+    function escaparHtml(valor: string) {
+      return valor.replace(/[&<>"']/g, (caracter) => {
+        const entidades: Record<string, string> = {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        };
+        return entidades[caracter] ?? caracter;
+      });
+    }
+
+    function imprimirEtiquetaPedido(pedido: Pedido) {
+      const ventana = window.open("", "_blank", "popup,width=400,height=420");
+      if (!ventana) {
+        mostrarNotificacion(
+          "El navegador bloqueó la etiqueta. Permite ventanas emergentes e inténtalo de nuevo.",
+          "error",
+        );
+        return;
+      }
+
+      const observaciones = pedido.observaciones?.trim()
+        ? `<p class="observaciones">${escaparHtml(pedido.observaciones)}</p>`
+        : "";
+      ventana.document.write(`<!doctype html>
+        <html lang="es">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Etiqueta pedido ${pedido.id}</title>
+            <style>
+              @page { size: 80mm 80mm; margin: 0; }
+              * { box-sizing: border-box; }
+              html, body { width: 80mm; height: 80mm; margin: 0; }
+              body { padding: 4mm; color: #17221c; font: 10pt Arial, sans-serif; }
+              main { display: flex; height: 72mm; flex-direction: column; border: .35mm solid #173d32; padding: 3mm; }
+              header { display: flex; justify-content: space-between; align-items: center; border-bottom: .3mm solid #d8e1d8; padding-bottom: 2mm; }
+              .brand { color: #173d32; font-size: 10pt; font-weight: 800; letter-spacing: 1.2pt; }
+              .order { color: #173d32; font-size: 12pt; font-weight: 800; }
+              h1 { margin: 3mm 0 1mm; font-size: 16pt; }
+              .client { overflow-wrap: anywhere; font-size: 12pt; font-weight: 700; }
+              .phone, .delivery { margin-top: 1mm; color: #46534a; font-size: 9pt; }
+              .specs { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; margin-top: 3mm; }
+              .spec { border-radius: 1.5mm; background: #f0f5ef; padding: 2mm; }
+              .label { color: #68766c; font-size: 7pt; text-transform: uppercase; }
+              .value { margin-top: 1mm; font-size: 11pt; font-weight: 700; }
+              .observaciones { display: -webkit-box; overflow: hidden; margin: 2mm 0 0; color: #46534a; font-size: 8pt; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+              footer { margin-top: auto; border-top: .3mm solid #d8e1d8; padding-top: 2mm; color: #68766c; font-size: 7pt; }
+              @media screen { body { margin: 10mm auto; box-shadow: 0 1mm 5mm #0003; } }
+            </style>
+          </head>
+          <body>
+            <main>
+              <header><span class="brand">XAPRINT</span><span class="order">PEDIDO #${pedido.id}</span></header>
+              <h1>${escaparHtml(pedido.servicio)}</h1>
+              <div class="client">${escaparHtml(pedido.cliente?.nombre ?? "Sin cliente")}</div>
+              <div class="phone">${escaparHtml(pedido.cliente?.telefono ?? "")}</div>
+              <div class="specs">
+                <div class="spec"><div class="label">Medidas</div><div class="value">${escaparHtml(formatearMedidas(pedido))}</div></div>
+                <div class="spec"><div class="label">Estado</div><div class="value">${escaparHtml(estados[pedido.estado]?.label ?? pedido.estado)}</div></div>
+              </div>
+              <div class="delivery">Entrega: ${escaparHtml(pedido.fechaEntrega ? formatearFecha(pedido.fechaEntrega) : "Sin fecha definida")}</div>
+              ${observaciones}
+              <footer>Etiqueta de producción · ${new Date().toLocaleDateString("es-EC")}</footer>
+            </main>
+          </body>
+        </html>`);
+      ventana.document.close();
+      ventana.focus();
+      window.setTimeout(() => ventana.print(), 300);
+    }
 
     /*
      * --------------------------------------------------------------------------
@@ -2160,6 +2246,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
           },
         }),
       );
+    });
+
+    imprimirEtiqueta?.addEventListener("click", () => {
+      cerrarMenuOpciones();
+      if (pedidoActual) imprimirEtiquetaPedido(pedidoActual);
     });
 
     eliminar?.addEventListener("click", () => {
