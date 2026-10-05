@@ -17,6 +17,8 @@ export interface Cliente {
   id: number;
   nombre: string;
   telefono: string | null;
+  cedula?: string | null;
+  direccion?: string | null;
 }
 
 export interface Usuario {
@@ -137,6 +139,8 @@ export interface HistorialPagosCliente {
 export interface CrearClienteData {
   nombre: string;
   telefono?: string | null;
+  cedula?: string | null;
+  direccion?: string | null;
 }
 
 export interface CrearPedidoData {

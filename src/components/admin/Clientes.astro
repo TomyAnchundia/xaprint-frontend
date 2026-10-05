@@ -33,7 +33,7 @@
           >
         </div>
         <label class="group relative block">
-          <span class="sr-only">Buscar clientes por nombre o teléfono</span>
+          <span class="sr-only">Buscar clientes por nombre, teléfono o cédula</span>
           <svg
             class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition group-focus-within:text-cyan-700"
             viewBox="0 0 24 24"
@@ -48,7 +48,7 @@
           <input
             id="clientes-buscar"
             type="search"
-            placeholder="Buscar por nombre o teléfono"
+            placeholder="Buscar por nombre, teléfono o cédula"
             class="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
           />
         </label>
@@ -104,6 +104,26 @@
         required
         maxlength="30"
         type="tel"
+        class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
+      />
+      <label
+        for="cliente-form-cedula"
+        class="mb-1 mt-3 block text-sm font-medium text-slate-700"
+        >Cédula</label
+      >
+      <input
+        id="cliente-form-cedula"
+        maxlength="20"
+        class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
+      />
+      <label
+        for="cliente-form-direccion"
+        class="mb-1 mt-3 block text-sm font-medium text-slate-700"
+        >Dirección</label
+      >
+      <input
+        id="cliente-form-direccion"
+        maxlength="250"
         class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
       />
       <p id="cliente-form-error" class="mt-3 hidden text-sm text-red-700"></p>
@@ -205,6 +225,12 @@
   const telefonoInput = document.getElementById(
     "cliente-form-telefono",
   ) as HTMLInputElement | null;
+  const cedulaInput = document.getElementById(
+    "cliente-form-cedula",
+  ) as HTMLInputElement | null;
+  const direccionInput = document.getElementById(
+    "cliente-form-direccion",
+  ) as HTMLInputElement | null;
   const formTitulo = document.getElementById("cliente-form-titulo");
   const error = document.getElementById("cliente-form-error");
   const notificacion = document.getElementById("clientes-notificacion");
@@ -259,7 +285,7 @@
     const consulta = normalizar(buscar?.value ?? "");
     const encontrados = clientes.filter((cliente) => {
       const coincide = normalizar(
-        `${cliente.nombre} ${cliente.telefono ?? ""}`,
+        `${cliente.nombre} ${cliente.telefono ?? ""} ${cliente.cedula ?? ""}`,
       ).includes(consulta);
       const resumen = resumenesDeuda.find(
         (item) => item.cliente.id === cliente.id,
@@ -317,7 +343,7 @@
     }
     detalle.innerHTML = `
       <div class="flex items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase text-cyan-800">Ficha de cliente</p><h3 class="mt-1 text-xl font-bold text-slate-900">${escapeHtml(cliente.nombre)}</h3></div><span class="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">#${cliente.id}</span></div>
-      <dl class="mt-6 divide-y divide-slate-100 rounded-lg border border-slate-200"><div class="px-3 py-3"><dt class="text-xs text-slate-500">Teléfono</dt><dd class="mt-1 text-sm font-medium text-slate-800">${escapeHtml(cliente.telefono ?? "No registrado")}</dd></div></dl>
+      <dl class="mt-6 divide-y divide-slate-100 rounded-lg border border-slate-200"><div class="px-3 py-3"><dt class="text-xs text-slate-500">Teléfono</dt><dd class="mt-1 text-sm font-medium text-slate-800">${escapeHtml(cliente.telefono ?? "No registrado")}</dd></div><div class="px-3 py-3"><dt class="text-xs text-slate-500">Cédula</dt><dd class="mt-1 text-sm font-medium text-slate-800">${escapeHtml(cliente.cedula || "No registrada")}</dd></div><div class="px-3 py-3"><dt class="text-xs text-slate-500">Dirección</dt><dd class="mt-1 text-sm font-medium text-slate-800">${escapeHtml(cliente.direccion || "No registrada")}</dd></div></dl>
       <div id="cliente-finanzas" class="mt-4"><p class="text-sm text-slate-500">Cargando saldo y pagos...</p></div>
       <div class="mt-5 flex flex-wrap gap-2"><button id="cliente-editar" type="button" class="h-9 rounded-lg bg-cyan-800 px-4 text-sm font-semibold text-white hover:bg-cyan-900">Editar cliente</button><button id="cliente-eliminar" type="button" class="h-9 rounded-lg border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 hover:bg-red-100">Eliminar</button></div>`;
     detalle
@@ -431,6 +457,8 @@
       formTitulo.textContent = cliente ? "Editar cliente" : "Nuevo cliente";
     if (nombreInput) nombreInput.value = cliente?.nombre ?? "";
     if (telefonoInput) telefonoInput.value = cliente?.telefono ?? "";
+    if (cedulaInput) cedulaInput.value = cliente?.cedula ?? "";
+    if (direccionInput) direccionInput.value = cliente?.direccion ?? "";
     error?.classList.add("hidden");
     overlay?.classList.remove("hidden");
     overlay?.classList.add("flex");
@@ -513,6 +541,8 @@
     const datos = {
       nombre: nombreInput.value.trim(),
       telefono: telefonoInput.value.trim(),
+      cedula: cedulaInput?.value.trim() || null,
+      direccion: direccionInput?.value.trim() || null,
     };
     const guardar = document.getElementById(
       "cliente-form-guardar",
