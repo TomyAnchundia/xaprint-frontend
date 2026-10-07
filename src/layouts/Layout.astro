@@ -67,15 +67,11 @@ const { title = "Centro de Control" } = Astro.props;
 
         const esError = detalle.tipo === "error";
         const toast = document.createElement("div");
-        toast.className = esError
-          ? "pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-red-200 bg-white p-4 text-sm text-slate-700 shadow-lg transition-opacity"
-          : "pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-emerald-200 bg-white p-4 text-sm text-slate-700 shadow-lg transition-opacity";
+        toast.className = `toast-notificacion toast-${detalle.tipo ?? "success"} pointer-events-auto flex w-full items-center gap-3 rounded-lg border bg-white p-4 text-sm text-slate-700 shadow-lg transition-opacity`;
         toast.setAttribute("role", esError ? "alert" : "status");
 
         const icono = document.createElement("span");
-        icono.className = esError
-          ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 font-bold text-red-700"
-          : "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700";
+        icono.className = "toast-icono flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold";
         icono.textContent = esError ? "!" : detalle.tipo === "info" ? "i" : "✓";
         icono.setAttribute("aria-hidden", "true");
 
@@ -86,7 +82,7 @@ const { title = "Centro de Control" } = Astro.props;
         const cerrar = document.createElement("button");
         cerrar.type = "button";
         cerrar.className =
-          "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800";
+          "toast-cerrar inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition";
         cerrar.setAttribute("aria-label", "Cerrar notificación");
         cerrar.innerHTML =
           '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="m6 6 12 12M18 6 6 18"></path></svg>';

@@ -186,13 +186,6 @@
       </div>
     </section>
   </div>
-  <p
-    id="clientes-notificacion"
-    class="hidden rounded-lg border px-4 py-3 text-sm"
-    role="status"
-    aria-live="polite"
-  >
-  </p>
 </section>
 
 <script>
@@ -208,7 +201,10 @@
     type Cliente,
     type ResumenDeudaCliente,
   } from "../../services/api";
-  import { mostrarNotificacion } from "../../utils/notificaciones";
+  import {
+    establecerCargaBoton,
+    mostrarNotificacion,
+  } from "../../utils/notificaciones";
 
   const lista = document.getElementById("clientes-lista");
   const detalle = document.getElementById("cliente-detalle");
@@ -233,7 +229,6 @@
   ) as HTMLInputElement | null;
   const formTitulo = document.getElementById("cliente-form-titulo");
   const error = document.getElementById("cliente-form-error");
-  const notificacion = document.getElementById("clientes-notificacion");
   const modalEliminar = document.getElementById("cliente-eliminar-modal");
   const nombreEliminar = document.getElementById("cliente-eliminar-nombre");
   const botonEliminarConfirmar = document.getElementById(
@@ -256,11 +251,7 @@
   }
 
   function avisar(texto: string, esError = false) {
-    if (!notificacion) return;
-    notificacion.textContent = texto;
-    notificacion.className = esError
-      ? "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-      : "rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800";
+    mostrarNotificacion(texto, esError ? "error" : "success");
   }
 
   function abrirConfirmacionEliminar(cliente: Cliente) {
@@ -405,8 +396,7 @@
         }
 
         entrada.setCustomValidity("");
-        boton.disabled = true;
-        boton.textContent = "Guardando...";
+        establecerCargaBoton(boton, true, "Guardando...");
         errorAbono?.classList.add("hidden");
 
         try {
@@ -421,8 +411,13 @@
                 : "No se pudo registrar el abono.";
             errorAbono.classList.remove("hidden");
           }
-          boton.disabled = false;
-          boton.textContent = "Guardar abono";
+          mostrarNotificacion(
+            caught instanceof Error
+              ? caught.message
+              : "No se pudo registrar el abono.",
+            "error",
+          );
+          establecerCargaBoton(boton, false, "Guardar abono");
         }
       });
       formularioAbono
@@ -488,25 +483,21 @@
   async function borrarCliente() {
     const cliente = clientePendienteEliminar;
     if (!cliente || !botonEliminarConfirmar) return;
-    botonEliminarConfirmar.disabled = true;
-    botonEliminarConfirmar.textContent = "Eliminando...";
+    establecerCargaBoton(botonEliminarConfirmar, true, "Eliminando...");
     try {
       await eliminarCliente(cliente.id);
       cerrarConfirmacionEliminar(false);
       clienteSeleccionado = null;
       await cargar();
-      avisar("Cliente eliminado.");
       mostrarNotificacion(`Cliente ${cliente.nombre} eliminado.`);
     } catch (caught) {
       const mensaje =
         caught instanceof Error
           ? caught.message
           : "No se pudo eliminar el cliente.";
-      avisar(mensaje, true);
       mostrarNotificacion(mensaje, "error");
     } finally {
-      botonEliminarConfirmar.disabled = false;
-      botonEliminarConfirmar.textContent = "Sí, eliminar";
+      establecerCargaBoton(botonEliminarConfirmar, false, "Sí, eliminar");
     }
   }
 
@@ -547,7 +538,7 @@
     const guardar = document.getElementById(
       "cliente-form-guardar",
     ) as HTMLButtonElement | null;
-    if (guardar) guardar.disabled = true;
+    if (guardar) establecerCargaBoton(guardar, true, "Guardando...");
     try {
       const guardado =
         editandoId === null
@@ -561,6 +552,12 @@
       cerrarFormulario();
       avisar(editandoId === null ? "Cliente creado." : "Cliente actualizado.");
     } catch (caught) {
+      mostrarNotificacion(
+        caught instanceof Error
+          ? caught.message
+          : "No se pudo guardar el cliente.",
+        "error",
+      );
       if (error) {
         error.textContent =
           caught instanceof Error
@@ -569,7 +566,7 @@
         error.classList.remove("hidden");
       }
     } finally {
-      if (guardar) guardar.disabled = false;
+      if (guardar) establecerCargaBoton(guardar, false, "Guardar");
     }
   });
 

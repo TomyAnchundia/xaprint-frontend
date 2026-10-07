@@ -345,7 +345,10 @@ const periodosFinancieros = [
       registrarPagoDesarrollador,
       type ResumenProduccionItem,
     } from "../../services/api";
-    import { mostrarNotificacion as notificarGlobal } from "../../utils/notificaciones";
+    import {
+      establecerCargaBoton,
+      mostrarNotificacion as notificarGlobal,
+    } from "../../utils/notificaciones";
 
     const fechaInput = document.getElementById(
       "estadisticas-fecha",
@@ -724,8 +727,7 @@ const periodosFinancieros = [
       }
 
       aporteMontoInput.setCustomValidity("");
-      aporteGuardar.disabled = true;
-      aporteGuardar.textContent = "Guardando...";
+      establecerCargaBoton(aporteGuardar, true, "Guardando...");
       aporteError?.classList.add("hidden");
 
       try {
@@ -746,7 +748,7 @@ const periodosFinancieros = [
         }
         mostrarNotificacion(mensaje, true);
       } finally {
-        aporteGuardar.textContent = "Guardar abono";
+        establecerCargaBoton(aporteGuardar, false, "Guardar abono");
         aporteGuardar.disabled = Number(aporteMontoInput.max) <= 0;
       }
     });

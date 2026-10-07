@@ -171,13 +171,6 @@
       </div>
     </section>
   </div>
-  <p
-    id="usuarios-notificacion"
-    class="hidden rounded-lg border px-4 py-3 text-sm"
-    role="status"
-    aria-live="polite"
-  >
-  </p>
 </section>
 
 <script>
@@ -189,7 +182,10 @@
     type CrearUsuarioData,
     type Usuario,
   } from "../../services/api";
-  import { mostrarNotificacion } from "../../utils/notificaciones";
+  import {
+    establecerCargaBoton,
+    mostrarNotificacion,
+  } from "../../utils/notificaciones";
 
   const lista = document.getElementById("usuarios-lista");
   const detalle = document.getElementById("usuario-detalle");
@@ -214,7 +210,6 @@
   ) as HTMLSelectElement | null;
   const titulo = document.getElementById("usuario-form-titulo");
   const error = document.getElementById("usuario-form-error");
-  const aviso = document.getElementById("usuarios-notificacion");
   const modalEliminar = document.getElementById("usuario-eliminar-modal");
   const nombreEliminar = document.getElementById("usuario-eliminar-nombre");
   const confirmarEliminar = document.getElementById(
@@ -232,11 +227,7 @@
   }
 
   function notificar(texto: string, esError = false) {
-    if (!aviso) return;
-    aviso.textContent = texto;
-    aviso.className = esError
-      ? "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-      : "rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800";
+    mostrarNotificacion(texto, esError ? "error" : "success");
   }
 
   function renderizarLista() {
@@ -337,25 +328,21 @@
   async function confirmarBorrado() {
     const usuario = usuarioPendienteEliminar;
     if (!usuario || !confirmarEliminar) return;
-    confirmarEliminar.disabled = true;
-    confirmarEliminar.textContent = "Eliminando...";
+    establecerCargaBoton(confirmarEliminar, true, "Eliminando...");
     try {
       await eliminarUsuario(usuario.id);
       cancelarBorrado(false);
       seleccionado = null;
       await cargar();
-      notificar("Usuario eliminado.");
       mostrarNotificacion(`Usuario ${usuario.username} eliminado.`);
     } catch (caught) {
       const mensaje =
         caught instanceof Error
           ? caught.message
           : "No se pudo eliminar el usuario.";
-      notificar(mensaje, true);
       mostrarNotificacion(mensaje, "error");
     } finally {
-      confirmarEliminar.disabled = false;
-      confirmarEliminar.textContent = "Sí, eliminar";
+      establecerCargaBoton(confirmarEliminar, false, "Sí, eliminar");
     }
   }
 
@@ -396,7 +383,7 @@
     const guardar = document.getElementById(
       "usuario-form-guardar",
     ) as HTMLButtonElement | null;
-    if (guardar) guardar.disabled = true;
+    if (guardar) establecerCargaBoton(guardar, true, "Guardando...");
     try {
       const guardado =
         editandoId === null
@@ -417,6 +404,12 @@
         editandoId === null ? "Usuario creado." : "Usuario actualizado.",
       );
     } catch (caught) {
+      mostrarNotificacion(
+        caught instanceof Error
+          ? caught.message
+          : "No se pudo guardar el usuario.",
+        "error",
+      );
       if (error) {
         error.textContent =
           caught instanceof Error
@@ -425,7 +418,7 @@
         error.classList.remove("hidden");
       }
     } finally {
-      if (guardar) guardar.disabled = false;
+      if (guardar) establecerCargaBoton(guardar, false, "Guardar");
     }
   });
 

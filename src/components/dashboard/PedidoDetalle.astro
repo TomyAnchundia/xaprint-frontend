@@ -268,25 +268,6 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
           ></span>
           Cargando pedido...
         </div>
-
-        <div
-          class="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3"
-        >
-          <div>
-            <p class="text-xs font-medium text-slate-500">Estado de pago</p>
-            <span
-              id="detalle-estado-pago"
-              class="mt-1 inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900"
-              >No pagado</span
-            >
-          </div>
-          <button
-            id="detalle-pago-accion"
-            type="button"
-            class="hidden h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-            >Registrar pago</button
-          >
-        </div>
       </div>
 
       <!-- Error -->
@@ -299,6 +280,29 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
       <!-- Información -->
       <div id="detalle-contenido" class="hidden">
+        <section class="border-b border-slate-200 px-5 py-4">
+          <div
+            class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4"
+          >
+            <div>
+              <p class="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Estado de pago
+              </p>
+              <span
+                id="detalle-estado-pago"
+                class="mt-1 inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900"
+                >No pagado</span
+              >
+            </div>
+            <button
+              id="detalle-pago-accion"
+              type="button"
+              class="hidden h-9 rounded-lg bg-blue-700 px-3 text-xs font-semibold text-white transition hover:bg-blue-800"
+              >Registrar pago</button
+            >
+          </div>
+        </section>
+
         <!-- Estado -->
         <section class="border-b border-slate-200 px-5 py-4">
           <div class="flex flex-wrap items-center gap-2.5">
@@ -721,7 +725,10 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
     import { suscribirsePedidos } from "../../services/pedidos-store";
     import { obtenerUsuario } from "../../services/auth";
-    import { mostrarNotificacion } from "../../utils/notificaciones";
+    import {
+      establecerCargaBoton,
+      mostrarNotificacion,
+    } from "../../utils/notificaciones";
     import { formatearFecha } from "../../utils/fecha";
     import {
       copiarMensaje,
@@ -1208,8 +1215,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
       procesandoCostoDiseno = true;
       if (modalCostoDisenoGuardar) {
-        modalCostoDisenoGuardar.disabled = true;
-        modalCostoDisenoGuardar.textContent = "Guardando...";
+        establecerCargaBoton(
+          modalCostoDisenoGuardar,
+          true,
+          "Guardando...",
+        );
       }
       modalCostoDisenoError?.classList.add("hidden");
 
@@ -1219,8 +1229,15 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         });
         renderizarPedido(pedidoActualizado);
         ocultarModalCostoDiseno();
+        mostrarNotificacion("Costo de diseño guardado.");
       } catch (errorApi) {
         console.error("No se pudo actualizar el costo de diseño:", errorApi);
+        mostrarNotificacion(
+          errorApi instanceof Error
+            ? errorApi.message
+            : "No se pudo guardar el costo de diseño.",
+          "error",
+        );
         if (modalCostoDisenoError) {
           modalCostoDisenoError.textContent =
             errorApi instanceof Error
@@ -1231,8 +1248,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       } finally {
         procesandoCostoDiseno = false;
         if (modalCostoDisenoGuardar) {
-          modalCostoDisenoGuardar.disabled = false;
-          modalCostoDisenoGuardar.textContent = "Guardar costo";
+          establecerCargaBoton(
+            modalCostoDisenoGuardar,
+            false,
+            "Guardar costo",
+          );
         }
       }
     }
@@ -1350,8 +1370,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       procesandoPrecioEspecial = true;
 
       if (modalPrecioEspecialGuardar) {
-        modalPrecioEspecialGuardar.disabled = true;
-        modalPrecioEspecialGuardar.textContent = "Guardando...";
+        establecerCargaBoton(
+          modalPrecioEspecialGuardar,
+          true,
+          "Guardando...",
+        );
       }
 
       modalPrecioEspecialError?.classList.add("hidden");
@@ -1364,8 +1387,15 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
         renderizarPedido(pedidoActualizado);
         ocultarModalPrecioEspecial();
+        mostrarNotificacion("Precio especial guardado.");
       } catch (errorApi) {
         console.error("No se pudo cambiar el precio especial:", errorApi);
+        mostrarNotificacion(
+          errorApi instanceof Error
+            ? errorApi.message
+            : "No se pudo guardar el precio especial.",
+          "error",
+        );
 
         if (modalPrecioEspecialError) {
           modalPrecioEspecialError.textContent =
@@ -1379,8 +1409,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         procesandoPrecioEspecial = false;
 
         if (modalPrecioEspecialGuardar) {
-          modalPrecioEspecialGuardar.disabled = false;
-          modalPrecioEspecialGuardar.textContent = "Guardar precio";
+          establecerCargaBoton(
+            modalPrecioEspecialGuardar,
+            false,
+            "Guardar precio",
+          );
         }
       }
     }
@@ -1399,8 +1432,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       procesandoPrecioEspecial = true;
 
       if (modalQuitarPrecioEspecialConfirmar) {
-        modalQuitarPrecioEspecialConfirmar.disabled = true;
-        modalQuitarPrecioEspecialConfirmar.textContent = "Quitando...";
+        establecerCargaBoton(
+          modalQuitarPrecioEspecialConfirmar,
+          true,
+          "Quitando...",
+        );
       }
 
       try {
@@ -1439,8 +1475,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         procesandoPrecioEspecial = false;
 
         if (modalQuitarPrecioEspecialConfirmar) {
-          modalQuitarPrecioEspecialConfirmar.disabled = false;
-          modalQuitarPrecioEspecialConfirmar.textContent = "Quitar precio";
+          establecerCargaBoton(
+            modalQuitarPrecioEspecialConfirmar,
+            false,
+            "Quitar precio",
+          );
         }
       }
     }
@@ -1476,7 +1515,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       if (modalPagoTexto) {
         modalPagoTexto.textContent = esReversion
           ? "Esto eliminará el último pago individual registrado para este pedido y recalculará su saldo. Si el pago fue compartido con otros pedidos, el sistema no permitirá revertirlo desde aquí."
-          : "Confirma únicamente si recibiste el pago del cliente. Se registrará solo el saldo pendiente, descontando abonos anteriores. Si todavía no ha pagado, déjalo pendiente y podrás registrar el cobro después.";
+          : "Confirma únicamente si recibiste el pago del cliente, aunque todavía no hayas entregado el pedido. Se registrará solo el saldo pendiente, descontando abonos anteriores. Si aún no ha pagado, déjalo pendiente.";
       }
       if (modalPagoMonto) {
         modalPagoMonto.textContent = `Total del pedido: ${formatearPrecio(pedidoActual.valorCobrar)}`;
@@ -1514,7 +1553,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     async function confirmarAccionPago() {
       if (!pedidoActual || procesandoPago || !modalPagoConfirmar) return;
       procesandoPago = true;
-      modalPagoConfirmar.disabled = true;
+      establecerCargaBoton(modalPagoConfirmar, true);
       modalPagoError?.classList.add("hidden");
 
       try {
@@ -1553,11 +1592,13 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         );
       } finally {
         procesandoPago = false;
-        modalPagoConfirmar.disabled = false;
-        modalPagoConfirmar.textContent =
+        establecerCargaBoton(
+          modalPagoConfirmar,
+          false,
           modoModalPago === "revertir"
             ? "Sí, revertir pago"
-            : "Sí, recibí el pago";
+            : "Sí, recibí el pago",
+        );
       }
     }
 
@@ -1749,9 +1790,10 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       if (estadoPagoElemento) {
         estadoPagoElemento.textContent = pagoTexto;
         estadoPagoElemento.className = `mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${pagoClase}`;
+        estadoPagoElemento.dataset.estadoPago = estadoPago;
       }
       if (pagoAccion) {
-        const puedeGestionarPago = pedido.estado === "ENTREGADO";
+        const puedeGestionarPago = pedido.estado !== "CANCELADO";
         pagoAccion.classList.toggle("hidden", !puedeGestionarPago);
         pagoAccion.textContent =
           estadoPago === "PAGADO" ? "Revertir último pago" : "Registrar pago";
@@ -1983,6 +2025,9 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       if (cancelar) {
         cancelar.disabled = true;
       }
+      if (avanzar) establecerCargaBoton(avanzar, true);
+      if (retroceder) establecerCargaBoton(retroceder, true);
+      if (cancelar) establecerCargaBoton(cancelar, true);
 
       accionesError?.classList.add("hidden");
 
@@ -2034,6 +2079,10 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         return false;
       } finally {
         procesandoEstado = false;
+
+        if (avanzar) establecerCargaBoton(avanzar, false);
+        if (retroceder) establecerCargaBoton(retroceder, false);
+        if (cancelar) establecerCargaBoton(cancelar, false);
 
         if (pedidoActual) {
           renderizarAcciones(pedidoActual.estado);
@@ -2191,7 +2240,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     });
 
     pagoAccion?.addEventListener("click", () => {
-      if (!pedidoActual || pedidoActual.estado !== "ENTREGADO") return;
+      if (!pedidoActual || pedidoActual.estado === "CANCELADO") return;
       mostrarModalPago(
         pedidoActual.estadoPago === "PAGADO" ? "revertir" : "registrar",
       );
@@ -2287,8 +2336,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       )
         return;
       procesandoEliminacion = true;
-      modalEliminarPedidoConfirmar.disabled = true;
-      modalEliminarPedidoConfirmar.textContent = "Eliminando...";
+      establecerCargaBoton(
+        modalEliminarPedidoConfirmar,
+        true,
+        "Eliminando...",
+      );
       botonEliminar.disabled = true;
 
       try {
@@ -2307,8 +2359,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       } finally {
         procesandoEliminacion = false;
         botonEliminar.disabled = false;
-        modalEliminarPedidoConfirmar.disabled = false;
-        modalEliminarPedidoConfirmar.textContent = "Eliminar";
+        establecerCargaBoton(
+          modalEliminarPedidoConfirmar,
+          false,
+          "Eliminar",
+        );
       }
     }
 

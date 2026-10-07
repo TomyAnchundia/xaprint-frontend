@@ -529,6 +529,10 @@ const { mode = "crear" } = Astro.props;
     obtenerPedido,
     actualizarPedido,
   } from "../../services/api";
+  import {
+    establecerCargaBoton,
+    mostrarNotificacion,
+  } from "../../utils/notificaciones";
 
   type Servicio = ServicioPedido;
   type Modo = "crear" | "editar";
@@ -966,8 +970,7 @@ const { mode = "crear" } = Astro.props;
       return;
     }
 
-    btnGuardarNuevoCliente.disabled = true;
-    btnGuardarNuevoCliente.textContent = "Guardando...";
+    establecerCargaBoton(btnGuardarNuevoCliente, true, "Guardando...");
 
     try {
       const cliente = await crearCliente({
@@ -981,17 +984,20 @@ const { mode = "crear" } = Astro.props;
 
       ocultarNuevoCliente();
 
-      mostrarMensaje("Cliente creado correctamente.", "success");
+      mostrarNotificacion("Cliente creado correctamente.");
     } catch (error) {
       console.error(error);
 
+      mostrarNotificacion(
+        error instanceof Error ? error.message : "No se pudo crear el cliente.",
+        "error",
+      );
       mostrarMensaje(
         error instanceof Error ? error.message : "No se pudo crear el cliente.",
         "error",
       );
     } finally {
-      btnGuardarNuevoCliente.disabled = false;
-      btnGuardarNuevoCliente.textContent = "Guardar cliente";
+      establecerCargaBoton(btnGuardarNuevoCliente, false, "Guardar cliente");
     }
   }
 
@@ -1246,10 +1252,11 @@ const { mode = "crear" } = Astro.props;
       return;
     }
 
-    btnGuardarPedido.disabled = true;
-
-    btnGuardarPedido.textContent =
-      modoActual === "editar" ? "Guardando cambios..." : "Creando pedido...";
+    establecerCargaBoton(
+      btnGuardarPedido,
+      true,
+      modoActual === "editar" ? "Guardando cambios..." : "Creando pedido...",
+    );
 
     try {
       const datos = {
@@ -1292,10 +1299,23 @@ const { mode = "crear" } = Astro.props;
         );
       }
 
+      mostrarNotificacion(
+        modoActual === "editar"
+          ? "Pedido actualizado correctamente."
+          : "Pedido creado correctamente.",
+      );
       cerrarModal();
     } catch (error) {
       console.error(error);
 
+      mostrarNotificacion(
+        error instanceof Error
+          ? error.message
+          : modoActual === "editar"
+            ? "No se pudo actualizar el pedido."
+            : "No se pudo crear el pedido.",
+        "error",
+      );
       mostrarMensaje(
         error instanceof Error
           ? error.message
@@ -1305,10 +1325,11 @@ const { mode = "crear" } = Astro.props;
         "error",
       );
     } finally {
-      btnGuardarPedido.disabled = false;
-
-      btnGuardarPedido.textContent =
-        modoActual === "editar" ? "Guardar cambios" : "Crear pedido";
+      establecerCargaBoton(
+        btnGuardarPedido,
+        false,
+        modoActual === "editar" ? "Guardar cambios" : "Crear pedido",
+      );
     }
   });
 

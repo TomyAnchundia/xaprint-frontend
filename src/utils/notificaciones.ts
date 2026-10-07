@@ -10,3 +10,20 @@ export function mostrarNotificacion(
     }),
   );
 }
+
+export function establecerCargaBoton(
+  boton: HTMLButtonElement,
+  cargando: boolean,
+  texto?: string,
+) {
+  if (texto !== undefined) boton.textContent = texto;
+  boton.disabled = cargando;
+
+  if (cargando) {
+    boton.dataset.loading = "true";
+    boton.setAttribute("aria-busy", "true");
+  } else {
+    delete boton.dataset.loading;
+    boton.removeAttribute("aria-busy");
+  }
+}

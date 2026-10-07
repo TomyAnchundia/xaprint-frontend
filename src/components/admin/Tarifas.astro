@@ -183,13 +183,6 @@
       </div>
     </form>
   </div>
-  <p
-    id="tarifas-aviso"
-    class="hidden rounded-lg border px-4 py-3 text-sm"
-    role="status"
-    aria-live="polite"
-  >
-  </p>
 </section>
 
 <script>
@@ -202,6 +195,10 @@
     type Tarifa,
   } from "../../services/api";
   import type { ServicioPedido } from "../../types/pedido";
+  import {
+    establecerCargaBoton,
+    mostrarNotificacion,
+  } from "../../utils/notificaciones";
 
   const cuerpo = document.getElementById("tarifas-body");
   const cantidad = document.getElementById("tarifas-cantidad");
@@ -224,7 +221,6 @@
   ) as HTMLInputElement | null;
   const titulo = document.getElementById("tarifa-form-titulo");
   const error = document.getElementById("tarifa-form-error");
-  const aviso = document.getElementById("tarifas-aviso");
   let tarifas: Tarifa[] = [];
   let servicioFiltro = "TODOS";
   let editandoId: number | null = null;
@@ -237,11 +233,7 @@
   }
 
   function mostrarAviso(texto: string, esError = false) {
-    if (!aviso) return;
-    aviso.textContent = texto;
-    aviso.className = esError
-      ? "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-      : "rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800";
+    mostrarNotificacion(texto, esError ? "error" : "success");
   }
 
   function renderizar() {
@@ -307,6 +299,7 @@
             void cambiarActiva(
               Number(boton.dataset.activa),
               boton.dataset.valor === "true",
+              boton,
             ),
         ),
       );
@@ -350,7 +343,12 @@
     ancho.value = String(anchoActual ?? anchos[0]);
   }
 
-  async function cambiarActiva(id: number, activo: boolean) {
+  async function cambiarActiva(
+    id: number,
+    activo: boolean,
+    boton: HTMLButtonElement,
+  ) {
+    establecerCargaBoton(boton, true);
     try {
       await cambiarTarifaActiva(id, activo);
       await cargar();
@@ -362,6 +360,8 @@
           : "No se pudo cambiar el estado.",
         true,
       );
+    } finally {
+      establecerCargaBoton(boton, false);
     }
   }
 
@@ -404,7 +404,7 @@
     const guardar = document.getElementById(
       "tarifa-guardar",
     ) as HTMLButtonElement | null;
-    if (guardar) guardar.disabled = true;
+    if (guardar) establecerCargaBoton(guardar, true, "Guardando...");
     try {
       if (editandoId === null) await crearTarifa(datos);
       else await actualizarTarifa(editandoId, datos);
@@ -415,6 +415,12 @@
         editandoId === null ? "Tarifa creada." : "Tarifa actualizada.",
       );
     } catch (caught) {
+      mostrarNotificacion(
+        caught instanceof Error
+          ? caught.message
+          : "No se pudo guardar la tarifa.",
+        "error",
+      );
       if (error) {
         error.textContent =
           caught instanceof Error
@@ -423,7 +429,7 @@
         error.classList.remove("hidden");
       }
     } finally {
-      if (guardar) guardar.disabled = false;
+      if (guardar) establecerCargaBoton(guardar, false, "Guardar");
     }
   });
 
