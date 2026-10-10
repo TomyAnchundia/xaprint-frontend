@@ -186,21 +186,291 @@
       </div>
     </section>
   </div>
+  <div
+    id="cliente-deuda-modal"
+    class="fixed inset-0 z-130 hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cliente-deuda-titulo"
+    aria-describedby="cliente-deuda-resumen"
+  >
+    <button
+      id="cliente-deuda-backdrop"
+      type="button"
+      class="absolute inset-0 cursor-default"
+      aria-label="Cerrar detalle de pedidos por cobrar"></button>
+    <section
+      class="relative flex max-h-[min(85vh,48rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+    >
+      <header
+        class="flex items-start justify-between gap-4 border-b border-slate-200 p-5"
+      >
+        <div>
+          <p class="text-xs font-semibold uppercase text-amber-800">
+            Saldo pendiente
+          </p>
+          <h3
+            id="cliente-deuda-titulo"
+            class="mt-1 text-lg font-bold text-slate-900"
+          >
+            Pedidos por cobrar
+          </h3>
+          <p
+            id="cliente-deuda-resumen"
+            class="mt-1 text-sm text-slate-500"
+          >
+          </p>
+        </div>
+        <button
+          id="cliente-deuda-cerrar"
+          type="button"
+          class="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600"
+          aria-label="Cerrar detalle de deuda"
+        >
+          <svg
+            class="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path stroke-linecap="round" d="m6 6 12 12M18 6 6 18"></path>
+          </svg>
+        </button>
+      </header>
+      <div class="overflow-y-auto p-5">
+        <div
+          class="overflow-x-auto rounded-lg border border-slate-200"
+        >
+          <table class="w-full min-w-140 text-left text-sm">
+            <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th scope="col" class="px-4 py-3">Pedido</th>
+                <th scope="col" class="px-4 py-3">Fecha</th>
+                <th scope="col" class="px-4 py-3 text-right">Total</th>
+                <th scope="col" class="px-4 py-3 text-right">Pagado</th>
+                <th scope="col" class="px-4 py-3 text-right">Por cobrar</th>
+              </tr>
+            </thead>
+            <tbody
+              id="cliente-deuda-pedidos"
+              class="divide-y divide-slate-100"
+            >
+            </tbody>
+          </table>
+        </div>
+        <div
+          class="mt-4 flex items-center justify-between gap-3 rounded-lg bg-amber-50 px-4 py-3"
+        >
+          <span class="text-sm font-semibold text-amber-900"
+            >Saldo total pendiente</span
+          >
+          <strong
+            id="cliente-deuda-total"
+            class="text-lg font-bold tabular-nums text-amber-950"></strong>
+        </div>
+      </div>
+      <footer
+        class="flex justify-end border-t border-slate-200 bg-slate-50 px-5 py-3"
+      >
+        <button
+          id="cliente-deuda-cerrar-pie"
+          type="button"
+          class="h-9 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600"
+          >Cerrar</button
+        >
+      </footer>
+    </section>
+  </div>
+  <div
+    id="cliente-tarifas-modal"
+    class="fixed inset-0 z-140 hidden items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cliente-tarifas-titulo"
+  >
+    <button
+      id="cliente-tarifas-backdrop"
+      type="button"
+      class="absolute inset-0 cursor-default"
+      aria-label="Cerrar tarifas exclusivas"></button>
+    <section
+      class="relative flex max-h-[min(92vh,52rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+    >
+      <header
+        class="flex items-start justify-between gap-4 border-b border-slate-200 p-5"
+      >
+        <div>
+          <p class="text-xs font-semibold uppercase text-cyan-800">
+            Configuración de precios
+          </p>
+          <h3
+            id="cliente-tarifas-titulo"
+            class="mt-1 text-lg font-bold text-slate-900"
+          >
+            Tarifas exclusivas
+          </h3>
+          <p
+            id="cliente-tarifas-cliente"
+            class="mt-1 text-sm text-slate-500"
+          >
+          </p>
+        </div>
+        <button
+          id="cliente-tarifas-cerrar"
+          type="button"
+          class="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+          aria-label="Cerrar tarifas exclusivas">✕</button>
+      </header>
+      <div class="min-h-0 space-y-5 overflow-y-auto p-5">
+        <div
+          class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-cyan-100 bg-cyan-50/60 p-3"
+        >
+          <p class="max-w-xl text-sm text-slate-700">
+            Guardar el primer rango activa automáticamente estas tarifas para
+            el cliente. Si falta el servicio, ancho o rango requerido, el
+            pedido no podrá guardarse.
+          </p>
+          <button
+            id="cliente-tarifas-toggle"
+            type="button"
+            class="h-9 rounded-lg px-4 text-sm font-semibold text-white"
+          >
+          </button>
+        </div>
+        <form
+          id="cliente-tarifa-form"
+          class="rounded-lg border border-slate-200 p-4"
+        >
+          <h4 id="cliente-tarifa-form-titulo" class="text-sm font-bold text-slate-900">
+            Agregar rango de tarifa
+          </h4>
+          <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <label class="text-xs font-medium text-slate-600">
+              Servicio
+              <select
+                id="cliente-tarifa-servicio"
+                required
+                class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800"
+              >
+                <option value="TEXTIL">DTF Textil</option>
+                <option value="UV">DTF UV</option>
+              </select>
+            </label>
+            <label class="text-xs font-medium text-slate-600">
+              Ancho
+              <select
+                id="cliente-tarifa-ancho"
+                required
+                class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800"
+              >
+                <option value="31">31 cm</option>
+                <option value="58">58 cm</option>
+              </select>
+            </label>
+            <label class="text-xs font-medium text-slate-600">
+              Precio por metro
+              <input
+                id="cliente-tarifa-precio"
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+                inputmode="decimal"
+                class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm text-slate-800"
+              />
+            </label>
+            <label class="text-xs font-medium text-slate-600">
+              Desde (cm)
+              <input
+                id="cliente-tarifa-desde"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm text-slate-800"
+              />
+            </label>
+            <label class="text-xs font-medium text-slate-600">
+              Hasta (cm)
+              <input
+                id="cliente-tarifa-hasta"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="Sin límite"
+                class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm text-slate-800"
+              />
+            </label>
+            <div class="flex items-end gap-2">
+              <button
+                id="cliente-tarifa-guardar"
+                type="submit"
+                class="h-10 flex-1 rounded-lg bg-cyan-800 px-3 text-sm font-semibold text-white hover:bg-cyan-900"
+                >Guardar tarifa</button
+              >
+              <button
+                id="cliente-tarifa-cancelar-edicion"
+                type="button"
+                class="hidden h-10 rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >Cancelar</button
+              >
+            </div>
+          </div>
+          <p
+            id="cliente-tarifa-error"
+            class="mt-3 hidden text-sm text-red-700"
+            role="alert"
+          >
+          </p>
+        </form>
+        <div>
+          <h4 class="text-sm font-bold text-slate-900">Rangos configurados</h4>
+          <div
+            id="cliente-tarifas-lista"
+            class="mt-2 divide-y divide-slate-100 rounded-lg border border-slate-200"
+          >
+            <p class="p-4 text-sm text-slate-500">Cargando tarifas...</p>
+          </div>
+        </div>
+      </div>
+      <footer
+        class="flex justify-end border-t border-slate-200 bg-slate-50 px-5 py-3"
+      >
+        <button
+          id="cliente-tarifas-cerrar-pie"
+          type="button"
+          class="h-9 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          >Cerrar</button
+        >
+      </footer>
+    </section>
+  </div>
 </section>
 
 <script>
   import {
     actualizarCliente,
+    actualizarTarifaCliente,
     crearCliente,
+    crearTarifaCliente,
     eliminarCliente,
+    eliminarTarifaCliente,
+    establecerTarifaEspecialCliente,
     obtenerClientes,
     obtenerDeudaCliente,
     obtenerDeudasClientes,
     obtenerPagosCliente,
+    obtenerTarifasCliente,
     registrarAbonoCliente,
     type Cliente,
+    type DeudaCliente,
     type ResumenDeudaCliente,
+    type TarifaCliente,
+    type TarifaClienteData,
   } from "../../services/api";
+  import { formatearFechaCorta } from "../../utils/fecha";
   import {
     establecerCargaBoton,
     mostrarNotificacion,
@@ -230,6 +500,10 @@
   const formTitulo = document.getElementById("cliente-form-titulo");
   const error = document.getElementById("cliente-form-error");
   const modalEliminar = document.getElementById("cliente-eliminar-modal");
+  const modalDeuda = document.getElementById("cliente-deuda-modal");
+  const deudaPedidos = document.getElementById("cliente-deuda-pedidos");
+  const deudaResumen = document.getElementById("cliente-deuda-resumen");
+  const deudaTotal = document.getElementById("cliente-deuda-total");
   const nombreEliminar = document.getElementById("cliente-eliminar-nombre");
   const botonEliminarConfirmar = document.getElementById(
     "cliente-eliminar-confirmar",
@@ -237,10 +511,45 @@
 
   let clientes: Cliente[] = [];
   let resumenesDeuda: ResumenDeudaCliente[] = [];
+  let datosCargados = false;
+  let cargandoDatos = false;
+  let recargaPendiente = false;
   let clienteSeleccionado: Cliente | null = null;
   let editandoId: number | null = null;
   let solicitudDetalle = 0;
   let clientePendienteEliminar: Cliente | null = null;
+  let deudaTrigger: HTMLElement | null = null;
+  let tarifasClienteActual: TarifaCliente[] = [];
+  let editandoTarifaClienteId: number | null = null;
+
+  const tarifasClienteModal = document.getElementById(
+    "cliente-tarifas-modal",
+  );
+  const tarifasClienteLista = document.getElementById(
+    "cliente-tarifas-lista",
+  );
+  const tarifasClienteTitulo = document.getElementById(
+    "cliente-tarifas-cliente",
+  );
+  const tarifasClienteForm = document.getElementById(
+    "cliente-tarifa-form",
+  ) as HTMLFormElement | null;
+  const tarifaServicioInput = document.getElementById(
+    "cliente-tarifa-servicio",
+  ) as HTMLSelectElement | null;
+  const tarifaAnchoInput = document.getElementById(
+    "cliente-tarifa-ancho",
+  ) as HTMLSelectElement | null;
+  const tarifaDesdeInput = document.getElementById(
+    "cliente-tarifa-desde",
+  ) as HTMLInputElement | null;
+  const tarifaHastaInput = document.getElementById(
+    "cliente-tarifa-hasta",
+  ) as HTMLInputElement | null;
+  const tarifaPrecioInput = document.getElementById(
+    "cliente-tarifa-precio",
+  ) as HTMLInputElement | null;
+  const tarifaError = document.getElementById("cliente-tarifa-error");
 
   function normalizar(texto: string) {
     return texto
@@ -270,6 +579,156 @@
       mostrarNotificacion("Eliminación de cliente cancelada.", "info");
     }
   }
+
+  function abrirDetalleDeuda(
+    trigger: HTMLElement,
+    cliente: Cliente,
+    deuda: DeudaCliente,
+  ) {
+    if (!modalDeuda || !deudaPedidos || !deudaResumen || !deudaTotal) return;
+    deudaTrigger = trigger;
+    deudaResumen.textContent = `${cliente.nombre} · ${deuda.pedidos.length} ${deuda.pedidos.length === 1 ? "pedido pendiente" : "pedidos pendientes"}`;
+    deudaPedidos.innerHTML = deuda.pedidos
+      .filter((pedido) => pedido.porCobrar > 0)
+      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+      .map(
+        (pedido) => `
+          <tr>
+            <th scope="row" class="px-4 py-3 font-semibold text-slate-800">#${pedido.id}</th>
+            <td class="px-4 py-3 text-sm text-slate-600">${formatearFechaCorta(pedido.fecha)}</td>
+            <td class="px-4 py-3 text-right tabular-nums text-slate-600">${formatearMoneda(pedido.total)}</td>
+            <td class="px-4 py-3 text-right tabular-nums text-slate-600">${formatearMoneda(pedido.pagado)}</td>
+            <td class="px-4 py-3 text-right font-semibold tabular-nums text-amber-800">${formatearMoneda(pedido.porCobrar)}</td>
+          </tr>`,
+      )
+      .join("");
+    deudaTotal.textContent = formatearMoneda(deuda.totalDeuda);
+    modalDeuda.classList.remove("hidden");
+    modalDeuda.classList.add("flex");
+    document.getElementById("cliente-deuda-cerrar")?.focus();
+  }
+
+  function restablecerFormularioTarifaCliente() {
+    editandoTarifaClienteId = null;
+    tarifasClienteForm?.reset();
+    const titulo = document.getElementById("cliente-tarifa-form-titulo");
+    const guardar = document.getElementById("cliente-tarifa-guardar");
+    const cancelar = document.getElementById(
+      "cliente-tarifa-cancelar-edicion",
+    );
+    if (titulo) titulo.textContent = "Agregar rango de tarifa";
+    if (guardar) guardar.textContent = "Guardar tarifa";
+    cancelar?.classList.add("hidden");
+    tarifaError?.classList.add("hidden");
+    actualizarAnchosTarifaCliente();
+  }
+
+  function actualizarAnchosTarifaCliente() {
+    if (!tarifaServicioInput || !tarifaAnchoInput) return;
+    const anchoActual = tarifaAnchoInput.value;
+    const anchos = tarifaServicioInput.value === "UV" ? [29] : [31, 58];
+    tarifaAnchoInput.innerHTML = anchos
+      .map((ancho) => `<option value="${ancho}">${ancho} cm</option>`)
+      .join("");
+    tarifaAnchoInput.value = anchos.includes(Number(anchoActual))
+      ? anchoActual
+      : String(anchos[0]);
+  }
+
+  function renderizarTarifasCliente() {
+    if (!tarifasClienteLista) return;
+    tarifasClienteLista.innerHTML = tarifasClienteActual.length
+      ? tarifasClienteActual
+          .map(
+            (tarifa) => `
+              <article class="flex flex-wrap items-center justify-between gap-3 p-3">
+                <div>
+                  <p class="text-sm font-semibold text-slate-800">${tarifa.servicio === "TEXTIL" ? "DTF Textil" : "DTF UV"} · ${tarifa.ancho} cm</p>
+                  <p class="mt-0.5 text-xs text-slate-500">${tarifa.desde}–${tarifa.hasta === null ? "∞" : tarifa.hasta} cm · ${formatearMoneda(tarifa.precio)}/m</p>
+                </div>
+                <div class="flex gap-2">
+                  <button type="button" data-tarifa-cliente-editar="${tarifa.id}" class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Editar</button>
+                  <button type="button" data-tarifa-cliente-eliminar="${tarifa.id}" class="rounded-md border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50">Eliminar</button>
+                </div>
+              </article>`,
+          )
+          .join("")
+      : `<p class="p-4 text-sm text-slate-500">Todavía no hay rangos exclusivos configurados.</p>`;
+  }
+
+  async function cargarTarifasClienteModal() {
+    if (!clienteSeleccionado || !tarifasClienteLista) return;
+    tarifasClienteLista.innerHTML =
+      '<p class="p-4 text-sm text-slate-500">Cargando tarifas...</p>';
+    try {
+      tarifasClienteActual = await obtenerTarifasCliente(clienteSeleccionado.id);
+      tarifasClienteActual.sort(
+        (a, b) =>
+          a.servicio.localeCompare(b.servicio) ||
+          a.ancho - b.ancho ||
+          a.desde - b.desde,
+      );
+      renderizarTarifasCliente();
+    } catch (caught) {
+      console.error("No se pudieron cargar las tarifas exclusivas:", caught);
+      tarifasClienteLista.innerHTML =
+        '<p class="p-4 text-sm text-red-700">No se pudieron cargar las tarifas. Cierra y vuelve a abrir esta ventana para reintentar.</p>';
+    }
+  }
+
+  async function abrirModalTarifasCliente() {
+    if (!clienteSeleccionado || !tarifasClienteModal) return;
+    if (tarifasClienteTitulo) {
+      tarifasClienteTitulo.textContent = clienteSeleccionado.nombre;
+    }
+    const toggle = document.getElementById("cliente-tarifas-toggle");
+    if (toggle) {
+      toggle.textContent = clienteSeleccionado.tarifaEspecial
+        ? "Desactivar tarifas exclusivas"
+        : "Activar tarifas exclusivas";
+      toggle.className = `h-9 rounded-lg px-4 text-sm font-semibold text-white ${
+        clienteSeleccionado.tarifaEspecial
+          ? "bg-slate-700 hover:bg-slate-800"
+          : "bg-cyan-800 hover:bg-cyan-900"
+      }`;
+    }
+    restablecerFormularioTarifaCliente();
+    tarifasClienteModal.classList.remove("hidden");
+    tarifasClienteModal.classList.add("flex");
+    document.getElementById("cliente-tarifas-cerrar")?.focus();
+    await cargarTarifasClienteModal();
+  }
+
+  function cerrarModalTarifasCliente() {
+    tarifasClienteModal?.classList.add("hidden");
+    tarifasClienteModal?.classList.remove("flex");
+    restablecerFormularioTarifaCliente();
+    detalle?.querySelector<HTMLButtonElement>("#cliente-tarifas-abrir")?.focus();
+  }
+
+  function cerrarDetalleDeuda() {
+    modalDeuda?.classList.add("hidden");
+    modalDeuda?.classList.remove("flex");
+    deudaTrigger?.focus();
+    deudaTrigger = null;
+  }
+
+  modalDeuda?.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key !== "Tab") return;
+    const elementosEnfocables = modalDeuda.querySelectorAll<HTMLElement>(
+      'button:not(:disabled):not(#cliente-deuda-backdrop), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+    );
+    const primero = elementosEnfocables.item(0);
+    const ultimo = elementosEnfocables.item(elementosEnfocables.length - 1);
+    if (!primero || !ultimo) return;
+    if (event.shiftKey && document.activeElement === primero) {
+      event.preventDefault();
+      ultimo.focus();
+    } else if (!event.shiftKey && document.activeElement === ultimo) {
+      event.preventDefault();
+      primero.focus();
+    }
+  });
 
   function renderLista() {
     if (!lista) return;
@@ -343,6 +802,13 @@
     detalle
       .querySelector("#cliente-eliminar")
       ?.addEventListener("click", () => abrirConfirmacionEliminar(cliente));
+    detalle.insertAdjacentHTML(
+      "beforeend",
+      `<section class="mt-4 rounded-lg border border-cyan-100 bg-cyan-50/50 p-3"><div class="flex flex-wrap items-center justify-between gap-3"><div><p class="text-sm font-semibold text-slate-800">Tarifas del cliente</p><p class="mt-0.5 text-xs text-slate-500">${cliente.tarifaEspecial ? "Usa tarifas exclusivas. Si falta un rango, no se podrá crear el pedido." : "Usa las tarifas generales."}</p></div><button id="cliente-tarifas-abrir" type="button" class="h-9 rounded-lg border border-cyan-200 bg-white px-3 text-xs font-semibold text-cyan-900 hover:bg-cyan-50">Administrar</button></div></section>`,
+    );
+    detalle
+      .querySelector("#cliente-tarifas-abrir")
+      ?.addEventListener("click", () => void abrirModalTarifasCliente());
 
     try {
       const [deuda, pagosCliente] = await Promise.all([
@@ -359,13 +825,23 @@
       const pagosRecientes = [...pagosCliente.pagos].reverse().slice(0, 5);
       finanzas.innerHTML = `
         <div class="grid grid-cols-2 gap-2">
-          <div class="rounded-lg border border-amber-200 bg-amber-50 p-3"><p class="text-xs font-medium text-amber-800">Por cobrar</p><p class="mt-1 text-lg font-bold text-amber-950">${formatearMoneda(deuda.totalDeuda)}</p><p class="text-[11px] text-amber-800">${deuda.pedidos.length} pedidos con saldo</p></div>
+          ${
+            deuda.totalDeuda > 0
+              ? `<button id="cliente-ver-deuda" type="button" class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-left transition hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-haspopup="dialog" aria-controls="cliente-deuda-modal"><span class="block text-xs font-medium text-amber-800">Por cobrar</span><span class="mt-1 block text-lg font-bold text-amber-950">${formatearMoneda(deuda.totalDeuda)}</span><span class="block text-[11px] text-amber-800">${deuda.pedidos.length} pedidos con saldo</span></button>`
+              : `<div class="rounded-lg border border-amber-200 bg-amber-50 p-3"><p class="text-xs font-medium text-amber-800">Por cobrar</p><p class="mt-1 text-lg font-bold text-amber-950">${formatearMoneda(deuda.totalDeuda)}</p><p class="text-[11px] text-amber-800">Sin pedidos con saldo</p></div>`
+          }
           <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3"><p class="text-xs font-medium text-emerald-800">Pagos registrados</p><p class="mt-1 text-lg font-bold text-emerald-950">${pagosCliente.pagos.length}</p><p class="text-[11px] text-emerald-800">Abonos recibidos</p></div>
         </div>
-        ${deuda.totalDeuda > 0 ? `<form id="cliente-abono-form" class="mt-4 rounded-lg border border-slate-200 p-3"><label for="cliente-abono-monto" class="block text-sm font-semibold text-slate-800">Registrar abono</label><p class="mt-1 text-xs text-slate-500">Se aplicará a los pedidos entregados más antiguos. Máximo: ${formatearMoneda(deuda.totalDeuda)}</p><div class="mt-3 flex items-end gap-2"><div class="min-w-0 flex-1"><label for="cliente-abono-monto" class="sr-only">Monto del abono</label><input id="cliente-abono-monto" name="monto" type="number" min="0.01" max="${deuda.totalDeuda.toFixed(2)}" step="0.01" required inputmode="decimal" placeholder="0.00" class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100" /></div><button type="submit" class="h-10 shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">Guardar abono</button></div><p id="cliente-abono-error" class="mt-2 hidden text-sm text-red-700" role="alert"></p></form>` : ""}
+        ${deuda.totalDeuda > 0 ? `<form id="cliente-abono-form" class="mt-4 rounded-lg border border-slate-200 p-3"><label for="cliente-abono-monto" class="block text-sm font-semibold text-slate-800">Registrar abono</label><p class="mt-1 text-xs text-slate-500">Se aplicará a los pedidos entregados más antiguos. Máximo: ${formatearMoneda(deuda.totalDeuda)}</p><div class="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"><div class="min-w-0"><label for="cliente-abono-monto" class="sr-only">Monto del abono</label><input id="cliente-abono-monto" name="monto" type="number" min="0.01" max="${deuda.totalDeuda.toFixed(2)}" step="0.01" required inputmode="decimal" placeholder="0.00" class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100" /></div><label for="cliente-abono-metodo" class="block text-xs font-medium text-slate-600">Método de pago<select id="cliente-abono-metodo" name="metodoPago" required class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option></select></label><button type="submit" class="h-10 shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">Guardar abono</button></div><p id="cliente-abono-error" class="mt-2 hidden text-sm text-red-700" role="alert"></p></form>` : ""}
         <h4 class="mt-5 text-sm font-bold text-slate-900">Últimos pagos</h4>
-        ${pagosRecientes.length ? `<ul class="mt-2 divide-y divide-slate-100 rounded-lg border border-slate-200">${pagosRecientes.map((pago) => `<li class="flex items-start justify-between gap-3 px-3 py-2.5"><span><span class="block text-sm font-semibold text-slate-800">${formatearMoneda(pago.monto)}</span><span class="mt-0.5 block text-xs text-slate-500">${new Intl.DateTimeFormat("es-EC", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guayaquil" }).format(new Date(pago.fecha))} · ${escapeHtml(pago.usuario.username)}</span></span><span class="text-right text-xs text-slate-500">${pago.aplicaciones.map((aplicacion: { pedidoId: number; monto: number }) => `#${aplicacion.pedidoId}: ${formatearMoneda(aplicacion.monto)}`).join("<br>")}</span></li>`).join("")}</ul>` : `<p class="mt-2 rounded-lg bg-slate-50 p-3 text-sm text-slate-500">Aún no hay pagos registrados.</p>`}
+        ${pagosRecientes.length ? `<ul class="mt-2 divide-y divide-slate-100 rounded-lg border border-slate-200">${pagosRecientes.map((pago) => `<li class="flex flex-wrap items-start justify-between gap-3 px-3 py-2.5"><span class="min-w-0"><span class="block text-sm font-semibold text-slate-800">${formatearMoneda(pago.monto)} · ${escapeHtml(pago.metodoPago)}</span><span class="mt-0.5 block text-xs text-slate-500">${new Intl.DateTimeFormat("es-EC", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guayaquil" }).format(new Date(pago.fecha))} · ${escapeHtml(pago.usuario.username)}</span></span><span class="text-right text-xs text-slate-500">${pago.aplicaciones.map((aplicacion: { pedidoId: number; monto: number }) => `#${aplicacion.pedidoId}: ${formatearMoneda(aplicacion.monto)}`).join("<br>")}</span></li>`).join("")}</ul>` : `<p class="mt-2 rounded-lg bg-slate-50 p-3 text-sm text-slate-500">Aún no hay pagos registrados.</p>`}
       `;
+
+      finanzas
+        .querySelector<HTMLButtonElement>("#cliente-ver-deuda")
+        ?.addEventListener("click", (event) => {
+          abrirDetalleDeuda(event.currentTarget as HTMLButtonElement, cliente, deuda);
+        });
 
       const formularioAbono = finanzas.querySelector<HTMLFormElement>(
         "#cliente-abono-form",
@@ -400,7 +876,13 @@
         errorAbono?.classList.add("hidden");
 
         try {
-          await registrarAbonoCliente(cliente.id, monto);
+          const metodoPago =
+            formularioAbono.querySelector<HTMLSelectElement>(
+              "#cliente-abono-metodo",
+            )?.value === "Transferencia"
+              ? "Transferencia"
+              : "Efectivo";
+          await registrarAbonoCliente(cliente.id, monto, metodoPago);
           await cargar();
           avisar("Abono registrado correctamente.");
         } catch (caught) {
@@ -466,17 +948,25 @@
   }
 
   async function cargar() {
-    if (!lista) return;
+    if (!lista || cargandoDatos) return;
+    cargandoDatos = true;
     lista.innerHTML = `<p class="p-5 text-sm text-slate-500">Cargando clientes...</p>`;
     try {
       [clientes, resumenesDeuda] = await Promise.all([
         obtenerClientes(),
         obtenerDeudasClientes(),
       ]);
+      datosCargados = true;
       renderLista();
       renderDetalle();
     } catch (caught) {
       lista.innerHTML = `<p class="p-5 text-sm text-red-700">${escapeHtml(caught instanceof Error ? caught.message : "No se pudieron cargar los clientes.")}</p>`;
+    } finally {
+      cargandoDatos = false;
+      if (recargaPendiente) {
+        recargaPendiente = false;
+        void cargar();
+      }
     }
   }
 
@@ -510,7 +1000,191 @@
   document
     .getElementById("cliente-eliminar-backdrop")
     ?.addEventListener("click", () => cerrarConfirmacionEliminar());
+  document
+    .querySelectorAll("#cliente-deuda-cerrar, #cliente-deuda-cerrar-pie, #cliente-deuda-backdrop")
+    .forEach((boton) => boton.addEventListener("click", cerrarDetalleDeuda));
+  document
+    .querySelectorAll(
+      "#cliente-tarifas-cerrar, #cliente-tarifas-cerrar-pie, #cliente-tarifas-backdrop",
+    )
+    .forEach((boton) =>
+      boton.addEventListener("click", cerrarModalTarifasCliente),
+    );
+  document
+    .getElementById("cliente-tarifas-abrir")
+    ?.addEventListener("click", () => void abrirModalTarifasCliente());
+  document
+    .getElementById("cliente-tarifas-toggle")
+    ?.addEventListener("click", async () => {
+      if (!clienteSeleccionado) return;
+      const toggle = document.getElementById(
+        "cliente-tarifas-toggle",
+      ) as HTMLButtonElement | null;
+      if (toggle) establecerCargaBoton(toggle, true, "Actualizando...");
+      try {
+        const cliente = await establecerTarifaEspecialCliente(
+          clienteSeleccionado.id,
+          !clienteSeleccionado.tarifaEspecial,
+        );
+        clienteSeleccionado = cliente;
+        clientes = clientes.map((actual) =>
+          actual.id === cliente.id ? cliente : actual,
+        );
+        renderLista();
+        renderDetalle();
+        await abrirModalTarifasCliente();
+        mostrarNotificacion(
+          cliente.tarifaEspecial
+            ? "Tarifas exclusivas activadas. Completa los rangos necesarios."
+            : "Se restablecieron las tarifas generales para este cliente.",
+        );
+      } catch (caught) {
+        const mensaje =
+          caught instanceof Error
+            ? caught.message
+            : "No se pudo cambiar el tipo de tarifa.";
+        mostrarNotificacion(mensaje, "error");
+      } finally {
+        if (toggle) establecerCargaBoton(toggle, false);
+      }
+    });
+  tarifaServicioInput?.addEventListener(
+    "change",
+    actualizarAnchosTarifaCliente,
+  );
+  document
+    .getElementById("cliente-tarifa-cancelar-edicion")
+    ?.addEventListener("click", restablecerFormularioTarifaCliente);
+  tarifasClienteForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (
+      !clienteSeleccionado ||
+      !tarifaServicioInput ||
+      !tarifaAnchoInput ||
+      !tarifaDesdeInput ||
+      !tarifaHastaInput ||
+      !tarifaPrecioInput
+    ) {
+      return;
+    }
+    const data: TarifaClienteData = {
+      servicio: tarifaServicioInput.value as "TEXTIL" | "UV",
+      ancho: Number(tarifaAnchoInput.value),
+      desde: Number(tarifaDesdeInput.value),
+      hasta: tarifaHastaInput.value
+        ? Number(tarifaHastaInput.value)
+        : null,
+      precio: Number(tarifaPrecioInput.value),
+    };
+    const boton = document.getElementById(
+      "cliente-tarifa-guardar",
+    ) as HTMLButtonElement | null;
+    if (boton) establecerCargaBoton(boton, true, "Guardando...");
+    tarifaError?.classList.add("hidden");
+    try {
+      if (editandoTarifaClienteId === null) {
+        await crearTarifaCliente(clienteSeleccionado.id, data);
+        clienteSeleccionado = {
+          ...clienteSeleccionado,
+          tarifaEspecial: true,
+        };
+        clientes = clientes.map((cliente) =>
+          cliente.id === clienteSeleccionado?.id
+            ? clienteSeleccionado
+            : cliente,
+        );
+        const toggle = document.getElementById("cliente-tarifas-toggle");
+        if (toggle) {
+          toggle.textContent = "Desactivar tarifas exclusivas";
+          toggle.className =
+            "h-9 rounded-lg bg-slate-700 px-4 text-sm font-semibold text-white hover:bg-slate-800";
+        }
+        void renderDetalle();
+      } else {
+        await actualizarTarifaCliente(
+          clienteSeleccionado.id,
+          editandoTarifaClienteId,
+          data,
+        );
+      }
+      restablecerFormularioTarifaCliente();
+      await cargarTarifasClienteModal();
+      mostrarNotificacion("Tarifa exclusiva guardada.");
+    } catch (caught) {
+      if (tarifaError) {
+        tarifaError.textContent =
+          caught instanceof Error
+            ? caught.message
+            : "No se pudo guardar la tarifa exclusiva.";
+        tarifaError.classList.remove("hidden");
+      }
+    } finally {
+      if (boton) establecerCargaBoton(boton, false, "Guardar tarifa");
+    }
+  });
+  tarifasClienteLista?.addEventListener("click", async (event) => {
+    const target = event.target;
+    if (!(target instanceof Element) || !clienteSeleccionado) return;
+    const editButton = target.closest<HTMLButtonElement>(
+      "[data-tarifa-cliente-editar]",
+    );
+    if (editButton) {
+      const tarifa = tarifasClienteActual.find(
+        (item) => item.id === Number(editButton.dataset.tarifaClienteEditar),
+      );
+      if (!tarifa) return;
+      editandoTarifaClienteId = tarifa.id;
+      if (tarifaServicioInput) tarifaServicioInput.value = tarifa.servicio;
+      actualizarAnchosTarifaCliente();
+      if (tarifaAnchoInput) tarifaAnchoInput.value = String(tarifa.ancho);
+      if (tarifaDesdeInput) tarifaDesdeInput.value = String(tarifa.desde);
+      if (tarifaHastaInput) tarifaHastaInput.value = tarifa.hasta?.toString() ?? "";
+      if (tarifaPrecioInput) tarifaPrecioInput.value = String(tarifa.precio);
+      const titulo = document.getElementById("cliente-tarifa-form-titulo");
+      const guardar = document.getElementById("cliente-tarifa-guardar");
+      const cancelar = document.getElementById(
+        "cliente-tarifa-cancelar-edicion",
+      );
+      if (titulo) titulo.textContent = "Editar rango de tarifa";
+      if (guardar) guardar.textContent = "Guardar cambios";
+      cancelar?.classList.remove("hidden");
+      tarifaError?.classList.add("hidden");
+      tarifaServicioInput?.focus();
+      return;
+    }
+
+    const deleteButton = target.closest<HTMLButtonElement>(
+      "[data-tarifa-cliente-eliminar]",
+    );
+    if (!deleteButton) return;
+    const tarifaId = Number(deleteButton.dataset.tarifaClienteEliminar);
+    if (!window.confirm("¿Eliminar este rango de tarifa exclusiva?")) return;
+    try {
+      await eliminarTarifaCliente(clienteSeleccionado.id, tarifaId);
+      if (editandoTarifaClienteId === tarifaId) {
+        restablecerFormularioTarifaCliente();
+      }
+      await cargarTarifasClienteModal();
+      mostrarNotificacion("Tarifa exclusiva eliminada.");
+    } catch (caught) {
+      mostrarNotificacion(
+        caught instanceof Error
+          ? caught.message
+          : "No se pudo eliminar la tarifa exclusiva.",
+        "error",
+      );
+    }
+  });
   window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modalDeuda?.classList.contains("hidden")) {
+      cerrarDetalleDeuda();
+    }
+    if (
+      event.key === "Escape" &&
+      !tarifasClienteModal?.classList.contains("hidden")
+    ) {
+      cerrarModalTarifasCliente();
+    }
     if (
       event.key === "Escape" &&
       !modalEliminar?.classList.contains("hidden")
@@ -571,8 +1245,16 @@
   });
 
   window.addEventListener("centro-control:actualizar-datos", () => {
-    void cargar();
+    if (cargandoDatos) {
+      recargaPendiente = true;
+    } else if (datosCargados) {
+      void cargar();
+    }
   });
 
-  void cargar();
+  window.addEventListener("centro-control:vista-activada", (event) => {
+    const vista = (event as CustomEvent<{ vista?: string }>).detail?.vista;
+    if (vista === "clientes" && !datosCargados && !cargandoDatos)
+      void cargar();
+  });
 </script>

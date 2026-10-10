@@ -164,6 +164,26 @@ export function crearFilaPedido(pedido: Pedido): string {
         </span>
       </td>
 
+      <td class="px-5 py-4">
+        <span
+          class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${
+            pedido.estadoPago === "PAGADO"
+              ? "bg-emerald-50 text-emerald-700"
+              : pedido.estadoPago === "PARCIALMENTE_PAGADO"
+                ? "bg-amber-50 text-amber-800"
+                : "bg-slate-100 text-slate-600"
+          }"
+        >
+          ${
+            pedido.estadoPago === "PAGADO"
+              ? "Pagado"
+              : pedido.estadoPago === "PARCIALMENTE_PAGADO"
+                ? "Abono parcial"
+                : "No pagado"
+          }
+        </span>
+      </td>
+
       <td class="px-5 py-4 text-right">
         <button
           type="button"

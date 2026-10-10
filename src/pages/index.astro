@@ -110,6 +110,7 @@ import Estadisticas from "../components/admin/Estadisticas.astro";
   </div>
 
   <script>
+    import "../utils/responsive-tables";
     import {
       suscribirseConexion,
       iniciarPedidosStore,
@@ -210,6 +211,11 @@ import Estadisticas from "../components/admin/Estadisticas.astro";
       activa.element?.classList.remove("hidden");
       activa.element?.classList.add("flex");
       document.title = `${activa.titulo} | Centro de Control`;
+      window.dispatchEvent(
+        new CustomEvent("centro-control:vista-activada", {
+          detail: { vista },
+        }),
+      );
     });
   </script>
 </Layout>

@@ -111,6 +111,24 @@ const periodosFinancieros = [
                   —
                 </dd>
               </div>
+              <div>
+                <dt class="text-[11px] text-slate-500">Efectivo</dt>
+                <dd
+                  data-efectivo={id}
+                  class="mt-0.5 text-base font-bold tabular-nums text-emerald-800"
+                >
+                  —
+                </dd>
+              </div>
+              <div>
+                <dt class="text-[11px] text-slate-500">Transferencia</dt>
+                <dd
+                  data-transferencia={id}
+                  class="mt-0.5 text-base font-bold tabular-nums text-blue-800"
+                >
+                  —
+                </dd>
+              </div>
             </dl>
             <p
               data-pedidos={id}
@@ -379,6 +397,7 @@ const periodosFinancieros = [
       "aporte-desarrollador-guardar",
     ) as HTMLButtonElement | null;
     const aporteError = document.getElementById("aporte-desarrollador-error");
+    let estadisticasCargadas = false;
     const modalAporte = document.getElementById(
       "modal-liquidacion-desarrollador",
     );
@@ -675,9 +694,17 @@ const periodosFinancieros = [
           const resumen = resumenes[indice];
           const cobrado = document.querySelector(`[data-cobrado="${id}"]`);
           const porCobrar = document.querySelector(`[data-por-cobrar="${id}"]`);
+          const efectivo = document.querySelector(`[data-efectivo="${id}"]`);
+          const transferencia = document.querySelector(
+            `[data-transferencia="${id}"]`,
+          );
           const pedidos = document.querySelector(`[data-pedidos="${id}"]`);
           if (cobrado) cobrado.textContent = moneda(resumen.cobrado);
           if (porCobrar) porCobrar.textContent = moneda(resumen.porCobrar);
+          if (efectivo) efectivo.textContent = moneda(resumen.efectivo);
+          if (transferencia) {
+            transferencia.textContent = moneda(resumen.transferencia);
+          }
           if (pedidos) {
             pedidos.textContent = `${resumen.pedidosPorCobrar} pedidos entregados con saldo`;
           }
@@ -704,8 +731,6 @@ const periodosFinancieros = [
           void cargarProduccion(fechaInput.value);
         }
       });
-
-      void cargarProduccion(fechaInput.value);
     }
 
     if (periodoAporteInput) {
@@ -757,9 +782,20 @@ const periodosFinancieros = [
       aporteMontoInput.setCustomValidity("");
     });
 
-    void cargarResumenFinanciero(fechaEcuador());
+    function cargarVistaEstadisticas() {
+      if (estadisticasCargadas) return;
+      estadisticasCargadas = true;
+      if (fechaInput?.value) void cargarProduccion(fechaInput.value);
+      void cargarResumenFinanciero(fechaEcuador());
+    }
+
+    window.addEventListener("centro-control:vista-activada", (event) => {
+      const vista = (event as CustomEvent<{ vista?: string }>).detail?.vista;
+      if (vista === "estadisticas") cargarVistaEstadisticas();
+    });
 
     window.addEventListener("centro-control:actualizar-datos", () => {
+      if (!estadisticasCargadas) return;
       if (fechaInput?.value) {
         void cargarProduccion(fechaInput.value);
       }

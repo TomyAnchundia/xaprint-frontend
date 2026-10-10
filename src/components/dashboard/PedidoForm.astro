@@ -692,6 +692,7 @@ const { mode = "crear" } = Astro.props;
     clienteSelect.value = String(cliente.id);
     busquedaCliente.value = cliente.nombre;
     ocultarResultadosClientes();
+    void actualizarPrecio();
   }
 
   function mostrarResultadosClientes(consulta: string) {
@@ -869,6 +870,7 @@ const { mode = "crear" } = Astro.props;
         servicio: servicioSelect.value as Servicio,
         ancho: Number(anchoSelect.value),
         largo,
+        clienteId: Number(clienteSelect?.value) || undefined,
       });
       const valorCalculado =
         resultado.valorCobrar ?? resultado.valor_cobrar ?? resultado.precio;
@@ -886,9 +888,14 @@ const { mode = "crear" } = Astro.props;
       if (!mantenerValorActual) {
         precioValor.textContent = formatearPrecio(valorCalculadoNormalizado);
       }
+      const clienteSeleccionado = clientesDisponibles.find(
+        (cliente) => cliente.id === Number(clienteSelect?.value),
+      );
       precioAyuda.textContent = mantenerValorActual
         ? "Importe actual guardado en el pedido."
-        : "Estimación calculada por el servidor.";
+        : clienteSeleccionado?.tarifaEspecial
+          ? "Estimación con la tarifa exclusiva de este cliente."
+          : "Estimación calculada con la tarifa general.";
     } catch (error) {
       console.error(error);
 
@@ -1337,6 +1344,7 @@ const { mode = "crear" } = Astro.props;
 
   busquedaCliente?.addEventListener("input", () => {
     if (clienteSelect) clienteSelect.value = "";
+    void actualizarPrecio();
     mostrarResultadosClientes(busquedaCliente.value);
   });
 

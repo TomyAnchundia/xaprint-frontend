@@ -216,6 +216,8 @@
     "usuario-eliminar-confirmar",
   ) as HTMLButtonElement | null;
   let usuarios: Usuario[] = [];
+  let datosCargados = false;
+  let cargandoDatos = false;
   let seleccionado: Usuario | null = null;
   let editandoId: number | null = null;
   let usuarioPendienteEliminar: Usuario | null = null;
@@ -298,14 +300,18 @@
   }
 
   async function cargar() {
-    if (!lista) return;
+    if (!lista || cargandoDatos) return;
+    cargandoDatos = true;
     lista.innerHTML = `<p class="p-5 text-sm text-slate-500">Cargando usuarios...</p>`;
     try {
       usuarios = await obtenerUsuarios();
+      datosCargados = true;
       renderizarLista();
       renderizarDetalle();
     } catch (caught) {
       lista.innerHTML = `<p class="p-5 text-sm text-red-700">${escapar(caught instanceof Error ? caught.message : "No se pudieron cargar los usuarios.")}</p>`;
+    } finally {
+      cargandoDatos = false;
     }
   }
 
@@ -422,5 +428,8 @@
     }
   });
 
-  void cargar();
+  window.addEventListener("centro-control:vista-activada", (event) => {
+    const vista = (event as CustomEvent<{ vista?: string }>).detail?.vista;
+    if (vista === "usuarios" && !datosCargados) void cargar();
+  });
 </script>

@@ -53,6 +53,12 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
                 —
               </p>
             </div>
+            <p
+              id="detalle-cliente-tarifa-especial"
+              class="mt-1 hidden w-fit rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold text-cyan-800"
+            >
+              Cliente con tarifas exclusivas
+            </p>
           </div>
         </div>
 
@@ -293,6 +299,10 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
                 class="mt-1 inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900"
                 >No pagado</span
               >
+              <p
+                id="detalle-metodos-pago"
+                class="mt-1 hidden text-xs font-medium text-slate-600"
+              ></p>
             </div>
             <button
               id="detalle-pago-accion"
@@ -718,6 +728,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       cambiarPrecioEspecial,
       eliminarPedido,
       obtenerHistorialPedido,
+      obtenerPagosPedido,
       obtenerPedido,
       registrarPagoPedido,
       revertirUltimoPagoPedido,
@@ -788,7 +799,6 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       eliminar?.classList.remove("hidden");
       eliminar?.classList.add("flex");
     }
-
     const titulo = document.getElementById("detalle-titulo");
     const loading = document.getElementById("detalle-loading");
     const error = document.getElementById("detalle-error");
@@ -822,6 +832,13 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
     const clienteHeader = document.getElementById("detalle-cliente-header");
     const telefonoHeader = document.getElementById("detalle-telefono-header");
+    const clienteTarifaEspecial = document.getElementById(
+      "detalle-cliente-tarifa-especial",
+    );
+    const metodosPagoElemento = document.getElementById(
+      "detalle-metodos-pago",
+    );
+    let solicitudMetodosPago = 0;
     const whatsappListo = document.getElementById(
       "detalle-whatsapp-listo",
     ) as HTMLButtonElement | null;
@@ -1020,6 +1037,12 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     );
     const modalPagoMonto = document.getElementById(
       "modal-confirmar-pago-monto",
+    );
+    const modalPagoMetodo = document.getElementById(
+      "modal-confirmar-pago-metodo",
+    ) as HTMLSelectElement | null;
+    const modalPagoMetodoContenedor = document.getElementById(
+      "modal-confirmar-pago-metodo-contenedor",
     );
     const modalPagoError = document.getElementById(
       "modal-confirmar-pago-error",
@@ -1506,6 +1529,8 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       if (!pedidoActual || !modalPago) return;
       modoModalPago = modo;
       const esReversion = modo === "revertir";
+      modalPagoMetodoContenedor?.classList.toggle("hidden", esReversion);
+      modalPagoMetodoContenedor?.classList.toggle("hidden", esReversion);
 
       if (modalPagoTitulo) {
         modalPagoTitulo.textContent = esReversion
@@ -1559,7 +1584,12 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       try {
         if (modoModalPago === "registrar") {
           modalPagoConfirmar.textContent = "Registrando...";
-          await registrarPagoPedido(pedidoActual.id);
+          await registrarPagoPedido(
+            pedidoActual.id,
+            modalPagoMetodo?.value === "Transferencia"
+              ? "Transferencia"
+              : "Efectivo",
+          );
         } else {
           modalPagoConfirmar.textContent = "Revirtiendo...";
           await revertirUltimoPagoPedido(pedidoActual.id);
@@ -1792,6 +1822,46 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         estadoPagoElemento.className = `mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${pagoClase}`;
         estadoPagoElemento.dataset.estadoPago = estadoPago;
       }
+      const solicitudPago = ++solicitudMetodosPago;
+      if (estadoPago === "PAGADO" && metodosPagoElemento) {
+        metodosPagoElemento.textContent = "Cargando método de pago...";
+        metodosPagoElemento.classList.remove("hidden");
+        void obtenerPagosPedido(pedido.id)
+          .then((pagosPedido) => {
+            if (
+              solicitudPago !== solicitudMetodosPago ||
+              pedidoActual?.id !== pedido.id ||
+              pedidoActual.estadoPago !== "PAGADO"
+            ) {
+              return;
+            }
+            const importesPorMetodo = new Map<string, number>();
+            pagosPedido.forEach((pago) => {
+              importesPorMetodo.set(
+                pago.metodoPago,
+                (importesPorMetodo.get(pago.metodoPago) ?? 0) + pago.monto,
+              );
+            });
+            metodosPagoElemento.textContent = importesPorMetodo.size
+              ? `Método de pago: ${[...importesPorMetodo]
+                  .map(
+                    ([metodo, monto]) =>
+                      `${metodo} (${formatearPrecio(monto)})`,
+                  )
+                  .join(" · ")}`
+              : "No se encontró el detalle del método de pago.";
+          })
+          .catch((error) => {
+            console.error("No se pudo cargar el método de pago:", error);
+            if (solicitudPago === solicitudMetodosPago) {
+              metodosPagoElemento.textContent =
+                "No se pudo cargar el método de pago.";
+            }
+          });
+      } else {
+        metodosPagoElemento?.classList.add("hidden");
+        if (metodosPagoElemento) metodosPagoElemento.textContent = "";
+      }
       if (pagoAccion) {
         const puedeGestionarPago = pedido.estado !== "CANCELADO";
         pagoAccion.classList.toggle("hidden", !puedeGestionarPago);
@@ -1884,6 +1954,10 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       if (telefonoHeader) {
         telefonoHeader.textContent = pedido.cliente?.telefono ?? "—";
       }
+      clienteTarifaEspecial?.classList.toggle(
+        "hidden",
+        !pedido.cliente?.tarifaEspecial,
+      );
 
       /*
        * Impresión

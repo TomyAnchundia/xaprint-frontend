@@ -46,14 +46,6 @@ export const estados: Record<
   },
 };
 
-export const ordenEstados: Record<EstadoPedido, number> = {
-  REVISION: 1,
-  IMPRIMIENDO: 2,
-  LISTO: 3,
-  ENTREGADO: 4,
-  CANCELADO: 5,
-};
-
 export function escaparHtml(valor: string): string {
   const elemento = document.createElement("div");
   elemento.textContent = valor;
@@ -132,24 +124,18 @@ export function obtenerPedidosFiltrados(
   }
 
   pedidos.sort((a, b) => {
-    const diferenciaEstado = ordenEstados[a.estado] - ordenEstados[b.estado];
-
-    if (diferenciaEstado !== 0) {
-      return diferenciaEstado;
-    }
-
     const fechaA = new Date(a.createdAt).getTime();
     const fechaB = new Date(b.createdAt).getTime();
 
     if (fechaA !== fechaB) {
-      return fechaA - fechaB;
+      return fechaB - fechaA;
     }
 
     if (a.prioridad !== b.prioridad) {
       return b.prioridad - a.prioridad;
     }
 
-    return a.id - b.id;
+    return b.id - a.id;
   });
 
   return pedidos;

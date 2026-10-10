@@ -19,6 +19,26 @@ export interface Cliente {
   telefono: string | null;
   cedula?: string | null;
   direccion?: string | null;
+  tarifaEspecial: boolean;
+}
+
+export interface TarifaCliente {
+  id: number;
+  clienteId: number;
+  servicio: ServicioPedido;
+  ancho: number;
+  desde: number;
+  hasta: number | null;
+  precio: number;
+  activo: boolean;
+}
+
+export interface TarifaClienteData {
+  servicio: ServicioPedido;
+  ancho: number;
+  desde: number;
+  hasta?: number | null;
+  precio: number;
 }
 
 export interface Usuario {
@@ -84,8 +104,17 @@ export interface ResumenPagosPeriodo {
   desde: string;
   hasta: string;
   cobrado: number;
+  efectivo: number;
+  transferencia: number;
   porCobrar: number;
   pedidosPorCobrar: number;
+}
+
+export interface PagoPedido {
+  id: number;
+  metodoPago: "Efectivo" | "Transferencia";
+  monto: number;
+  fecha: string;
 }
 
 export interface PagoDesarrollador {
@@ -113,7 +142,13 @@ export interface ResultadoPagoPedido {
 
 export interface DeudaCliente {
   cliente: Pick<Cliente, "id" | "nombre" | "telefono">;
-  pedidos: { id: number; total: number; pagado: number; porCobrar: number }[];
+  pedidos: {
+    id: number;
+    fecha: string;
+    total: number;
+    pagado: number;
+    porCobrar: number;
+  }[];
   totalDeuda: number;
 }
 
@@ -126,6 +161,7 @@ export interface ResumenDeudaCliente {
 export interface PagoCliente {
   id: number;
   monto: number;
+  metodoPago: "Efectivo" | "Transferencia";
   fecha: string;
   usuario: { id: number; username: string };
   aplicaciones: { pedidoId: number; monto: number }[];
@@ -173,6 +209,7 @@ export interface CalcularPrecioData {
   servicio: ServicioPedido;
   ancho: number;
   largo: number;
+  clienteId?: number;
 }
 
 export interface CalcularPrecioResponse {
@@ -196,6 +233,7 @@ export interface HistorialGeneralItem {
 
   estadoAnterior: EstadoPedido;
   estado: "ENTREGADO" | "CANCELADO";
+  estadoPago: "NO_PAGADO" | "PARCIALMENTE_PAGADO" | "PAGADO";
 
   fecha: string;
 
@@ -207,6 +245,7 @@ export interface HistorialGeneralItem {
 
   precioCalculado: number | null;
   precioEspecial: number | null;
+  valorCobrar: number | null;
   precioFinal: number | null;
 
   prioridad: number;
@@ -279,6 +318,56 @@ export async function obtenerClientes(): Promise<Cliente[]> {
   return request<Cliente[]>("/clientes");
 }
 
+export async function obtenerTarifasCliente(
+  clienteId: number,
+): Promise<TarifaCliente[]> {
+  return request<TarifaCliente[]>(`/tarifas/clientes/${clienteId}`);
+}
+
+export async function establecerTarifaEspecialCliente(
+  clienteId: number,
+  activo: boolean,
+): Promise<Cliente> {
+  return request<Cliente>(`/tarifas/clientes/${clienteId}/especial`, {
+    method: "PATCH",
+    body: JSON.stringify({ activo }),
+  });
+}
+
+export async function crearTarifaCliente(
+  clienteId: number,
+  data: TarifaClienteData,
+): Promise<TarifaCliente> {
+  return request<TarifaCliente>(`/tarifas/clientes/${clienteId}`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function actualizarTarifaCliente(
+  clienteId: number,
+  tarifaId: number,
+  data: TarifaClienteData,
+): Promise<TarifaCliente> {
+  return request<TarifaCliente>(
+    `/tarifas/clientes/${clienteId}/${tarifaId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+export async function eliminarTarifaCliente(
+  clienteId: number,
+  tarifaId: number,
+): Promise<TarifaCliente> {
+  return request<TarifaCliente>(
+    `/tarifas/clientes/${clienteId}/${tarifaId}`,
+    { method: "DELETE" },
+  );
+}
+
 export async function actualizarCliente(
   id: number,
   data: Partial<CrearClienteData>,
@@ -309,21 +398,24 @@ export async function obtenerPagosCliente(
 
 export async function registrarPagoPedido(
   pedidoId: number,
+  metodoPago: "Efectivo" | "Transferencia",
 ): Promise<ResultadoPagoPedido> {
   return request<ResultadoPagoPedido>(`/pagos/pedido/${pedidoId}`, {
     method: "POST",
+    body: JSON.stringify({ metodoPago }),
   });
 }
 
 export async function registrarAbonoCliente(
   clienteId: number,
   monto: number,
+  metodoPago: "Efectivo" | "Transferencia",
 ): Promise<{ pagoId: number; monto: number; aplicado: number }> {
   return request<{ pagoId: number; monto: number; aplicado: number }>(
     "/pagos",
     {
       method: "POST",
-      body: JSON.stringify({ clienteId, monto }),
+      body: JSON.stringify({ clienteId, monto, metodoPago }),
     },
   );
 }
@@ -414,6 +506,12 @@ export async function obtenerResumenPagosPeriodo(
 ): Promise<ResumenPagosPeriodo> {
   const params = new URLSearchParams({ desde, hasta });
   return request<ResumenPagosPeriodo>(`/pagos/resumen-periodo?${params}`);
+}
+
+export async function obtenerPagosPedido(
+  pedidoId: number,
+): Promise<PagoPedido[]> {
+  return request<PagoPedido[]>(`/pagos/pedido/${pedidoId}`);
 }
 
 export async function obtenerResumenAporteDesarrollador(

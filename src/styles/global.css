@@ -492,6 +492,163 @@ html[data-theme="dark"]
   color: #f4f4f5;
 }
 
+html[data-theme="dark"]
+  :is(button, a, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+  --tw-ring-color: rgb(96 165 250 / 0.55);
+}
+
+html[data-theme="dark"]
+  :is(button, a, [role="button"], [tabindex], input, select, textarea):focus {
+  --tw-ring-color: rgb(96 165 250 / 0.45);
+}
+
+html[data-theme="dark"] :is(input, select, textarea):focus {
+  border-color: #60a5fa;
+}
+
+html[data-theme="dark"]
+  :is(
+    [class~="hover:bg-white"],
+    [class~="hover:bg-slate-50"],
+    [class~="hover:bg-slate-50/50"],
+    [class~="hover:bg-slate-100"],
+    [class~="hover:bg-slate-200"],
+    [class~="hover:bg-white/70"],
+    [class~="hover:bg-cyan-50"],
+    [class~="hover:bg-cyan-50/50"],
+    [class~="hover:bg-amber-50"],
+    [class~="hover:bg-amber-50/50"],
+    [class~="hover:bg-amber-100"],
+    [class~="hover:bg-emerald-50"],
+    [class~="hover:bg-emerald-100"],
+    [class~="hover:bg-violet-50"],
+    [class~="hover:bg-violet-100"],
+    [class~="hover:bg-violet-200"],
+    [class~="focus:bg-white"],
+    [class~="focus:bg-slate-50"],
+    [class~="focus:bg-slate-100"],
+    [class~="focus:bg-cyan-50"],
+    [class~="focus:bg-emerald-50"],
+    [class~="focus-visible:bg-white"],
+    [class~="focus-visible:bg-slate-50"],
+    [class~="focus-visible:bg-cyan-50"],
+    [class~="focus-visible:bg-emerald-50"]
+  ):is(:hover, :focus, :focus-visible) {
+  border-color: #52525b;
+  background-color: #27272a;
+  color: #f4f4f5;
+}
+
+html[data-theme="dark"]
+  :is(
+    [class~="hover:bg-red-50"],
+    [class~="hover:bg-red-100"],
+    [class~="hover:bg-red-200"],
+    [class~="focus:bg-red-50"],
+    [class~="focus-visible:bg-red-50"]
+  ):is(:hover, :focus, :focus-visible) {
+  border-color: #991b1b;
+  background-color: #7f1d1d;
+  color: #fecaca;
+}
+
+html[data-theme="dark"]
+  :is(
+    [class~="hover:text-slate-700"],
+    [class~="hover:text-slate-800"],
+    [class~="hover:text-slate-900"],
+    [class~="hover:text-gray-700"],
+    [class~="hover:text-gray-800"],
+    [class~="hover:text-gray-900"],
+    [class~="focus:text-slate-700"],
+    [class~="focus:text-slate-800"],
+    [class~="focus-visible:text-slate-700"]
+  ):is(:hover, :focus, :focus-visible) {
+  color: #f4f4f5;
+}
+
+html[data-theme="dark"]
+  :is(
+    [class~="hover:text-cyan-700"],
+    [class~="hover:text-cyan-800"],
+    [class~="hover:text-blue-700"],
+    [class~="hover:text-blue-800"],
+    [class~="focus:text-cyan-700"],
+    [class~="focus:text-emerald-800"],
+    [class~="focus-visible:text-cyan-700"]
+  ):is(:hover, :focus, :focus-visible) {
+  color: #93c5fd;
+}
+
+html[data-theme="dark"]
+  :is(
+    [class~="hover:text-emerald-800"],
+    [class~="hover:text-emerald-700"],
+    [class~="focus:text-emerald-700"],
+    [class~="focus-visible:text-emerald-700"]
+  ):is(:hover, :focus, :focus-visible) {
+  color: #6ee7b7;
+}
+
+html[data-theme="dark"]
+  :is(
+    [class~="hover:text-red-700"],
+    [class~="hover:text-red-800"],
+    [class~="hover:text-red-600"],
+    [class~="focus:text-red-700"],
+    [class~="focus-visible:text-red-700"]
+  ):is(:hover, :focus, :focus-visible) {
+  color: #fca5a5;
+}
+
+html[data-theme="dark"]
+  :is(
+    [class~="hover:text-violet-800"],
+    [class~="hover:text-violet-700"],
+    [class~="focus:text-violet-800"],
+    [class~="focus-visible:text-violet-800"]
+  ):is(:hover, :focus, :focus-visible) {
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"]
+  :is(
+    [class~="hover:border-slate-200"],
+    [class~="hover:border-slate-300"],
+    [class~="hover:border-gray-200"],
+    [class~="hover:border-cyan-300"],
+    [class~="hover:border-violet-300"],
+    [class~="hover:border-amber-200"],
+    [class~="focus:border-slate-300"],
+    [class~="focus:border-cyan-600"],
+    [class~="focus:border-cyan-500"],
+    [class~="focus:border-emerald-600"],
+    [class~="focus:border-blue-500"],
+    [class~="focus:border-violet-400"]
+  ):is(:hover, :focus, :focus-visible) {
+  border-color: #60a5fa;
+}
+
+html[data-theme="dark"]
+  .group:focus-within
+  [class~="group-focus-within:text-cyan-700"] {
+  color: #93c5fd;
+}
+
+html[data-theme="dark"]
+  .group:hover
+  [class~="group-hover:text-cyan-950"] {
+  color: #bfdbfe;
+}
+
+html[data-theme="dark"]
+  .group:hover
+  [class~="group-hover:text-cyan-800"] {
+  color: #93c5fd;
+}
+
 @media (max-width: 1023px) {
   .dashboard-main {
     overflow: visible;
@@ -507,5 +664,214 @@ html[data-theme="dark"]
 
   .dashboard-views > section:not(#vista-pedidos) > :first-child > .grid {
     flex: none;
+  }
+}
+
+@media (max-width: 639px) {
+  #vista-pedidos .mt-2 > [role="group"] {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-shell {
+    overflow-x: clip;
+  }
+
+  #pedidos-tabla {
+    max-height: min(58dvh, 520px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  #pedidos-tabla table {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+  }
+
+  #pedidos-tabla thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  #pedidos-tabla tbody {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  #pedidos-tabla tbody tr {
+    display: grid;
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    background: white;
+  }
+
+  #pedidos-tabla tbody td {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+    text-align: right;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  #pedidos-tabla tbody td::before {
+    flex: 0 0 5.5rem;
+    color: #64748b;
+    content: attr(data-label);
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  #pedidos-tabla tbody td[data-label=""]::before {
+    display: none;
+  }
+
+  #pedidos-tabla tbody td[colspan] {
+    display: block;
+    text-align: center;
+  }
+
+  #pedidos-tabla tbody td:last-child {
+    justify-content: flex-end;
+    border-bottom: 0;
+  }
+
+  #pedidos-tabla tbody td:last-child::before {
+    margin-right: auto;
+  }
+
+  #pedidos-tabla .pedido-accion {
+    flex-shrink: 0;
+  }
+
+  .overflow-x-auto:has(table) {
+    max-height: min(58dvh, 520px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .overflow-x-auto:has(table) table {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+    white-space: normal;
+  }
+
+  .overflow-x-auto:has(table) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .overflow-x-auto:has(table) tbody {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .overflow-x-auto:has(table) tbody tr {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    background: white;
+  }
+
+  .overflow-x-auto:has(table) tbody td {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+    text-align: right;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .overflow-x-auto:has(table) tbody td::before {
+    flex: 0 0 5.5rem;
+    color: #64748b;
+    content: attr(data-label);
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .overflow-x-auto:has(table) tbody td[data-label=""]::before {
+    display: none;
+  }
+
+  .overflow-x-auto:has(table) tbody td[colspan] {
+    display: block;
+    text-align: center;
+  }
+
+  .overflow-x-auto:has(table) tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  .overflow-x-auto:has(table) tbody td:last-child:only-child {
+    text-align: center;
+  }
+
+  .filtro-pedido,
+  .filtro-servicio-pedido,
+  .historial-filtro-estado,
+  .historial-filtro-servicio,
+  .historial-filtro-fecha,
+  .tarifa-filtro,
+  .estadisticas-periodo {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.65rem;
+    line-height: 1rem;
+  }
+
+  #vista-pedidos .shrink-0.border-b {
+    padding: 0.65rem;
+  }
+}
+
+@media (max-width: 639px) {
+  html[data-theme="dark"] #pedidos-tabla tbody tr,
+  html[data-theme="dark"] .overflow-x-auto:has(table) tbody tr {
+    border-color: #3f3f46;
+    color: #f4f4f5;
+    background-color: #18181b;
+  }
+
+  html[data-theme="dark"] #pedidos-tabla tbody td,
+  html[data-theme="dark"] .overflow-x-auto:has(table) tbody td {
+    border-color: #3f3f46;
+    color: #e4e4e7;
+  }
+
+  html[data-theme="dark"] #pedidos-tabla tbody td::before,
+  html[data-theme="dark"] .overflow-x-auto:has(table) tbody td::before {
+    color: #a1a1aa;
   }
 }

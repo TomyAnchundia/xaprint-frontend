@@ -13,6 +13,7 @@ export interface ClientePedido {
   id: number;
   nombre: string;
   telefono: string | null;
+  tarifaEspecial: boolean;
 }
 
 export interface Pedido {

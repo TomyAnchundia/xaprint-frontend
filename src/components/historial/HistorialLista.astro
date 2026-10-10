@@ -30,6 +30,9 @@ import HistorialVacio from "./HistorialVacio.astro";
   let filtroServicio = "TODOS";
   let nombreBuscado = "";
   let historial: HistorialGeneralItem[] = [];
+  let historialCargado = false;
+  let cargandoHistorial = false;
+  let recargaHistorialPendiente = false;
 
   function actualizarEstadoBotones(): void {
     document
@@ -235,8 +238,8 @@ import HistorialVacio from "./HistorialVacio.astro";
         const cliente = item.cliente?.nombre?.trim() || "Cliente sin nombre";
 
         const precio =
-          item.precioFinal !== null
-            ? `$${item.precioFinal.toFixed(2)}`
+          item.valorCobrar !== null
+            ? `$${item.valorCobrar.toFixed(2)}`
             : "Sin precio";
 
         const servicio = item.servicio === "TEXTIL" ? "DTF Textil" : "DTF UV";
@@ -250,6 +253,18 @@ import HistorialVacio from "./HistorialVacio.astro";
           item.estado === "ENTREGADO"
             ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
             : "bg-red-50 text-red-700 ring-red-600/20";
+        const estadoPagoTexto =
+          item.estadoPago === "PAGADO"
+            ? "Pagado"
+            : item.estadoPago === "PARCIALMENTE_PAGADO"
+              ? "Abono parcial"
+              : "No pagado";
+        const estadoPagoClase =
+          item.estadoPago === "PAGADO"
+            ? "bg-emerald-50 text-emerald-700"
+            : item.estadoPago === "PARCIALMENTE_PAGADO"
+              ? "bg-amber-50 text-amber-800"
+              : "bg-slate-100 text-slate-600";
 
         return `
           <article
@@ -268,6 +283,11 @@ import HistorialVacio from "./HistorialVacio.astro";
                     class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${estadoClase}"
                   >
                     ${estadoTexto}
+                  </span>
+                  <span
+                    class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${estadoPagoClase}"
+                  >
+                    ${estadoPagoTexto}
                   </span>
                 </div>
 
@@ -336,7 +356,8 @@ import HistorialVacio from "./HistorialVacio.astro";
   }
 
   async function cargarHistorial() {
-    if (!lista) return;
+    if (!lista || cargandoHistorial) return;
+    cargandoHistorial = true;
 
     lista.innerHTML = `
       <div
@@ -356,6 +377,7 @@ import HistorialVacio from "./HistorialVacio.astro";
 
     try {
       historial = await obtenerHistorialGeneral();
+      historialCargado = true;
 
       aplicarFiltros();
     } catch (error) {
@@ -390,6 +412,12 @@ import HistorialVacio from "./HistorialVacio.astro";
       document
         .getElementById("historial-reintentar")
         ?.addEventListener("click", cargarHistorial);
+    } finally {
+      cargandoHistorial = false;
+      if (recargaHistorialPendiente) {
+        recargaHistorialPendiente = false;
+        void cargarHistorial();
+      }
     }
   }
 
@@ -425,7 +453,17 @@ import HistorialVacio from "./HistorialVacio.astro";
     aplicarFiltros();
   });
 
-  window.addEventListener("centro-control:recargar-historial", cargarHistorial);
+  window.addEventListener("centro-control:vista-activada", (event) => {
+    const vista = (event as CustomEvent<{ vista?: string }>).detail?.vista;
+    if (vista === "historial" && !historialCargado)
+      void cargarHistorial();
+  });
+  window.addEventListener("centro-control:recargar-historial", () => {
+    if (cargandoHistorial) {
+      recargaHistorialPendiente = true;
+    } else if (historialCargado) {
+      void cargarHistorial();
+    }
+  });
 
-  cargarHistorial();
 </script>

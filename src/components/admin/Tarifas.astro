@@ -129,7 +129,7 @@
             id="tarifa-desde"
             type="number"
             min="0"
-            step="1"
+            step="0.01"
             required
             class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
           />
@@ -143,7 +143,7 @@
             id="tarifa-hasta"
             type="number"
             min="0.01"
-            step="1"
+            step="0.01"
             placeholder="Sin límite"
             class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
           />
@@ -222,6 +222,8 @@
   const titulo = document.getElementById("tarifa-form-titulo");
   const error = document.getElementById("tarifa-form-error");
   let tarifas: Tarifa[] = [];
+  let datosCargados = false;
+  let cargandoDatos = false;
   let servicioFiltro = "TODOS";
   let editandoId: number | null = null;
 
@@ -306,14 +308,19 @@
   }
 
   async function cargar() {
+    if (cargandoDatos) return;
+    cargandoDatos = true;
     if (cuerpo)
       cuerpo.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">Cargando tarifas...</td></tr>`;
     try {
       tarifas = await obtenerTarifas();
+      datosCargados = true;
       renderizar();
     } catch (caught) {
       if (cuerpo)
         cuerpo.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-700">${caught instanceof Error ? caught.message : "No se pudieron cargar las tarifas."}</td></tr>`;
+    } finally {
+      cargandoDatos = false;
     }
   }
 
@@ -433,5 +440,8 @@
     }
   });
 
-  void cargar();
+  window.addEventListener("centro-control:vista-activada", (event) => {
+    const vista = (event as CustomEvent<{ vista?: string }>).detail?.vista;
+    if (vista === "tarifas" && !datosCargados) void cargar();
+  });
 </script>
