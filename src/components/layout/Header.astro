@@ -1,5 +1,5 @@
 ---
-
+import Logo from "../Logo.astro";
 ---
 
 <header
@@ -26,10 +26,13 @@
       </svg>
     </button>
 
-    <div>
-      <h1 class="text-lg font-semibold text-slate-900">XAPRINT</h1>
+    <Logo class="h-5 w-24 sm:h-7 sm:w-32 md:h-8 md:w-40 lg:hidden" />
 
-      <p class="hidden text-xs text-slate-400 sm:block">Impresiones</p>
+    <div class="hidden md:block">
+      <h1 class="text-base font-semibold text-slate-900 sm:text-lg">
+        Centro de control
+      </h1>
+      <p class="text-xs text-slate-400">Impresiones</p>
     </div>
   </div>
 

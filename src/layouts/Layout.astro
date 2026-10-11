@@ -19,6 +19,10 @@ const { title = "Centro de Control" } = Astro.props;
       name="description"
       content="Centro de Control para gestión y monitoreo de pedidos de impresión."
     />
+    <meta name="theme-color" content="#1200ff" />
+    <link rel="icon" type="image/png" href="/xaprint-fondo.png" />
+    <link rel="apple-touch-icon" href="/xaprint-fondo.png" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <script is:inline>
       try {
@@ -71,7 +75,8 @@ const { title = "Centro de Control" } = Astro.props;
         toast.setAttribute("role", esError ? "alert" : "status");
 
         const icono = document.createElement("span");
-        icono.className = "toast-icono flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold";
+        icono.className =
+          "toast-icono flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold";
         icono.textContent = esError ? "!" : detalle.tipo === "info" ? "i" : "✓";
         icono.setAttribute("aria-hidden", "true");
 

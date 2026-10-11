@@ -251,7 +251,7 @@ import HistorialVacio from "./HistorialVacio.astro";
 
         const estadoClase =
           item.estado === "ENTREGADO"
-            ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+            ? "bg-emerald-700 text-white ring-emerald-600/20"
             : "bg-red-50 text-red-700 ring-red-600/20";
         const estadoPagoTexto =
           item.estadoPago === "PAGADO"
@@ -261,7 +261,7 @@ import HistorialVacio from "./HistorialVacio.astro";
               : "No pagado";
         const estadoPagoClase =
           item.estadoPago === "PAGADO"
-            ? "bg-emerald-50 text-emerald-700"
+            ? "bg-emerald-700 text-white"
             : item.estadoPago === "PARCIALMENTE_PAGADO"
               ? "bg-amber-50 text-amber-800"
               : "bg-slate-100 text-slate-600";

@@ -7,6 +7,8 @@ export interface UsuarioSesion {
 
 const TOKEN_KEY = "centro-control-token";
 const USER_KEY = "centro-control-usuario";
+const SESSION_MESSAGE_KEY = "centro-control-session-message";
+let expirationTimer = 0;
 
 export function obtenerToken(): string | null {
   if (typeof window === "undefined") {
@@ -83,13 +85,64 @@ export function haySesion(): boolean {
   return Boolean(obtenerToken());
 }
 
-export function cerrarSesion(): void {
+export function cerrarSesion(message?: string): void {
   if (typeof window === "undefined") {
     return;
   }
 
+  window.clearTimeout(expirationTimer);
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  if (message) {
+    sessionStorage.setItem(SESSION_MESSAGE_KEY, message);
+  }
 
   window.location.replace("/login");
+}
+
+export function vigilarExpiracionSesion(token = obtenerToken()): void {
+  if (typeof window === "undefined" || !token) return;
+  window.clearTimeout(expirationTimer);
+
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return;
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const claims: unknown = JSON.parse(
+      window.atob(
+        normalizedPayload.padEnd(
+          Math.ceil(normalizedPayload.length / 4) * 4,
+          "=",
+        ),
+      ),
+    );
+    if (
+      typeof claims !== "object" ||
+      claims === null ||
+      !("exp" in claims) ||
+      typeof claims.exp !== "number" ||
+      !Number.isFinite(claims.exp)
+    ) {
+      return;
+    }
+
+    const remaining = claims.exp * 1000 - Date.now();
+    if (remaining <= 0) {
+      cerrarSesion("La sesión expiró. Inicia sesión de nuevo.");
+      return;
+    }
+    expirationTimer = window.setTimeout(
+      () => cerrarSesion("La sesión expiró. Inicia sesión de nuevo."),
+      remaining,
+    );
+  } catch {
+    // El servidor sigue siendo quien valida tokens malformados.
+  }
+}
+
+export function consumirAvisoSesion(): string | null {
+  if (typeof window === "undefined") return null;
+  const message = sessionStorage.getItem(SESSION_MESSAGE_KEY);
+  sessionStorage.removeItem(SESSION_MESSAGE_KEY);
+  return message;
 }

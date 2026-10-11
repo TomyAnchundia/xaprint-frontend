@@ -1,0 +1,16 @@
+{
+  "name": "Centro de Control Xaprint",
+  "short_name": "Xaprint",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1200ff",
+  "theme_color": "#1200ff",
+  "icons": [
+    {
+      "src": "/xaprint-fondo.png",
+      "sizes": "1497x1497",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

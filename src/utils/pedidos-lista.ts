@@ -32,7 +32,7 @@ export const estados: Record<
 
   LISTO: {
     label: "Listo",
-    clase: "bg-emerald-50 text-emerald-700",
+    clase: "bg-emerald-700 text-white",
   },
 
   ENTREGADO: {

@@ -253,6 +253,12 @@ const API_URL = import.meta.env.PUBLIC_API_URL ?? "http://localhost:3000";
     const loginButton = document.getElementById("login-button");
     const loginButtonText = document.getElementById("login-button-text");
     const loginError = document.getElementById("login-error");
+    const sessionMessage = sessionStorage.getItem("centro-control-session-message");
+    if (sessionMessage && loginError) {
+      loginError.textContent = sessionMessage;
+      loginError.classList.remove("hidden");
+      sessionStorage.removeItem("centro-control-session-message");
+    }
 
     if (loginForm) {
       loginForm.addEventListener("submit", async (event) => {

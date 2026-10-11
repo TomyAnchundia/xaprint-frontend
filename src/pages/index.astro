@@ -116,7 +116,11 @@ import Estadisticas from "../components/admin/Estadisticas.astro";
       iniciarPedidosStore,
     } from "../services/pedidos-store";
 
-    import { obtenerToken, obtenerUsuario } from "../services/auth";
+    import {
+      obtenerToken,
+      obtenerUsuario,
+      vigilarExpiracionSesion,
+    } from "../services/auth";
     import { puedeVerVista } from "../services/permisos";
 
     /*
@@ -130,6 +134,7 @@ import Estadisticas from "../components/admin/Estadisticas.astro";
     if (!obtenerToken() || !usuario) {
       window.location.replace("/login");
     } else {
+      vigilarExpiracionSesion();
       const estado = document.getElementById("estado-api");
       const punto = document.getElementById("estado-api-punto");
       const texto = document.getElementById("estado-api-texto");

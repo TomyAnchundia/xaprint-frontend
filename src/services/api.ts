@@ -4,6 +4,7 @@ import type {
   ServicioPedido,
   EstadoPedido,
 } from "../types/pedido";
+import { cerrarSesion } from "./auth";
 
 export type { ServicioPedido } from "../types/pedido";
 
@@ -282,6 +283,10 @@ async function request<T>(
   }
 
   if (!response.ok) {
+    if (response.status === 401 && token) {
+      cerrarSesion("La sesión expiró. Inicia sesión de nuevo.");
+    }
+
     const message =
       typeof data === "object" &&
       data !== null &&

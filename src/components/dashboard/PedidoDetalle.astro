@@ -351,14 +351,14 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
                 </p>
               </div>
 
-              <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <!-- Retroceder -->
                 <button
                   id="detalle-retroceder"
                   type="button"
-                  class="hidden h-10 flex-1 min-w-35 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  class="hidden h-auto min-h-10 w-full min-w-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 px-2 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span class="flex items-center justify-center gap-1.5">
+                  <span class="flex items-center justify-center gap-1.5 text-center leading-tight">
                     <svg
                       class="h-3.5 w-3.5 shrink-0"
                       viewBox="0 0 24 24"
@@ -380,9 +380,9 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
                 <button
                   id="detalle-avanzar"
                   type="button"
-                  class="hidden h-10 flex-1 min-w-35 items-center justify-center rounded-xl bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  class="hidden h-auto min-h-10 w-full min-w-0 items-center justify-center rounded-xl bg-slate-900 px-2 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span class="flex items-center justify-center gap-1.5">
+                  <span class="flex items-center justify-center gap-1.5 text-center leading-tight">
                     <span id="detalle-avanzar-texto">Avanzar</span>
 
                     <svg

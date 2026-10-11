@@ -1,0 +1,28 @@
+---
+const { class: className = "h-8 w-auto" } = Astro.props;
+---
+
+<span
+  role="img"
+  aria-label="Logo"
+  class:list={["logo-xaprint inline-block", className]}
+  style={{
+    maskImage: "url('/logo-xaprint.svg')",
+    maskRepeat: "no-repeat",
+    maskPosition: "center",
+    maskSize: "contain",
+    WebkitMaskImage: "url('/logo-xaprint.svg')",
+    WebkitMaskRepeat: "no-repeat",
+    WebkitMaskPosition: "center",
+    WebkitMaskSize: "contain",
+  }}></span>
+
+<style>
+  .logo-xaprint {
+    background-color: #000;
+  }
+
+  :global(html[data-theme="dark"]) .logo-xaprint {
+    background-color: #fff;
+  }
+</style>
