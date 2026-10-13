@@ -110,6 +110,12 @@ const periodosFinancieros = [
                 >
                   —
                 </dd>
+                <p
+                  data-pedidos={id}
+                  class="mt-0.5 text-[10px] leading-snug text-slate-500"
+                >
+                  — pedidos con saldo
+                </p>
               </div>
               <div>
                 <dt class="text-[11px] text-slate-500">Efectivo</dt>
@@ -129,13 +135,22 @@ const periodosFinancieros = [
                   —
                 </dd>
               </div>
+              <div>
+                <dt class="text-[11px] text-slate-500">Costo de diseño</dt>
+                <dd
+                  data-costo-diseno={id}
+                  class="mt-0.5 text-base font-bold tabular-nums text-cyan-900"
+                >
+                  —
+                </dd>
+                <dd
+                  data-costo-diseno-pedidos={id}
+                  class="text-[10px] text-slate-500"
+                >
+                  — pedidos
+                </dd>
+              </div>
             </dl>
-            <p
-              data-pedidos={id}
-              class="mt-1 text-[11px] leading-snug text-slate-500"
-            >
-              — pedidos con saldo
-            </p>
           </article>
         ))
       }
@@ -363,6 +378,8 @@ const periodosFinancieros = [
       registrarPagoDesarrollador,
       type ResumenProduccionItem,
     } from "../../services/api";
+    import { suscribirsePedidos } from "../../services/pedidos-store";
+    import type { Pedido } from "../../types/pedido";
     import {
       establecerCargaBoton,
       mostrarNotificacion as notificarGlobal,
@@ -470,6 +487,46 @@ const periodosFinancieros = [
         { id: "mes", desde: primerDiaMes, hasta: fecha },
       ];
     }
+
+    function fechaEcuadorPedido(fecha: string) {
+      const partes = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Guayaquil",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(new Date(fecha));
+      const obtener = (tipo: string) =>
+        partes.find((parte) => parte.type === tipo)?.value ?? "";
+      return `${obtener("year")}-${obtener("month")}-${obtener("day")}`;
+    }
+
+    function actualizarCostosDiseno(pedidos: Pedido[]) {
+      const periodos = obtenerPeriodos(fechaEcuador());
+
+      periodos.forEach(({ id, desde, hasta }) => {
+        const pedidosConDiseno = pedidos.filter((pedido) => {
+          const costo = pedido.costoDiseno;
+          if (!Number.isFinite(costo) || (costo ?? 0) <= 0) return false;
+          const fechaPedido = fechaEcuadorPedido(pedido.createdAt);
+          return fechaPedido >= desde && fechaPedido <= hasta;
+        });
+        const total = pedidosConDiseno.reduce(
+          (acumulado, pedido) => acumulado + (pedido.costoDiseno ?? 0),
+          0,
+        );
+        const valor = document.querySelector(`[data-costo-diseno="${id}"]`);
+        const cantidad = document.querySelector(
+          `[data-costo-diseno-pedidos="${id}"]`,
+        );
+
+        if (valor) valor.textContent = moneda(Math.round(total * 100) / 100);
+        if (cantidad) {
+          cantidad.textContent = `${pedidosConDiseno.length} ${pedidosConDiseno.length === 1 ? "pedido" : "pedidos"}`;
+        }
+      });
+    }
+
+    suscribirsePedidos(actualizarCostosDiseno);
 
     document
       .querySelectorAll<HTMLButtonElement>("[data-estadisticas-periodo]")

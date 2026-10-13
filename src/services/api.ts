@@ -415,8 +415,18 @@ export async function registrarAbonoCliente(
   clienteId: number,
   monto: number,
   metodoPago: "Efectivo" | "Transferencia",
-): Promise<{ pagoId: number; monto: number; aplicado: number }> {
-  return request<{ pagoId: number; monto: number; aplicado: number }>(
+): Promise<{
+  pagoId: number;
+  monto: number;
+  aplicado: number;
+  pedidoIds: number[];
+}> {
+  return request<{
+    pagoId: number;
+    monto: number;
+    aplicado: number;
+    pedidoIds: number[];
+  }>(
     "/pagos",
     {
       method: "POST",
