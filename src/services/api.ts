@@ -235,6 +235,7 @@ export interface HistorialGeneralItem {
   estadoAnterior: EstadoPedido;
   estado: "ENTREGADO" | "CANCELADO";
   estadoPago: "NO_PAGADO" | "PARCIALMENTE_PAGADO" | "PAGADO";
+  metodosPago: ("Efectivo" | "Transferencia")[];
 
   fecha: string;
 

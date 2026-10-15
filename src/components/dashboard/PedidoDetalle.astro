@@ -1,5 +1,6 @@
 ---
 import PedidoDetalleModales from "./PedidoDetalleModales.astro";
+import TransferenciaPedido from "./TransferenciaPedido.astro";
 ---
 
 <div
@@ -299,6 +300,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
                 class="mt-1 inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900"
                 >No pagado</span
               >
+              <span
+                id="detalle-metodos-pago-iconos"
+                class="ml-1 inline-flex items-center gap-1 align-middle"
+                aria-label="Métodos de pago"
+              ></span>
               <p
                 id="detalle-metodos-pago"
                 class="mt-1 hidden text-xs font-medium text-slate-600"
@@ -312,6 +318,8 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
             >
           </div>
         </section>
+
+        <TransferenciaPedido />
 
         <!-- Estado -->
         <section class="border-b border-slate-200 px-5 py-4">
@@ -736,6 +744,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
     import { suscribirsePedidos } from "../../services/pedidos-store";
     import { obtenerUsuario } from "../../services/auth";
+    import { crearIconosMetodoPago } from "../../utils/pedidos-render";
     import {
       establecerCargaBoton,
       mostrarNotificacion,
@@ -837,6 +846,9 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     );
     const metodosPagoElemento = document.getElementById(
       "detalle-metodos-pago",
+    );
+    const metodosPagoIconos = document.getElementById(
+      "detalle-metodos-pago-iconos",
     );
     let solicitudMetodosPago = 0;
     const whatsappListo = document.getElementById(
@@ -1824,6 +1836,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       }
       const solicitudPago = ++solicitudMetodosPago;
       if (estadoPago === "PAGADO" && metodosPagoElemento) {
+        if (metodosPagoIconos) metodosPagoIconos.innerHTML = "";
         metodosPagoElemento.textContent = "Cargando método de pago...";
         metodosPagoElemento.classList.remove("hidden");
         void obtenerPagosPedido(pedido.id)
@@ -1842,6 +1855,13 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
                 (importesPorMetodo.get(pago.metodoPago) ?? 0) + pago.monto,
               );
             });
+            if (metodosPagoIconos) {
+              const metodos = [...importesPorMetodo.keys()].filter(
+                (metodo): metodo is "Efectivo" | "Transferencia" =>
+                  metodo === "Efectivo" || metodo === "Transferencia",
+              );
+              metodosPagoIconos.innerHTML = crearIconosMetodoPago(metodos);
+            }
             metodosPagoElemento.textContent = importesPorMetodo.size
               ? `Método de pago: ${[...importesPorMetodo]
                   .map(
@@ -1861,6 +1881,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       } else {
         metodosPagoElemento?.classList.add("hidden");
         if (metodosPagoElemento) metodosPagoElemento.textContent = "";
+        if (metodosPagoIconos) metodosPagoIconos.innerHTML = "";
       }
       if (pagoAccion) {
         const puedeGestionarPago = pedido.estado !== "CANCELADO";

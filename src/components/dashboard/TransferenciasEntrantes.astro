@@ -1,0 +1,425 @@
+<aside
+  id="transferencias-entrantes"
+  class="fixed bottom-4 right-4 z-160 hidden w-[min(24rem,calc(100vw-2rem))]"
+  aria-label="Transferencias de archivos"
+  aria-live="polite"
+>
+  <button
+    id="transferencias-indicador"
+    type="button"
+    class="mb-2 hidden w-full animate-pulse items-center gap-3 rounded-xl border border-red-300 bg-red-700 px-4 py-3 text-left text-white shadow-lg transition hover:bg-red-800"
+    aria-expanded="false"
+    aria-controls="transferencias-bandeja"
+  >
+    <span class="relative flex h-3 w-3 shrink-0">
+      <span
+        id="transferencias-indicador-pulso"
+        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-200 opacity-75"
+      ></span>
+      <span class="relative inline-flex h-3 w-3 rounded-full bg-white"></span>
+    </span>
+    <span id="transferencias-indicador-texto" class="min-w-0 flex-1 text-sm font-semibold">
+      Tienes archivos por recibir
+    </span>
+    <span
+      id="transferencias-indicador-cantidad"
+      class="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-white px-2 text-xs font-bold text-red-700"
+    >0</span>
+  </button>
+
+  <section
+    id="transferencias-bandeja"
+    class="hidden overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-2xl"
+    aria-label="Bandeja de archivos entrantes"
+  >
+    <header
+      class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3"
+    >
+      <div>
+        <h2 class="text-sm font-bold text-slate-900">Archivos compartidos</h2>
+        <p id="transferencias-bandeja-resumen" class="mt-0.5 text-xs text-slate-500"></p>
+      </div>
+      <button
+        id="transferencias-cerrar-bandeja"
+        type="button"
+        class="rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100"
+        aria-label="Contraer bandeja de transferencias"
+      >Contraer</button>
+    </header>
+    <div
+      id="transferencias-lista"
+      class="max-h-[min(65vh,36rem)] space-y-2 overflow-y-auto p-2"
+    ></div>
+  </section>
+</aside>
+
+<script>
+  import { obtenerUsuario } from "../../services/auth";
+  import {
+    confirmarArchivoRecibido,
+    convertirContenidoABlobPartes,
+    responderTransferencia,
+    suscribirseTransferencia,
+    type BloqueTransferencia,
+    type SolicitudTransferencia,
+  } from "../../services/transferencias";
+
+  type ArchivoRecibido = SolicitudTransferencia["archivos"][number] & {
+    estado: "pendiente" | "recibiendo" | "listo" | "descargado" | "error";
+    bloques: BlobPart[];
+    bytesRecibidos: number;
+    siguienteSecuencia: number;
+    archivo?: Blob;
+    error?: string;
+  };
+
+  type TransferenciaRecibida = {
+    solicitud: SolicitudTransferencia;
+    estado: "pendiente" | "recibiendo";
+    archivos: Map<string, ArchivoRecibido>;
+  };
+
+  const contenedor = document.getElementById("transferencias-entrantes");
+  const listaTransferencias = document.getElementById("transferencias-lista");
+  const indicador = document.getElementById(
+    "transferencias-indicador",
+  ) as HTMLButtonElement | null;
+  const indicadorTexto = document.getElementById("transferencias-indicador-texto");
+  const indicadorCantidad = document.getElementById(
+    "transferencias-indicador-cantidad",
+  );
+  const bandeja = document.getElementById("transferencias-bandeja");
+  const resumenBandeja = document.getElementById(
+    "transferencias-bandeja-resumen",
+  );
+  const cerrarBandeja = document.getElementById(
+    "transferencias-cerrar-bandeja",
+  );
+  const usuario = obtenerUsuario();
+  const transferencias = new Map<string, TransferenciaRecibida>();
+  let bandejaAbierta = false;
+
+  function formatearTamano(bytes: number): string {
+    if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function crearBoton(
+    texto: string,
+    clase: string,
+    accion: () => void,
+  ): HTMLButtonElement {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = clase;
+    boton.textContent = texto;
+    boton.addEventListener("click", accion);
+    return boton;
+  }
+
+  function renderizar() {
+    if (!contenedor || !listaTransferencias || !indicador || !bandeja) return;
+    const solicitudesPendientes = [...transferencias.values()].filter(
+      (transferencia) => transferencia.estado === "pendiente",
+    );
+    const totalArchivosPendientes = solicitudesPendientes.reduce(
+      (total, transferencia) => total + transferencia.archivos.size,
+      0,
+    );
+    contenedor.classList.toggle("hidden", transferencias.size === 0);
+    indicador.classList.toggle("hidden", solicitudesPendientes.length === 0);
+    indicador.classList.toggle("flex", solicitudesPendientes.length > 0);
+    indicador.setAttribute("aria-expanded", String(bandejaAbierta));
+    if (indicadorTexto) {
+      indicadorTexto.textContent =
+        solicitudesPendientes.length === 1
+          ? "Tienes archivos por recibir"
+          : `Tienes ${solicitudesPendientes.length} envíos por recibir`;
+    }
+    if (indicadorCantidad) {
+      indicadorCantidad.textContent = String(totalArchivosPendientes);
+      indicadorCantidad.setAttribute(
+        "aria-label",
+        `${totalArchivosPendientes} archivos pendientes`,
+      );
+    }
+    bandeja.classList.toggle(
+      "hidden",
+      !bandejaAbierta || transferencias.size === 0,
+    );
+    if (resumenBandeja) {
+      resumenBandeja.textContent =
+        solicitudesPendientes.length > 0
+          ? `${solicitudesPendientes.length} envío${solicitudesPendientes.length === 1 ? "" : "s"} esperando · ${totalArchivosPendientes} archivo${totalArchivosPendientes === 1 ? "" : "s"}`
+          : "No hay archivos pendientes de aceptar.";
+    }
+    listaTransferencias.replaceChildren();
+
+    const ordenadas = [...transferencias.entries()].sort(
+      ([, primera], [, segunda]) =>
+        Number(primera.estado !== "pendiente") -
+        Number(segunda.estado !== "pendiente"),
+    );
+    for (const [id, transferencia] of ordenadas) {
+      const tarjeta = document.createElement("section");
+      tarjeta.className =
+        "overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm";
+
+      const cuerpo = document.createElement("div");
+      cuerpo.className = "p-4";
+      const titulo = document.createElement("p");
+      titulo.className = "text-sm font-semibold text-slate-900";
+      titulo.textContent = `Archivos por recibir · Pedido #${transferencia.solicitud.pedidoId}`;
+      const descripcion = document.createElement("p");
+      descripcion.className = "mt-1 text-xs leading-5 text-slate-500";
+      descripcion.textContent =
+        `${transferencia.solicitud.remitente} comparte ${transferencia.archivos.size} archivo${transferencia.archivos.size === 1 ? "" : "s"}.`;
+      cuerpo.append(titulo, descripcion);
+
+      const lista = document.createElement("ul");
+      lista.className = "mt-3 space-y-2";
+      for (const archivo of transferencia.archivos.values()) {
+        const elemento = document.createElement("li");
+        elemento.className = "rounded-lg bg-slate-50 px-3 py-2";
+        const nombre = document.createElement("p");
+        nombre.className = "truncate text-xs font-semibold text-slate-800";
+        nombre.textContent = archivo.nombreArchivo;
+        const detalle = document.createElement("p");
+        detalle.className = "mt-1 text-xs text-slate-500";
+        detalle.textContent =
+          archivo.estado === "pendiente"
+            ? `${transferencia.estado === "pendiente" ? "Pendiente de recibir" : "En cola de recepción"} · ${formatearTamano(archivo.tamano)}`
+            : archivo.estado === "recibiendo"
+              ? `Recibiendo ${formatearTamano(archivo.bytesRecibidos)} de ${formatearTamano(archivo.tamano)}`
+              : archivo.estado === "listo"
+                ? "Recibido · listo para descargar"
+                : archivo.estado === "descargado"
+                  ? "Descargado"
+                : archivo.error ?? "No se pudo recibir el archivo.";
+        elemento.append(nombre, detalle);
+
+        if (archivo.estado === "recibiendo") {
+          const progreso = document.createElement("progress");
+          progreso.className = "mt-2 h-2 w-full accent-cyan-700";
+          progreso.max = Math.max(archivo.tamano, 1);
+          progreso.value = archivo.bytesRecibidos;
+          progreso.dataset.transferenciaProgreso = `${id}:${archivo.id}`;
+          progreso.setAttribute(
+            "aria-label",
+            `Progreso de recepción de ${archivo.nombreArchivo}`,
+          );
+          elemento.append(progreso);
+        } else if (archivo.estado === "listo" && archivo.archivo) {
+          elemento.append(
+            crearBoton(
+              "Descargar",
+              "mt-2 h-8 rounded-lg bg-cyan-800 px-3 text-xs font-semibold text-white hover:bg-cyan-900",
+              () => descargar(id, archivo.id),
+            ),
+          );
+        }
+        lista.append(elemento);
+      }
+      cuerpo.append(lista);
+
+      if (transferencia.estado === "pendiente") {
+        const acciones = document.createElement("div");
+        acciones.className = "mt-3 flex justify-end gap-2";
+        acciones.append(
+          crearBoton(
+            "Rechazar",
+            "h-8 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50",
+            () => void responder(id, false),
+          ),
+          crearBoton(
+            "Recibir archivos",
+            "h-8 rounded-lg bg-cyan-800 px-3 text-xs font-semibold text-white hover:bg-cyan-900",
+            () => void responder(id, true),
+          ),
+        );
+        cuerpo.append(acciones);
+      } else {
+        cuerpo.append(
+          crearBoton(
+            "Cerrar",
+            "mt-3 h-8 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50",
+            () => quitar(id),
+          ),
+        );
+      }
+
+      tarjeta.append(cuerpo);
+      listaTransferencias.append(tarjeta);
+    }
+  }
+
+  async function responder(id: string, aceptada: boolean) {
+    const transferencia = transferencias.get(id);
+    if (!transferencia) return;
+
+    try {
+      await responderTransferencia(id, aceptada);
+      if (!aceptada) {
+        quitar(id);
+        return;
+      }
+      transferencia.estado = "recibiendo";
+      const primerArchivo = transferencia.archivos.values().next().value;
+      if (primerArchivo) primerArchivo.estado = "recibiendo";
+      renderizar();
+    } catch (error) {
+      console.error("No se pudo responder a la solicitud de transferencia:", error);
+      quitar(id);
+    }
+  }
+
+  function recibirBloque(bloque: BloqueTransferencia) {
+    const transferencia = transferencias.get(bloque.transferenciaId);
+    const archivo = transferencia?.archivos.get(bloque.archivoId);
+    if (
+      !transferencia ||
+      transferencia.estado !== "recibiendo" ||
+      !archivo ||
+      (archivo.estado !== "recibiendo" && archivo.estado !== "pendiente")
+    ) {
+      return;
+    }
+
+    try {
+      archivo.estado = "recibiendo";
+      if (bloque.secuencia !== archivo.siguienteSecuencia) {
+        throw new Error("Se recibió un bloque fuera de secuencia.");
+      }
+      const parte = convertirContenidoABlobPartes(bloque.contenido);
+      const bytes = parte.byteLength;
+      if (archivo.bytesRecibidos + bytes > archivo.tamano) {
+        throw new Error("El tamaño recibido no coincide con el archivo.");
+      }
+      archivo.bloques.push(parte);
+      archivo.bytesRecibidos += bytes;
+      archivo.siguienteSecuencia += 1;
+      const progreso = contenedor?.querySelector<HTMLProgressElement>(
+        `[data-transferencia-progreso="${bloque.transferenciaId}:${bloque.archivoId}"]`,
+      );
+      if (progreso) progreso.value = archivo.bytesRecibidos;
+      const detalle = progreso?.previousElementSibling;
+      if (detalle instanceof HTMLParagraphElement) {
+        detalle.textContent = `Recibiendo ${formatearTamano(archivo.bytesRecibidos)} de ${formatearTamano(archivo.tamano)}`;
+      }
+    } catch (error) {
+      archivo.estado = "error";
+      archivo.error =
+        error instanceof Error ? error.message : "Bloque de archivo no válido.";
+      renderizar();
+    }
+  }
+
+  function completarArchivo(datos: {
+    transferenciaId: string;
+    archivoId: string;
+  }) {
+    const transferencia = transferencias.get(datos.transferenciaId);
+    const archivo = transferencia?.archivos.get(datos.archivoId);
+    if (
+      !transferencia ||
+      !archivo ||
+      archivo.estado === "listo" ||
+      archivo.estado === "descargado" ||
+      archivo.estado === "error"
+    ) {
+      return;
+    }
+    if (archivo.bytesRecibidos !== archivo.tamano) {
+      archivo.estado = "error";
+      archivo.error = "La recepción quedó incompleta. Solicita el envío de nuevo.";
+      renderizar();
+      return;
+    }
+
+    archivo.archivo = new Blob(archivo.bloques, {
+      type: archivo.tipo || "application/octet-stream",
+    });
+    archivo.bloques = [];
+    archivo.estado = "listo";
+    renderizar();
+    void confirmarArchivoRecibido(datos.transferenciaId, datos.archivoId).catch(
+      (error: unknown) => {
+        console.error("No se pudo confirmar la recepción del archivo:", error);
+      },
+    );
+  }
+
+  function descargar(transferenciaId: string, archivoId: string) {
+    const archivo = transferencias.get(transferenciaId)?.archivos.get(archivoId);
+    if (!archivo?.archivo) return;
+
+    const url = URL.createObjectURL(archivo.archivo);
+    const enlace = document.createElement("a");
+    enlace.href = url;
+    enlace.download = archivo.nombreArchivo;
+    enlace.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    archivo.archivo = undefined;
+    archivo.estado = "descargado";
+    renderizar();
+  }
+
+  function quitar(id: string) {
+    transferencias.delete(id);
+    renderizar();
+  }
+
+  indicador?.addEventListener("click", () => {
+    bandejaAbierta = !bandejaAbierta;
+    renderizar();
+  });
+  cerrarBandeja?.addEventListener("click", () => {
+    bandejaAbierta = false;
+    renderizar();
+  });
+
+  if (usuario?.rol === "EMPLEADO") {
+    suscribirseTransferencia<SolicitudTransferencia>(
+      "transferencia:solicitud",
+      (solicitud) => {
+        bandejaAbierta = true;
+        transferencias.set(solicitud.transferenciaId, {
+          solicitud,
+          estado: "pendiente",
+          archivos: new Map(
+            solicitud.archivos.map((archivo) => [
+              archivo.id,
+              {
+                ...archivo,
+                estado: "pendiente",
+                bloques: [],
+                bytesRecibidos: 0,
+                siguienteSecuencia: 0,
+              },
+            ]),
+          ),
+        });
+        renderizar();
+      },
+    );
+    suscribirseTransferencia<BloqueTransferencia>(
+      "transferencia:bloque",
+      recibirBloque,
+    );
+    suscribirseTransferencia<{ transferenciaId: string; archivoId: string }>(
+      "transferencia:archivo-listo",
+      completarArchivo,
+    );
+
+    const cancelar = ({ transferenciaId }: { transferenciaId: string }) =>
+      quitar(transferenciaId);
+    suscribirseTransferencia<{ transferenciaId: string }>(
+      "transferencia:cancelada",
+      cancelar,
+    );
+    suscribirseTransferencia<{ transferenciaId: string }>(
+      "transferencia:expirada",
+      cancelar,
+    );
+  }
+</script>

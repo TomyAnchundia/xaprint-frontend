@@ -17,6 +17,7 @@ import HistorialVacio from "./HistorialVacio.astro";
   } from "../../services/api";
 
   import { formatearFecha, formatearHora } from "../../utils/fecha";
+  import { crearIconosMetodoPago } from "../../utils/pedidos-render";
   import { obtenerUsuario } from "../../services/auth";
   import { pedidoPerteneceAlArea } from "../../services/permisos";
 
@@ -289,6 +290,11 @@ import HistorialVacio from "./HistorialVacio.astro";
                   >
                     ${estadoPagoTexto}
                   </span>
+                  ${
+                    item.estadoPago === "PAGADO"
+                      ? crearIconosMetodoPago(item.metodosPago)
+                      : ""
+                  }
                 </div>
 
                 <p class="mt-2 truncate text-sm font-semibold text-slate-800">

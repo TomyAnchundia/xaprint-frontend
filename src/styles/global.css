@@ -291,6 +291,41 @@ html[data-theme="dark"] #detalle-estado-pago[data-estado-pago="NO_PAGADO"] {
   color: #fee2e2;
 }
 
+html[data-theme="dark"] #transferencia-pedido > div {
+  border-color: #3f3f46;
+  background-color: #18181b;
+}
+
+html[data-theme="dark"] #transferencia-pedido > div > div > span {
+  background-color: #164e63;
+  color: #a5f3fc;
+}
+
+html[data-theme="dark"] #transferencia-pedido label {
+  border-color: #52525b;
+  background-color: #27272a;
+  color: #e4e4e7;
+}
+
+html[data-theme="dark"] #transferencia-pedido label:hover {
+  background-color: #3f3f46;
+}
+
+html[data-theme="dark"] #transferencia-pedido #transferencia-enviar {
+  background-color: #0e7490;
+}
+
+html[data-theme="dark"]
+  #transferencia-pedido
+  #transferencia-enviar:not(:disabled):hover {
+  background-color: #0891b2;
+}
+
+html[data-theme="dark"] #transferencia-archivos-lista > li {
+  background-color: #27272a;
+  color: #e4e4e7;
+}
+
 html[data-theme="dark"] #detalle-whatsapp-listo {
   border-color: #3f3f46;
   background-color: #18181b;

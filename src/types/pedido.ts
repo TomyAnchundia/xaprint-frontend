@@ -25,6 +25,8 @@ export interface Pedido {
 
   estadoPago: EstadoPagoPedido;
 
+  metodosPago?: ("Efectivo" | "Transferencia")[];
+
   prioridad: number;
 
   costoDiseno: number | null;
