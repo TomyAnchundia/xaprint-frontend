@@ -114,14 +114,18 @@
     estado: string;
     error: boolean;
     archivos: ArchivoEnvio[];
+    transferenciaId?: string;
   };
   let archivos: ArchivoEnvio[] = [];
   const envios: EnvioPedido[] = [];
   const enviosPorTransferenciaId = new Map<string, EnvioPedido>();
+  const transferenciasExpiradas = new Set<string>();
   const estadosDestinatarioPendientes = new Map<
     string,
     EstadoDestinatarioTransferencia[]
   >();
+  const TIEMPO_VISIBLE_ENVIO_MS = 3 * 60 * 1000;
+  const MAXIMO_IDS_EXPIRADOS = 500;
 
   if (usuario?.rol === "ADMIN" || usuario?.rol === "DISENADOR") {
     seccion?.classList.remove("hidden");
@@ -276,6 +280,24 @@
     }
   }
 
+  function ocultarEnvioDespuesDeUnTiempo(envio: EnvioPedido) {
+    window.setTimeout(() => {
+      const indice = envios.indexOf(envio);
+      if (indice === -1) return;
+      envios.splice(indice, 1);
+      if (envio.transferenciaId) {
+        enviosPorTransferenciaId.delete(envio.transferenciaId);
+        estadosDestinatarioPendientes.delete(envio.transferenciaId);
+        transferenciasExpiradas.add(envio.transferenciaId);
+        if (transferenciasExpiradas.size > MAXIMO_IDS_EXPIRADOS) {
+          const masAntigua = transferenciasExpiradas.values().next().value;
+          if (masAntigua) transferenciasExpiradas.delete(masAntigua);
+        }
+      }
+      renderizarEnvios();
+    }, TIEMPO_VISIBLE_ENVIO_MS);
+  }
+
   function actualizarProgreso(
     envio: EnvioPedido,
     progreso: ProgresoTransferencia,
@@ -306,6 +328,7 @@
   ) {
     const envio = enviosPorTransferenciaId.get(actualizacion.transferenciaId);
     if (!envio) {
+      if (transferenciasExpiradas.has(actualizacion.transferenciaId)) return;
       const pendientes = estadosDestinatarioPendientes.get(
         actualizacion.transferenciaId,
       ) ?? [];
@@ -399,6 +422,7 @@
             renderizarEnvios();
           },
           (id) => {
+            envio.transferenciaId = id;
             enviosPorTransferenciaId.set(id, envio);
             const pendientes = estadosDestinatarioPendientes.get(id) ?? [];
             estadosDestinatarioPendientes.delete(id);
@@ -415,12 +439,14 @@
             renderizarEnvios();
           },
         );
+        ocultarEnvioDespuesDeUnTiempo(envio);
       } catch (error) {
         envio.error = true;
         envio.estado =
           error instanceof Error
             ? error.message
             : "No se pudieron transferir los archivos.";
+        ocultarEnvioDespuesDeUnTiempo(envio);
         renderizarEnvios();
       }
     })();

@@ -1,35 +1,45 @@
 <aside
   id="transferencias-entrantes"
-  class="fixed bottom-4 right-4 z-160 hidden w-[min(24rem,calc(100vw-2rem))]"
+  class="pointer-events-none fixed bottom-4 right-4 z-20 hidden w-auto md:flex md:w-[min(24rem,calc(100vw-2rem))] md:flex-col md:items-end"
   aria-label="Transferencias de archivos"
   aria-live="polite"
 >
   <button
     id="transferencias-indicador"
     type="button"
-    class="mb-2 hidden w-full animate-pulse items-center gap-3 rounded-xl border border-red-300 bg-red-700 px-4 py-3 text-left text-white shadow-lg transition hover:bg-red-800"
+    class="pointer-events-auto relative mb-2 ml-auto flex size-14 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:bg-slate-50 md:ml-0 md:h-auto md:w-full md:justify-start md:gap-3 md:rounded-xl md:px-4 md:py-3 md:text-left"
     aria-expanded="false"
     aria-controls="transferencias-bandeja"
+    aria-label="Transferencias de archivos: No hay archivos"
   >
-    <span class="relative flex h-3 w-3 shrink-0">
-      <span
-        id="transferencias-indicador-pulso"
-        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-200 opacity-75"
-      ></span>
-      <span class="relative inline-flex h-3 w-3 rounded-full bg-white"></span>
-    </span>
-    <span id="transferencias-indicador-texto" class="min-w-0 flex-1 text-sm font-semibold">
-      Tienes archivos por recibir
+    <svg
+      class="size-6 shrink-0 md:size-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <path d="M14 2v6h6M8 13h8M8 17h8"></path>
+    </svg>
+    <span
+      id="transferencias-indicador-texto"
+      class="sr-only min-w-0 flex-1 text-sm font-semibold md:not-sr-only"
+    >
+      No hay archivos
     </span>
     <span
       id="transferencias-indicador-cantidad"
-      class="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-white px-2 text-xs font-bold text-red-700"
-    >0</span>
+      class="absolute -right-1 -top-1 hidden h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-white px-1 text-xs font-bold text-red-700 shadow-sm md:static md:h-7 md:min-w-7 md:border-0 md:px-2 md:shadow-none"
+    ></span>
   </button>
 
   <section
     id="transferencias-bandeja"
-    class="hidden overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-2xl"
+    class="pointer-events-auto hidden w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-2xl"
     aria-label="Bandeja de archivos entrantes"
   >
     <header
@@ -57,10 +67,9 @@
   import { obtenerUsuario } from "../../services/auth";
   import {
     confirmarArchivoRecibido,
-    convertirContenidoABlobPartes,
+    prepararRecepcionP2P,
     responderTransferencia,
     suscribirseTransferencia,
-    type BloqueTransferencia,
     type SolicitudTransferencia,
   } from "../../services/transferencias";
 
@@ -68,7 +77,8 @@
     estado: "pendiente" | "recibiendo" | "listo" | "descargado" | "error";
     bloques: BlobPart[];
     bytesRecibidos: number;
-    siguienteSecuencia: number;
+    recepcionFinalizada: boolean;
+    servidorCompleto: boolean;
     archivo?: Blob;
     error?: string;
   };
@@ -97,7 +107,98 @@
   );
   const usuario = obtenerUsuario();
   const transferencias = new Map<string, TransferenciaRecibida>();
+  const limpiarRecepciones = new Map<string, () => void>();
   let bandejaAbierta = false;
+  let contextoAudio: AudioContext | null = null;
+  let tonoPendiente = false;
+
+  function emitirTonoAlerta() {
+    if (
+      !tonoPendiente ||
+      !contextoAudio ||
+      contextoAudio.state !== "running"
+    ) {
+      return;
+    }
+
+    const inicio = contextoAudio.currentTime;
+    const notas = [
+      { frecuencia: 783.99, inicio: 0, duracion: 0.32 },
+      { frecuencia: 987.77, inicio: 0.24, duracion: 0.34 },
+      { frecuencia: 1174.66, inicio: 0.5, duracion: 0.38 },
+      { frecuencia: 1567.98, inicio: 0.82, duracion: 0.58 },
+      { frecuencia: 1174.66, inicio: 1.42, duracion: 0.36 },
+      { frecuencia: 1567.98, inicio: 1.68, duracion: 1.15 },
+    ];
+
+    for (const nota of notas) {
+      const momento = inicio + nota.inicio;
+      const fundamental = contextoAudio.createOscillator();
+      const resonancia = contextoAudio.createOscillator();
+      const volumenFundamental = contextoAudio.createGain();
+      const volumenResonancia = contextoAudio.createGain();
+
+      fundamental.type = "sine";
+      fundamental.frequency.setValueAtTime(nota.frecuencia, momento);
+      fundamental.frequency.exponentialRampToValueAtTime(
+        nota.frecuencia * 1.012,
+        momento + 0.12,
+      );
+      volumenFundamental.gain.setValueAtTime(0.0001, momento);
+      volumenFundamental.gain.exponentialRampToValueAtTime(
+        0.17,
+        momento + 0.012,
+      );
+      volumenFundamental.gain.exponentialRampToValueAtTime(
+        0.0001,
+        momento + nota.duracion,
+      );
+      fundamental.connect(volumenFundamental);
+      volumenFundamental.connect(contextoAudio.destination);
+      fundamental.start(momento);
+      fundamental.stop(momento + nota.duracion + 0.02);
+
+      resonancia.type = "sine";
+      resonancia.frequency.setValueAtTime(
+        nota.frecuencia * 2.76,
+        momento,
+      );
+      volumenResonancia.gain.setValueAtTime(0.0001, momento);
+      volumenResonancia.gain.exponentialRampToValueAtTime(
+        0.045,
+        momento + 0.01,
+      );
+      volumenResonancia.gain.exponentialRampToValueAtTime(
+        0.0001,
+        momento + nota.duracion * 0.72,
+      );
+      resonancia.connect(volumenResonancia);
+      volumenResonancia.connect(contextoAudio.destination);
+      resonancia.start(momento);
+      resonancia.stop(momento + nota.duracion * 0.74);
+    }
+    tonoPendiente = false;
+  }
+
+  function prepararAudioAlerta() {
+    if (!("AudioContext" in window)) return;
+
+    try {
+      contextoAudio ??= new AudioContext();
+      if (contextoAudio.state === "suspended") {
+        void contextoAudio
+          .resume()
+          .then(emitirTonoAlerta)
+          .catch((error: unknown) => {
+            console.warn("No se pudo habilitar el sonido de transferencias:", error);
+          });
+      } else {
+        emitirTonoAlerta();
+      }
+    } catch (error) {
+      console.warn("No se pudo preparar el sonido de transferencias:", error);
+    }
+  }
 
   function formatearTamano(bytes: number): string {
     if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -126,18 +227,37 @@
       (total, transferencia) => total + transferencia.archivos.size,
       0,
     );
-    contenedor.classList.toggle("hidden", transferencias.size === 0);
-    indicador.classList.toggle("hidden", solicitudesPendientes.length === 0);
-    indicador.classList.toggle("flex", solicitudesPendientes.length > 0);
+    const hayArchivos = transferencias.size > 0;
+    const haySolicitudesPendientes = solicitudesPendientes.length > 0;
+    indicador.classList.toggle("animate-pulse", hayArchivos);
+    indicador.classList.toggle("border-red-300", hayArchivos);
+    indicador.classList.toggle("bg-red-700", hayArchivos);
+    indicador.classList.toggle("text-white", hayArchivos);
+    indicador.classList.toggle("hover:bg-red-800", hayArchivos);
+    indicador.classList.toggle("border-slate-200", !hayArchivos);
+    indicador.classList.toggle("bg-white", !hayArchivos);
+    indicador.classList.toggle("text-slate-700", !hayArchivos);
+    indicador.classList.toggle("hover:bg-slate-50", !hayArchivos);
     indicador.setAttribute("aria-expanded", String(bandejaAbierta));
     if (indicadorTexto) {
-      indicadorTexto.textContent =
-        solicitudesPendientes.length === 1
-          ? "Tienes archivos por recibir"
-          : `Tienes ${solicitudesPendientes.length} envíos por recibir`;
+      const textoIndicador =
+        haySolicitudesPendientes
+          ? solicitudesPendientes.length === 1
+            ? "Tienes archivos por recibir"
+            : `Tienes ${solicitudesPendientes.length} envíos por recibir`
+          : transferencias.size > 0
+            ? "Archivos compartidos"
+            : "No hay archivos";
+      indicadorTexto.textContent = textoIndicador;
+      indicador.setAttribute(
+        "aria-label",
+        `Transferencias de archivos: ${textoIndicador}`,
+      );
     }
     if (indicadorCantidad) {
       indicadorCantidad.textContent = String(totalArchivosPendientes);
+      indicadorCantidad.classList.toggle("hidden", totalArchivosPendientes === 0);
+      indicadorCantidad.classList.toggle("inline-flex", totalArchivosPendientes > 0);
       indicadorCantidad.setAttribute(
         "aria-label",
         `${totalArchivosPendientes} archivos pendientes`,
@@ -145,15 +265,23 @@
     }
     bandeja.classList.toggle(
       "hidden",
-      !bandejaAbierta || transferencias.size === 0,
+      !bandejaAbierta,
     );
     if (resumenBandeja) {
       resumenBandeja.textContent =
         solicitudesPendientes.length > 0
           ? `${solicitudesPendientes.length} envío${solicitudesPendientes.length === 1 ? "" : "s"} esperando · ${totalArchivosPendientes} archivo${totalArchivosPendientes === 1 ? "" : "s"}`
-          : "No hay archivos pendientes de aceptar.";
+          : transferencias.size > 0
+            ? "No hay archivos pendientes de aceptar."
+            : "No hay archivos por recibir.";
     }
     listaTransferencias.replaceChildren();
+    if (transferencias.size === 0) {
+      const vacio = document.createElement("p");
+      vacio.className = "rounded-lg px-3 py-6 text-center text-sm text-slate-500";
+      vacio.textContent = "No hay archivos por recibir.";
+      listaTransferencias.append(vacio);
+    }
 
     const ordenadas = [...transferencias.entries()].sort(
       ([, primera], [, segunda]) =>
@@ -258,48 +386,91 @@
     if (!transferencia) return;
 
     try {
+      if (aceptada) {
+        const limpiar = prepararRecepcionP2P(
+          id,
+          (evento) => recibirDatosP2P(id, evento),
+          (error) => fallarRecepcionP2P(id, error),
+        );
+        limpiarRecepciones.set(id, limpiar);
+        transferencia.estado = "recibiendo";
+        const primerArchivo = transferencia.archivos.values().next().value;
+        if (primerArchivo) primerArchivo.estado = "recibiendo";
+        renderizar();
+      }
       await responderTransferencia(id, aceptada);
       if (!aceptada) {
         quitar(id);
         return;
       }
-      transferencia.estado = "recibiendo";
-      const primerArchivo = transferencia.archivos.values().next().value;
-      if (primerArchivo) primerArchivo.estado = "recibiendo";
-      renderizar();
     } catch (error) {
       console.error("No se pudo responder a la solicitud de transferencia:", error);
-      quitar(id);
+      limpiarRecepciones.get(id)?.();
+      limpiarRecepciones.delete(id);
+      if (aceptada) {
+        transferencia.estado = "pendiente";
+        fallarRecepcionP2P(
+          id,
+          error instanceof Error
+            ? error
+            : new Error("No se pudo establecer la conexión directa."),
+        );
+      } else {
+        quitar(id);
+      }
     }
   }
 
-  function recibirBloque(bloque: BloqueTransferencia) {
-    const transferencia = transferencias.get(bloque.transferenciaId);
-    const archivo = transferencia?.archivos.get(bloque.archivoId);
+  function recibirDatosP2P(
+    transferenciaId: string,
+    evento: {
+      tipo: "inicio" | "bloque" | "fin";
+      archivoId: string;
+      contenido?: ArrayBuffer;
+    },
+  ) {
+    const transferencia = transferencias.get(transferenciaId);
+    const archivo = transferencia?.archivos.get(evento.archivoId);
     if (
       !transferencia ||
       transferencia.estado !== "recibiendo" ||
       !archivo ||
-      (archivo.estado !== "recibiendo" && archivo.estado !== "pendiente")
+      (archivo.estado !== "recibiendo" && archivo.estado !== "pendiente") ||
+      (evento.tipo === "inicio" && archivo.bytesRecibidos !== 0) ||
+      (evento.tipo !== "inicio" && archivo.estado !== "recibiendo")
     ) {
       return;
     }
 
     try {
-      archivo.estado = "recibiendo";
-      if (bloque.secuencia !== archivo.siguienteSecuencia) {
-        throw new Error("Se recibió un bloque fuera de secuencia.");
+      if (evento.tipo === "inicio") {
+        archivo.estado = "recibiendo";
+        archivo.recepcionFinalizada = false;
+        archivo.servidorCompleto = false;
+        renderizar();
+        return;
       }
-      const parte = convertirContenidoABlobPartes(bloque.contenido);
-      const bytes = parte.byteLength;
-      if (archivo.bytesRecibidos + bytes > archivo.tamano) {
+
+      if (evento.tipo === "fin") {
+        archivo.recepcionFinalizada = true;
+        if (archivo.bytesRecibidos !== archivo.tamano) {
+          throw new Error("El tamaño recibido no coincide con el archivo.");
+        }
+        finalizarArchivo(transferenciaId, archivo);
+        return;
+      }
+
+      if (!evento.contenido) {
+        throw new Error("Se recibió un bloque P2P vacío.");
+      }
+      const parte = evento.contenido;
+      if (archivo.bytesRecibidos + parte.byteLength > archivo.tamano) {
         throw new Error("El tamaño recibido no coincide con el archivo.");
       }
       archivo.bloques.push(parte);
-      archivo.bytesRecibidos += bytes;
-      archivo.siguienteSecuencia += 1;
+      archivo.bytesRecibidos += parte.byteLength;
       const progreso = contenedor?.querySelector<HTMLProgressElement>(
-        `[data-transferencia-progreso="${bloque.transferenciaId}:${bloque.archivoId}"]`,
+        `[data-transferencia-progreso="${transferenciaId}:${evento.archivoId}"]`,
       );
       if (progreso) progreso.value = archivo.bytesRecibidos;
       const detalle = progreso?.previousElementSibling;
@@ -314,6 +485,18 @@
     }
   }
 
+  function fallarRecepcionP2P(transferenciaId: string, error: Error) {
+    const transferencia = transferencias.get(transferenciaId);
+    if (!transferencia) return;
+    for (const archivo of transferencia.archivos.values()) {
+      if (archivo.estado === "pendiente" || archivo.estado === "recibiendo") {
+        archivo.estado = "error";
+        archivo.error = error.message;
+      }
+    }
+    renderizar();
+  }
+
   function completarArchivo(datos: {
     transferenciaId: string;
     archivoId: string;
@@ -323,6 +506,23 @@
     if (
       !transferencia ||
       !archivo ||
+      archivo.estado === "listo" ||
+      archivo.estado === "descargado" ||
+      archivo.estado === "error"
+    ) {
+      return;
+    }
+    archivo.servidorCompleto = true;
+    finalizarArchivo(datos.transferenciaId, archivo);
+  }
+
+  function finalizarArchivo(
+    transferenciaId: string,
+    archivo: ArchivoRecibido,
+  ) {
+    if (
+      !archivo.recepcionFinalizada ||
+      !archivo.servidorCompleto ||
       archivo.estado === "listo" ||
       archivo.estado === "descargado" ||
       archivo.estado === "error"
@@ -342,7 +542,7 @@
     archivo.bloques = [];
     archivo.estado = "listo";
     renderizar();
-    void confirmarArchivoRecibido(datos.transferenciaId, datos.archivoId).catch(
+    void confirmarArchivoRecibido(transferenciaId, archivo.id).catch(
       (error: unknown) => {
         console.error("No se pudo confirmar la recepción del archivo:", error);
       },
@@ -365,6 +565,8 @@
   }
 
   function quitar(id: string) {
+    limpiarRecepciones.get(id)?.();
+    limpiarRecepciones.delete(id);
     transferencias.delete(id);
     renderizar();
   }
@@ -378,10 +580,14 @@
     renderizar();
   });
 
+  document.addEventListener("pointerdown", prepararAudioAlerta, { once: true });
+  document.addEventListener("keydown", prepararAudioAlerta, { once: true });
+
   if (usuario?.rol === "EMPLEADO") {
     suscribirseTransferencia<SolicitudTransferencia>(
       "transferencia:solicitud",
       (solicitud) => {
+        const esNuevaSolicitud = !transferencias.has(solicitud.transferenciaId);
         bandejaAbierta = true;
         transferencias.set(solicitud.transferenciaId, {
           solicitud,
@@ -394,17 +600,18 @@
                 estado: "pendiente",
                 bloques: [],
                 bytesRecibidos: 0,
-                siguienteSecuencia: 0,
+                recepcionFinalizada: false,
+                servidorCompleto: false,
               },
             ]),
           ),
         });
+        if (esNuevaSolicitud) {
+          tonoPendiente = true;
+          prepararAudioAlerta();
+        }
         renderizar();
       },
-    );
-    suscribirseTransferencia<BloqueTransferencia>(
-      "transferencia:bloque",
-      recibirBloque,
     );
     suscribirseTransferencia<{ transferenciaId: string; archivoId: string }>(
       "transferencia:archivo-listo",
@@ -421,5 +628,7 @@
       "transferencia:expirada",
       cancelar,
     );
+    contenedor?.classList.remove("hidden");
+    renderizar();
   }
 </script>

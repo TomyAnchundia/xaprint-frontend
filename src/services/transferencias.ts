@@ -7,8 +7,24 @@ const API_URL =
     ? `http://${window.location.hostname}:3000`
     : "http://localhost:3000");
 const TAMANO_BLOQUE = 64 * 1024;
+const MAXIMO_BUFFER_DATA_CHANNEL = 2 * 1024 * 1024;
+const TIEMPO_CONEXION_P2P_MS = 45_000;
 
-type Respuesta<T> = { ok: true } & T | { ok: false; error: string };
+type Respuesta<T> = ({ ok: true } & T) | { ok: false; error: string };
+type TipoSenalP2P = "oferta" | "respuesta" | "candidato";
+
+type SenalP2P = {
+  transferenciaId: string;
+  destinatarioSocketId: string;
+  remitenteSocketId: string;
+  tipo: TipoSenalP2P;
+  valor: RTCSessionDescriptionInit | RTCIceCandidateInit;
+};
+
+type EventoDatosP2P =
+  | { tipo: "inicio"; archivoId: string }
+  | { tipo: "bloque"; archivoId: string; contenido: ArrayBuffer }
+  | { tipo: "fin"; archivoId: string };
 
 export interface SolicitudTransferencia {
   transferenciaId: string;
@@ -18,17 +34,8 @@ export interface SolicitudTransferencia {
     nombreArchivo: string;
     tamano: number;
     tipo: string;
-    siguienteSecuencia: number;
-    bytesEnviados: number;
   }[];
   remitente: string;
-}
-
-export interface BloqueTransferencia {
-  transferenciaId: string;
-  archivoId: string;
-  secuencia: number;
-  contenido: ArrayBuffer | Uint8Array | { type: "Buffer"; data: number[] };
 }
 
 export interface ProgresoTransferencia {
@@ -43,17 +50,13 @@ export interface EstadoDestinatarioTransferencia {
   transferenciaId: string;
   archivoId?: string;
   username: string;
-  estado:
-    | "aceptado"
-    | "rechazado"
-    | "desconectado"
-    | "expirado"
-    | "recibido";
+  estado: "aceptado" | "rechazado" | "desconectado" | "expirado" | "recibido";
 }
 
 type EventoListo = {
   transferenciaId: string;
   cantidadAceptada: number;
+  destinatarios: { socketId: string; username: string }[];
 };
 
 let socket: Socket | null = null;
@@ -114,17 +117,15 @@ function emitirConRespuesta<T>(
   datos: unknown,
 ): Promise<Respuesta<T>> {
   return new Promise((resolve, reject) => {
-    canal.timeout(15_000).emit(
-      evento,
-      datos,
-      (error: Error | null, respuesta: Respuesta<T>) => {
+    canal
+      .timeout(15_000)
+      .emit(evento, datos, (error: Error | null, respuesta: Respuesta<T>) => {
         if (error) {
           reject(new Error("El servidor no respondió a la transferencia."));
           return;
         }
         resolve(respuesta);
-      },
-    );
+      });
   });
 }
 
@@ -133,6 +134,435 @@ function validarRespuesta<T>(respuesta: Respuesta<T>): T {
     throw new Error(respuesta.error);
   }
   return respuesta;
+}
+
+function validarDisponibilidadP2P(): void {
+  if (typeof RTCPeerConnection === "undefined") {
+    throw new Error(
+      window.isSecureContext
+        ? "Este navegador no admite transferencias directas WebRTC."
+        : "WebRTC no está disponible en esta página. Abre el sistema mediante HTTPS o localhost.",
+    );
+  }
+}
+
+function crearConexionP2P(): RTCPeerConnection {
+  validarDisponibilidadP2P();
+  return new RTCPeerConnection({
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" },
+    ],
+  });
+}
+
+function emitirSenal(
+  canal: Socket,
+  datos: {
+    transferenciaId: string;
+    destinatarioSocketId: string;
+    tipo: TipoSenalP2P;
+    valor: RTCSessionDescriptionInit | RTCIceCandidateInit;
+  },
+): void {
+  canal.emit("transferencia:senal", datos);
+}
+
+function emitirSenalConRespuesta(
+  canal: Socket,
+  datos: {
+    transferenciaId: string;
+    destinatarioSocketId: string;
+    tipo: TipoSenalP2P;
+    valor: RTCSessionDescriptionInit | RTCIceCandidateInit;
+  },
+): Promise<void> {
+  return emitirConRespuesta<Record<string, never>>(
+    canal,
+    "transferencia:senal",
+    datos,
+  ).then(validarRespuesta);
+}
+
+function procesarCandidatosPendientes(
+  peer: RTCPeerConnection,
+  candidatos: RTCIceCandidateInit[],
+): Promise<void> {
+  return candidatos.reduce(
+    (anterior, candidato) =>
+      anterior.then(() => peer.addIceCandidate(new RTCIceCandidate(candidato))),
+    Promise.resolve(),
+  );
+}
+
+function esperarCanalAbierto(
+  peer: RTCPeerConnection,
+  canal: RTCDataChannel,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tiempoLimite = window.setTimeout(() => {
+      limpiar();
+      reject(
+        new Error(
+          "No se pudo establecer una conexión directa con todos los empleados. Verifica que la red permita WebRTC P2P.",
+        ),
+      );
+    }, TIEMPO_CONEXION_P2P_MS);
+
+    const limpiar = () => {
+      window.clearTimeout(tiempoLimite);
+      canal.removeEventListener("open", alAbrir);
+      canal.removeEventListener("error", alError);
+      peer.removeEventListener("connectionstatechange", revisarEstado);
+    };
+    const alAbrir = () => {
+      limpiar();
+      resolve();
+    };
+    const alError = () => {
+      limpiar();
+      reject(new Error("Falló el canal directo de transferencia."));
+    };
+    const revisarEstado = () => {
+      if (
+        peer.connectionState === "failed" ||
+        peer.connectionState === "closed"
+      ) {
+        limpiar();
+        reject(
+          new Error(
+            "No se pudo establecer una conexión directa. La transferencia no se envió.",
+          ),
+        );
+      }
+    };
+
+    canal.addEventListener("open", alAbrir);
+    canal.addEventListener("error", alError);
+    peer.addEventListener("connectionstatechange", revisarEstado);
+    revisarEstado();
+    if (canal.readyState === "open") alAbrir();
+  });
+}
+
+async function esperarBufferDisponible(canal: RTCDataChannel): Promise<void> {
+  if (canal.readyState !== "open") {
+    throw new Error("Se perdió la conexión directa durante la transferencia.");
+  }
+  if (canal.bufferedAmount <= MAXIMO_BUFFER_DATA_CHANNEL) return;
+
+  canal.bufferedAmountLowThreshold = MAXIMO_BUFFER_DATA_CHANNEL / 2;
+  await new Promise<void>((resolve, reject) => {
+    const tiempoLimite = window.setTimeout(() => {
+      limpiar();
+      reject(new Error("La conexión directa dejó de aceptar datos."));
+    }, TIEMPO_CONEXION_P2P_MS);
+    const limpiar = () => {
+      window.clearTimeout(tiempoLimite);
+      canal.removeEventListener("bufferedamountlow", revisar);
+      canal.removeEventListener("close", alCerrar);
+    };
+    const revisar = () => {
+      if (canal.bufferedAmount <= MAXIMO_BUFFER_DATA_CHANNEL / 2) {
+        limpiar();
+        resolve();
+      }
+    };
+    const alCerrar = () => {
+      limpiar();
+      reject(new Error("Se perdió la conexión directa durante el envío."));
+    };
+
+    canal.addEventListener("bufferedamountlow", revisar);
+    canal.addEventListener("close", alCerrar);
+    revisar();
+  });
+}
+
+async function esperarColaVacia(canal: RTCDataChannel): Promise<void> {
+  if (canal.readyState !== "open") {
+    throw new Error("Se perdió la conexión directa durante la transferencia.");
+  }
+  if (canal.bufferedAmount === 0) return;
+
+  canal.bufferedAmountLowThreshold = 0;
+  await new Promise<void>((resolve, reject) => {
+    const tiempoLimite = window.setTimeout(() => {
+      limpiar();
+      reject(
+        new Error("No se pudo completar el envío por la conexión directa."),
+      );
+    }, TIEMPO_CONEXION_P2P_MS);
+    const limpiar = () => {
+      window.clearTimeout(tiempoLimite);
+      canal.removeEventListener("bufferedamountlow", alVaciar);
+      canal.removeEventListener("close", alCerrar);
+    };
+    const alVaciar = () => {
+      limpiar();
+      resolve();
+    };
+    const alCerrar = () => {
+      limpiar();
+      reject(new Error("Se perdió la conexión directa durante el envío."));
+    };
+
+    canal.addEventListener("bufferedamountlow", alVaciar);
+    canal.addEventListener("close", alCerrar);
+    if (canal.bufferedAmount === 0) alVaciar();
+  });
+}
+
+async function prepararCanalesEnvio(
+  canal: Socket,
+  transferenciaId: string,
+  destinatarios: { socketId: string }[],
+): Promise<{
+  canales: Map<string, RTCDataChannel>;
+  cerrar: () => void;
+}> {
+  const peers = new Map<
+    string,
+    {
+      peer: RTCPeerConnection;
+      canal: RTCDataChannel;
+      candidatosPendientes: RTCIceCandidateInit[];
+    }
+  >();
+  const fallar = (error: unknown) => {
+    console.error("Falló la conexión WebRTC de transferencia:", error);
+  };
+
+  const recibirSenal = (senal: SenalP2P) => {
+    if (senal.transferenciaId !== transferenciaId || senal.tipo === "oferta") {
+      return;
+    }
+    const entrada = peers.get(senal.destinatarioSocketId);
+    if (!entrada) return;
+
+    void (async () => {
+      try {
+        if (senal.tipo === "respuesta") {
+          await entrada.peer.setRemoteDescription(
+            new RTCSessionDescription(senal.valor as RTCSessionDescriptionInit),
+          );
+          await procesarCandidatosPendientes(
+            entrada.peer,
+            entrada.candidatosPendientes,
+          );
+          entrada.candidatosPendientes.length = 0;
+        } else {
+          const candidato = senal.valor as RTCIceCandidateInit;
+          if (entrada.peer.remoteDescription) {
+            await entrada.peer.addIceCandidate(new RTCIceCandidate(candidato));
+          } else {
+            entrada.candidatosPendientes.push(candidato);
+          }
+        }
+      } catch (error) {
+        fallar(error);
+        entrada.peer.close();
+      }
+    })();
+  };
+  canal.on("transferencia:senal", recibirSenal);
+
+  try {
+    const aperturas: Promise<void>[] = [];
+    for (const destinatario of destinatarios) {
+      const peer = crearConexionP2P();
+      const dataChannel = peer.createDataChannel("archivos", {
+        ordered: true,
+      });
+      dataChannel.binaryType = "arraybuffer";
+      peers.set(destinatario.socketId, {
+        peer,
+        canal: dataChannel,
+        candidatosPendientes: [],
+      });
+      aperturas.push(esperarCanalAbierto(peer, dataChannel));
+      peer.onicecandidate = (evento) => {
+        if (evento.candidate) {
+          emitirSenal(canal, {
+            transferenciaId,
+            destinatarioSocketId: destinatario.socketId,
+            tipo: "candidato",
+            valor: evento.candidate.toJSON(),
+          });
+        }
+      };
+
+      const oferta = await peer.createOffer();
+      await peer.setLocalDescription(oferta);
+      const descripcion = peer.localDescription;
+      if (!descripcion) {
+        throw new Error("No se pudo preparar la oferta WebRTC.");
+      }
+      await emitirSenalConRespuesta(canal, {
+        transferenciaId,
+        destinatarioSocketId: destinatario.socketId,
+        tipo: "oferta",
+        valor: descripcion.toJSON(),
+      });
+    }
+
+    await Promise.all(aperturas);
+    return {
+      canales: new Map(
+        [...peers].map(([socketId, entrada]) => [socketId, entrada.canal]),
+      ),
+      cerrar: () => {
+        canal.off("transferencia:senal", recibirSenal);
+        for (const { peer } of peers.values()) peer.close();
+      },
+    };
+  } catch (error) {
+    canal.off("transferencia:senal", recibirSenal);
+    for (const { peer } of peers.values()) peer.close();
+    throw error;
+  }
+}
+
+export function prepararRecepcionP2P(
+  transferenciaId: string,
+  alRecibir: (evento: EventoDatosP2P) => void,
+  alFallar: (error: Error) => void,
+): () => void {
+  validarDisponibilidadP2P();
+  const canal = obtenerSocket();
+  const peers = new Map<string, RTCPeerConnection>();
+  const candidatosPendientes = new Map<string, RTCIceCandidateInit[]>();
+  let activa = true;
+
+  const recibirSenal = (senal: SenalP2P) => {
+    if (
+      !activa ||
+      senal.transferenciaId !== transferenciaId ||
+      senal.destinatarioSocketId !== canal.id ||
+      senal.tipo === "respuesta"
+    ) {
+      return;
+    }
+    const remitenteSocketId = senal.remitenteSocketId;
+    let peer = peers.get(remitenteSocketId);
+
+    void (async () => {
+      try {
+        if (senal.tipo === "oferta") {
+          if (peer) return;
+          peer = crearConexionP2P();
+          peers.set(remitenteSocketId, peer);
+          peer.onicecandidate = (evento) => {
+            if (evento.candidate) {
+              emitirSenal(canal, {
+                transferenciaId,
+                destinatarioSocketId: canal.id!,
+                tipo: "candidato",
+                valor: evento.candidate.toJSON(),
+              });
+            }
+          };
+          peer.ondatachannel = ({ channel: dataChannel }) => {
+            dataChannel.binaryType = "arraybuffer";
+            let archivoActual: string | null = null;
+            dataChannel.onmessage = ({ data }) => {
+              try {
+                if (typeof data === "string") {
+                  const mensaje: unknown = JSON.parse(data);
+                  if (
+                    typeof mensaje !== "object" ||
+                    mensaje === null ||
+                    !("tipo" in mensaje) ||
+                    !("archivoId" in mensaje) ||
+                    typeof mensaje.archivoId !== "string"
+                  ) {
+                    throw new Error("Se recibió un control P2P no válido.");
+                  }
+                  if (mensaje.tipo === "inicio" && archivoActual === null) {
+                    archivoActual = mensaje.archivoId;
+                    alRecibir({ tipo: "inicio", archivoId: archivoActual });
+                  } else if (
+                    mensaje.tipo === "fin" &&
+                    archivoActual === mensaje.archivoId
+                  ) {
+                    alRecibir({ tipo: "fin", archivoId: archivoActual });
+                    archivoActual = null;
+                  } else {
+                    throw new Error(
+                      "El flujo de archivos P2P está desordenado.",
+                    );
+                  }
+                } else if (
+                  data instanceof ArrayBuffer &&
+                  archivoActual !== null
+                ) {
+                  alRecibir({
+                    tipo: "bloque",
+                    archivoId: archivoActual,
+                    contenido: data,
+                  });
+                } else {
+                  throw new Error("Se recibió un bloque P2P no válido.");
+                }
+              } catch (error) {
+                alFallar(
+                  error instanceof Error
+                    ? error
+                    : new Error("No se pudo procesar el bloque P2P."),
+                );
+                dataChannel.close();
+              }
+            };
+          };
+
+          await peer.setRemoteDescription(
+            new RTCSessionDescription(senal.valor as RTCSessionDescriptionInit),
+          );
+          const pendientes = candidatosPendientes.get(remitenteSocketId) ?? [];
+          await procesarCandidatosPendientes(peer, pendientes);
+          candidatosPendientes.delete(remitenteSocketId);
+          const respuesta = await peer.createAnswer();
+          await peer.setLocalDescription(respuesta);
+          const descripcion = peer.localDescription;
+          if (!descripcion) {
+            throw new Error("No se pudo preparar la respuesta WebRTC.");
+          }
+          await emitirSenalConRespuesta(canal, {
+            transferenciaId,
+            destinatarioSocketId: canal.id!,
+            tipo: "respuesta",
+            valor: descripcion.toJSON(),
+          });
+        } else {
+          const candidato = senal.valor as RTCIceCandidateInit;
+          if (peer?.remoteDescription) {
+            await peer.addIceCandidate(new RTCIceCandidate(candidato));
+          } else {
+            const pendientes =
+              candidatosPendientes.get(remitenteSocketId) ?? [];
+            pendientes.push(candidato);
+            candidatosPendientes.set(remitenteSocketId, pendientes);
+          }
+        }
+      } catch (error) {
+        peer?.close();
+        alFallar(
+          error instanceof Error
+            ? error
+            : new Error("No se pudo establecer la conexión directa."),
+        );
+      }
+    })();
+  };
+
+  canal.on("transferencia:senal", recibirSenal);
+  return () => {
+    activa = false;
+    canal.off("transferencia:senal", recibirSenal);
+    for (const peer of peers.values()) peer.close();
+    peers.clear();
+    candidatosPendientes.clear();
+  };
 }
 
 function crearIdTransferenciaArchivo(): string {
@@ -163,6 +593,7 @@ export async function responderTransferencia(
   transferenciaId: string,
   aceptada: boolean,
 ): Promise<void> {
+  validarDisponibilidadP2P();
   const canal = await conectar();
   validarRespuesta(
     await emitirConRespuesta<Record<string, never>>(
@@ -191,9 +622,7 @@ export async function enviarArchivosPedido(
   pedidoId: number,
   archivos: File[],
   alActualizar: (progreso: ProgresoTransferencia) => void,
-  alPrepararArchivos: (
-    archivos: { id: string; archivo: File }[],
-  ) => void,
+  alPrepararArchivos: (archivos: { id: string; archivo: File }[]) => void,
   alCrearTransferencia: (transferenciaId: string) => void,
   alRecibirDestinatarios: (nombres: string[]) => void,
 ): Promise<void> {
@@ -201,10 +630,7 @@ export async function enviarArchivosPedido(
   alActualizar({ estado: "solicitando", enviados: 0, total: 0 });
 
   const eventosListos = new Map<string, EventoListo>();
-  const resolutoresListos = new Map<
-    string,
-    (evento: EventoListo) => void
-  >();
+  const resolutoresListos = new Map<string, (evento: EventoListo) => void>();
   const tiemposLimiteListos = new Map<string, number>();
   const recibirListo = (evento: EventoListo) => {
     const resolver = resolutoresListos.get(evento.transferenciaId);
@@ -221,6 +647,8 @@ export async function enviarArchivosPedido(
   canal.on("transferencia:destinatarios-listos", recibirListo);
 
   let transferenciaId: string | null = null;
+  let conexionP2P:
+    { canales: Map<string, RTCDataChannel>; cerrar: () => void } | undefined;
   try {
     const archivosTransferencia = archivos.map((archivo) => ({
       id: crearIdTransferenciaArchivo(),
@@ -274,28 +702,29 @@ export async function enviarArchivosPedido(
       throw new Error("Ningún empleado aceptó recibir el archivo.");
     }
 
+    conexionP2P = await prepararCanalesEnvio(
+      canal,
+      transferenciaId,
+      eventoListo.destinatarios,
+    );
+    const canalesEnvio = conexionP2P.canales;
     for (const [indice, archivo] of archivos.entries()) {
       const archivoId = archivosTransferencia[indice]?.id;
       if (!archivoId) {
         throw new Error("No se pudo identificar uno de los archivos.");
       }
+      for (const dataChannel of canalesEnvio.values()) {
+        dataChannel.send(JSON.stringify({ tipo: "inicio", archivoId }));
+      }
       let enviados = 0;
       for (let inicio = 0; inicio < archivo.size; inicio += TAMANO_BLOQUE) {
-        const contenido = new Uint8Array(
-          await archivo.slice(inicio, inicio + TAMANO_BLOQUE).arrayBuffer(),
-        );
-        validarRespuesta(
-          await emitirConRespuesta<Record<string, never>>(
-            canal,
-            "transferencia:bloque",
-            {
-              transferenciaId,
-              archivoId,
-              secuencia: enviados / TAMANO_BLOQUE,
-              contenido,
-            },
-          ),
-        );
+        const contenido = await archivo
+          .slice(inicio, inicio + TAMANO_BLOQUE)
+          .arrayBuffer();
+        for (const dataChannel of canalesEnvio.values()) {
+          await esperarBufferDisponible(dataChannel);
+          dataChannel.send(contenido);
+        }
         enviados += contenido.byteLength;
         alActualizar({
           estado: "enviando",
@@ -305,6 +734,10 @@ export async function enviarArchivosPedido(
           total: archivo.size,
         });
       }
+      for (const dataChannel of canalesEnvio.values()) {
+        dataChannel.send(JSON.stringify({ tipo: "fin", archivoId }));
+      }
+      await Promise.all([...canalesEnvio.values()].map(esperarColaVacia));
       validarRespuesta(
         await emitirConRespuesta<Record<string, never>>(
           canal,
@@ -321,6 +754,7 @@ export async function enviarArchivosPedido(
     }
     throw error;
   } finally {
+    conexionP2P?.cerrar();
     if (transferenciaId) {
       const tiempoLimite = tiemposLimiteListos.get(transferenciaId);
       if (tiempoLimite) window.clearTimeout(tiempoLimite);
@@ -334,25 +768,4 @@ export async function enviarArchivosPedido(
 
 export function cancelarTransferencia(transferenciaId: string): void {
   socket?.emit("transferencia:cancelar", { transferenciaId });
-}
-
-export function convertirContenidoABlobPartes(
-  contenido: BloqueTransferencia["contenido"],
-): ArrayBuffer {
-  if (contenido instanceof ArrayBuffer) return contenido;
-  if (contenido instanceof Uint8Array) {
-    return contenido.buffer.slice(
-      contenido.byteOffset,
-      contenido.byteOffset + contenido.byteLength,
-    ) as ArrayBuffer;
-  }
-  if (
-    typeof contenido === "object" &&
-    contenido !== null &&
-    contenido.type === "Buffer" &&
-    Array.isArray(contenido.data)
-  ) {
-    return new Uint8Array(contenido.data).buffer;
-  }
-  throw new Error("El bloque recibido tiene un formato no válido.");
 }
