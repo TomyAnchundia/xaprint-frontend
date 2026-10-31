@@ -26,9 +26,11 @@ type EventoDatosP2P =
   | { tipo: "bloque"; archivoId: string; contenido: ArrayBuffer }
   | { tipo: "fin"; archivoId: string };
 
+export type AreaTransferencia = "UV" | "TEXTIL31" | "TEXTIL58";
+
 export interface SolicitudTransferencia {
   transferenciaId: string;
-  pedidoId: number;
+  area: AreaTransferencia;
   archivos: {
     id: string;
     nombreArchivo: string;
@@ -618,8 +620,8 @@ export async function confirmarArchivoRecibido(
   );
 }
 
-export async function enviarArchivosPedido(
-  pedidoId: number,
+export async function enviarArchivos(
+  area: AreaTransferencia,
   archivos: File[],
   alActualizar: (progreso: ProgresoTransferencia) => void,
   alPrepararArchivos: (archivos: { id: string; archivo: File }[]) => void,
@@ -667,7 +669,7 @@ export async function enviarArchivosPedido(
         transferenciaId: string;
         destinatarios: { socketId: string; username: string }[];
       }>(canal, "transferencia:invitar", {
-        pedidoId,
+        area,
         archivos: archivosTransferencia,
       }),
     );

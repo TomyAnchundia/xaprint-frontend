@@ -291,32 +291,50 @@ html[data-theme="dark"] #detalle-estado-pago[data-estado-pago="NO_PAGADO"] {
   color: #fee2e2;
 }
 
-html[data-theme="dark"] #transferencia-pedido > div {
+html:not([data-theme="dark"]) #transferencias-bandeja {
+  border-color: #cbd5e1;
+  box-shadow:
+    0 20px 50px rgb(15 23 42 / 0.24),
+    0 4px 12px rgb(15 23 42 / 0.12);
+}
+
+html:not([data-theme="dark"]) #detalle-contenido > section {
+  margin: 0.75rem 1rem;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background-color: #fff;
+  box-shadow:
+    0 3px 8px rgb(15 23 42 / 0.08),
+    0 1px 2px rgb(15 23 42 / 0.06);
+}
+
+html[data-theme="dark"] #transferencia-archivos > div {
   border-color: #3f3f46;
   background-color: #18181b;
 }
 
-html[data-theme="dark"] #transferencia-pedido > div > div > span {
+html[data-theme="dark"] #transferencia-archivos > div > div > span {
   background-color: #164e63;
   color: #a5f3fc;
 }
 
-html[data-theme="dark"] #transferencia-pedido label {
+html[data-theme="dark"] #transferencia-archivos label {
   border-color: #52525b;
   background-color: #27272a;
   color: #e4e4e7;
 }
 
-html[data-theme="dark"] #transferencia-pedido label:hover {
+html[data-theme="dark"] #transferencia-archivos label:hover {
   background-color: #3f3f46;
 }
 
-html[data-theme="dark"] #transferencia-pedido #transferencia-enviar {
+html[data-theme="dark"] #transferencia-archivos #transferencia-enviar {
   background-color: #0e7490;
 }
 
 html[data-theme="dark"]
-  #transferencia-pedido
+  #transferencia-archivos
   #transferencia-enviar:not(:disabled):hover {
   background-color: #0891b2;
 }
