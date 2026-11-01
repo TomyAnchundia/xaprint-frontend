@@ -146,6 +146,9 @@ export interface DeudaCliente {
   pedidos: {
     id: number;
     fecha: string;
+    servicio: "TEXTIL" | "UV";
+    ancho: number;
+    largo: number;
     total: number;
     pagado: number;
     porCobrar: number;
@@ -265,7 +268,9 @@ async function request<T>(
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(typeof FormData !== "undefined" && options.body instanceof FormData
+        ? {}
+        : { "Content-Type": "application/json" }),
       ...(token
         ? {
             Authorization: `Bearer ${token}`,
@@ -563,6 +568,26 @@ export async function crearPedido(data: CrearPedidoData): Promise<Pedido> {
     method: "POST",
     body: JSON.stringify(data),
   });
+}
+
+export async function subirImagenReferenciaPedido(
+  pedidoId: number,
+  imagen: File,
+): Promise<{ venceEn: string }> {
+  const datos = new FormData();
+  datos.append("file", imagen);
+  return request<{ venceEn: string }>(`/pedidos/${pedidoId}/referencia`, {
+    method: "POST",
+    body: datos,
+  });
+}
+
+export async function obtenerImagenReferenciaPedido(
+  pedidoId: number,
+): Promise<{ url: string; venceEn: string }> {
+  return request<{ url: string; venceEn: string }>(
+    `/pedidos/${pedidoId}/referencia`,
+  );
 }
 
 export async function calcularPrecio(

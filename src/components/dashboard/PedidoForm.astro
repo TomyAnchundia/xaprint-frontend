@@ -334,6 +334,36 @@ const { mode = "crear" } = Astro.props;
             </div>
           </section>
 
+          <section
+            id="pedido-referencia-opcional"
+            class="rounded-xl border border-slate-200 bg-white p-4"
+          >
+            <p class="mb-1.5 block text-sm font-medium text-slate-700">
+              Imagen de referencia (opcional)
+            </p>
+            <input
+              id="pedido-imagen-referencia"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="hidden"
+            />
+            <button
+              id="pedido-imagen-referencia-pegar"
+              type="button"
+              class="mt-3 w-full rounded-lg border border-dashed border-cyan-300 bg-cyan-50/60 px-3 py-3 text-left text-sm text-cyan-900 transition hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-600/30"
+            >
+              Haz clic aquí y pega una captura con Ctrl+V
+            </button>
+            <p
+              id="pedido-imagen-referencia-ayuda"
+              class="mt-2 text-xs text-slate-500"
+              aria-live="polite"
+            >
+              Captura JPG, PNG o WebP de hasta 5 MB. Se conservará hasta cinco
+              días desde la creación del pedido.
+            </p>
+          </section>
+
           <!-- Configuración -->
           <section>
             <div class="mb-3">
@@ -466,6 +496,7 @@ const { mode = "crear" } = Astro.props;
                 class="block w-full resize-y rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               ></textarea>
             </div>
+
           </section>
 
           <!-- Mensaje -->
@@ -528,6 +559,7 @@ const { mode = "crear" } = Astro.props;
     obtenerClientes,
     obtenerPedido,
     actualizarPedido,
+    subirImagenReferenciaPedido,
   } from "../../services/api";
   import {
     establecerCargaBoton,
@@ -550,6 +582,18 @@ const { mode = "crear" } = Astro.props;
   const cancelar = document.getElementById("cancelar-modal-nuevo-pedido");
 
   const formulario = document.getElementById("form-nuevo-pedido");
+  const referenciaOpcional = document.getElementById(
+    "pedido-referencia-opcional",
+  );
+  const imagenReferencia = document.getElementById(
+    "pedido-imagen-referencia",
+  ) as HTMLInputElement | null;
+  const imagenReferenciaAyuda = document.getElementById(
+    "pedido-imagen-referencia-ayuda",
+  );
+  const pegarImagenReferencia = document.getElementById(
+    "pedido-imagen-referencia-pegar",
+  ) as HTMLButtonElement | null;
 
   const clienteSelect = document.getElementById(
     "pedido-cliente",
@@ -746,6 +790,7 @@ const { mode = "crear" } = Astro.props;
 
   function actualizarTextosModal() {
     const esEdicion = modoActual === "editar";
+    referenciaOpcional?.classList.toggle("hidden", esEdicion);
 
     if (titulo) {
       titulo.textContent = esEdicion ? "Editar pedido" : "Nuevo pedido";
@@ -1064,6 +1109,18 @@ const { mode = "crear" } = Astro.props;
     if (observacionesInput) {
       observacionesInput.value = "";
     }
+    if (imagenReferencia) {
+      imagenReferencia.value = "";
+    }
+    if (pegarImagenReferencia) {
+      pegarImagenReferencia.textContent =
+        "Haz clic aquí y pega una captura con Ctrl+V";
+    }
+    if (imagenReferenciaAyuda) {
+      imagenReferenciaAyuda.textContent =
+        "Captura JPG, PNG o WebP de hasta 5 MB. Se conservará hasta cinco días desde la creación del pedido.";
+      imagenReferenciaAyuda.className = "mt-2 text-xs text-slate-500";
+    }
 
     if (precioValor) {
       precioValor.textContent = "—";
@@ -1259,6 +1316,18 @@ const { mode = "crear" } = Astro.props;
       return;
     }
 
+    const archivoReferencia =
+      modoActual === "crear" ? imagenReferencia?.files?.[0] : undefined;
+    let errorCargaImagen: string | null = null;
+    if (archivoReferencia) {
+      const tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
+      if (!tiposPermitidos.includes(archivoReferencia.type)) {
+        errorCargaImagen = "La imagen debe ser JPG, PNG o WebP.";
+      } else if (archivoReferencia.size > 5 * 1024 * 1024) {
+        errorCargaImagen = "La imagen no puede superar 5 MB.";
+      }
+    }
+
     establecerCargaBoton(
       btnGuardarPedido,
       true,
@@ -1296,6 +1365,25 @@ const { mode = "crear" } = Astro.props;
         );
       } else {
         const nuevoPedido = await crearPedido(datos);
+        if (archivoReferencia && !errorCargaImagen) {
+          establecerCargaBoton(
+            btnGuardarPedido,
+            true,
+            "Guardando imagen...",
+          );
+          try {
+            await subirImagenReferenciaPedido(nuevoPedido.id, archivoReferencia);
+          } catch (error) {
+            console.error(
+              "El pedido se creó, pero no se pudo adjuntar la imagen:",
+              error,
+            );
+            errorCargaImagen =
+              error instanceof Error
+                ? error.message
+                : "No se pudo adjuntar la imagen.";
+          }
+        }
 
         document.dispatchEvent(
           new CustomEvent("centro-control:pedido-creado", {
@@ -1304,6 +1392,14 @@ const { mode = "crear" } = Astro.props;
             },
           }),
         );
+        if (errorCargaImagen) {
+          mostrarNotificacion(
+            `Pedido creado, pero la imagen no se adjuntó: ${errorCargaImagen}`,
+            "error",
+          );
+          cerrarModal();
+          return;
+        }
       }
 
       mostrarNotificacion(
@@ -1337,6 +1433,64 @@ const { mode = "crear" } = Astro.props;
         false,
         modoActual === "editar" ? "Guardar cambios" : "Crear pedido",
       );
+    }
+  });
+
+  imagenReferencia?.addEventListener("change", () => {
+    const archivo = imagenReferencia.files?.[0];
+    if (!archivo) return;
+    if (pegarImagenReferencia) {
+      pegarImagenReferencia.textContent = `Imagen seleccionada: ${archivo.name}`;
+    }
+    if (imagenReferenciaAyuda) {
+      imagenReferenciaAyuda.textContent = `${archivo.name} · ${(archivo.size / (1024 * 1024)).toFixed(2)} MB`;
+      imagenReferenciaAyuda.className = "mt-2 text-xs text-slate-500";
+    }
+  });
+
+  document.addEventListener("paste", (event: ClipboardEvent) => {
+    if (
+      modoActual !== "crear" ||
+      !modal ||
+      modal.classList.contains("hidden") ||
+      !imagenReferencia ||
+      !event.clipboardData
+    ) {
+      return;
+    }
+
+    const archivoPegado = Array.from(event.clipboardData.items)
+      .filter((item) => item.type.startsWith("image/"))
+      .map((item) => item.getAsFile())
+      .find((archivo): archivo is File => archivo !== null);
+    if (!archivoPegado) return;
+
+    event.preventDefault();
+    const extensionPorTipo: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+    };
+    const extension = extensionPorTipo[archivoPegado.type];
+    const archivo = extension
+      ? new File([archivoPegado], `captura-${Date.now()}.${extension}`, {
+          type: archivoPegado.type,
+          lastModified: Date.now(),
+        })
+      : archivoPegado;
+
+    try {
+      const datosTransferencia = new DataTransfer();
+      datosTransferencia.items.add(archivo);
+      imagenReferencia.files = datosTransferencia.files;
+      imagenReferencia.dispatchEvent(new Event("change", { bubbles: true }));
+    } catch (error) {
+      console.error("No se pudo adjuntar la imagen pegada:", error);
+      if (imagenReferenciaAyuda) {
+        imagenReferenciaAyuda.textContent =
+          "No se pudo pegar la captura. Inténtalo nuevamente con Ctrl+V.";
+        imagenReferenciaAyuda.className = "mt-2 text-xs text-red-600";
+      }
     }
   });
 

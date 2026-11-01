@@ -194,6 +194,57 @@
   </div>
 </section>
 
+<div
+  id="pedido-referencia-preview-modal"
+  class="invisible fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/75 p-4 opacity-0 transition-opacity"
+  aria-hidden="true"
+>
+  <div
+    class="relative flex max-h-full w-full max-w-4xl flex-col rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="pedido-referencia-preview-titulo"
+  >
+    <div class="mb-3 flex items-center justify-between gap-3">
+      <h2
+        id="pedido-referencia-preview-titulo"
+        class="text-base font-semibold text-slate-900"
+      >
+        Imagen de referencia
+      </h2>
+      <button
+        id="pedido-referencia-preview-cerrar"
+        type="button"
+        class="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+        aria-label="Cerrar vista previa"
+      >
+        <svg
+          class="h-5 w-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path stroke-linecap="round" d="m6 6 12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+    </div>
+    <p
+      id="pedido-referencia-preview-estado"
+      class="mb-3 text-sm text-slate-500"
+      aria-live="polite"
+    >
+      Cargando imagen...
+    </p>
+    <img
+      id="pedido-referencia-preview-imagen"
+      class="hidden max-h-[75vh] w-full rounded-lg bg-slate-100 object-contain"
+      alt="Vista previa de la imagen de referencia del pedido"
+    />
+  </div>
+</div>
+
 <script>
   import {
     iniciarPedidosStore,
@@ -201,8 +252,10 @@
   } from "../../services/pedidos-store";
 
   import type { Pedido } from "../../types/pedido";
+  import { obtenerImagenReferenciaPedido } from "../../services/api";
   import { copiarTelefono, copiarTexto } from "../../utils/copiar-telefono";
   import { crearFilaPedido } from "../../utils/pedidos-render";
+  import { mostrarNotificacion } from "../../utils/notificaciones";
   import { obtenerUsuario } from "../../services/auth";
   import { pedidoPerteneceAlArea } from "../../services/permisos";
   import {
@@ -225,6 +278,68 @@
   const resultadosBusqueda = document.getElementById(
     "pedidos-busqueda-resultados",
   );
+  const previewModal = document.getElementById(
+    "pedido-referencia-preview-modal",
+  );
+  const previewCerrar = document.getElementById(
+    "pedido-referencia-preview-cerrar",
+  );
+  const previewEstado = document.getElementById(
+    "pedido-referencia-preview-estado",
+  );
+  const previewImagen = document.getElementById(
+    "pedido-referencia-preview-imagen",
+  ) as HTMLImageElement | null;
+  let solicitudPreviewReferencia = 0;
+
+  function cerrarPreviewReferencia() {
+    solicitudPreviewReferencia += 1;
+    previewModal?.classList.add("invisible", "opacity-0");
+    previewModal?.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("overflow-hidden");
+    previewImagen?.classList.add("hidden");
+    previewImagen?.removeAttribute("src");
+    if (previewEstado) previewEstado.textContent = "";
+  }
+
+  async function abrirPreviewReferencia(pedidoId: number) {
+    if (!previewModal || !previewEstado || !previewImagen) return;
+
+    const solicitud = ++solicitudPreviewReferencia;
+    previewModal.classList.remove("invisible", "opacity-0");
+    previewModal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("overflow-hidden");
+    previewEstado.textContent = `Cargando imagen del pedido #${pedidoId}...`;
+    previewImagen.classList.add("hidden");
+    previewImagen.removeAttribute("src");
+
+    try {
+      const referencia = await obtenerImagenReferenciaPedido(pedidoId);
+      if (solicitud !== solicitudPreviewReferencia) return;
+      previewImagen.src = referencia.url;
+      previewImagen.classList.remove("hidden");
+      previewEstado.textContent = `Pedido #${pedidoId} · Disponible hasta ${new Date(referencia.venceEn).toLocaleString("es-EC")}.`;
+    } catch (error) {
+      if (solicitud !== solicitudPreviewReferencia) return;
+      previewEstado.textContent =
+        error instanceof Error
+          ? error.message
+          : "No se pudo cargar la imagen de referencia.";
+    }
+  }
+
+  previewCerrar?.addEventListener("click", cerrarPreviewReferencia);
+  previewModal?.addEventListener("click", (event) => {
+    if (event.target === previewModal) cerrarPreviewReferencia();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (
+      event.key === "Escape" &&
+      previewModal?.getAttribute("aria-hidden") === "false"
+    ) {
+      cerrarPreviewReferencia();
+    }
+  });
 
   let filtroActual: FiltroPedido = "TODOS";
   let filtroServicioActual: FiltroServicioPedido = "TODOS";
@@ -524,6 +639,18 @@
       botonDetalle?.addEventListener("click", () => {
         abrirDetalle();
       });
+
+      fila
+        .querySelector<HTMLButtonElement>("[data-referencia-preview]")
+        ?.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const pedidoId = Number(
+            (event.currentTarget as HTMLButtonElement).dataset.referenciaPreview,
+          );
+          if (Number.isSafeInteger(pedidoId) && pedidoId > 0) {
+            void abrirPreviewReferencia(pedidoId);
+          }
+        });
     });
   }
 
@@ -636,8 +763,15 @@
    * Nuevo pedido.
    */
   const btnNuevoPedido = document.getElementById("btn-nuevo-pedido");
+  const usuarioActual = obtenerUsuario();
+  const esEmpleado = usuarioActual?.rol === "EMPLEADO";
+
+  if (esEmpleado) {
+    btnNuevoPedido?.classList.add("hidden");
+  }
 
   btnNuevoPedido?.addEventListener("click", () => {
+    if (esEmpleado) return;
     document.dispatchEvent(new CustomEvent("centro-control:nuevo-pedido"));
   });
 </script>

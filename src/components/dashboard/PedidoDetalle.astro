@@ -291,7 +291,9 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
             class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4"
           >
             <div>
-              <p class="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <p
+                class="text-xs font-medium uppercase tracking-wide text-slate-500"
+              >
                 Estado de pago
               </p>
               <span
@@ -302,12 +304,12 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
               <span
                 id="detalle-metodos-pago-iconos"
                 class="ml-1 inline-flex items-center gap-1 align-middle"
-                aria-label="Métodos de pago"
-              ></span>
+                aria-label="Métodos de pago"></span>
               <p
                 id="detalle-metodos-pago"
                 class="mt-1 hidden text-xs font-medium text-slate-600"
-              ></p>
+              >
+              </p>
             </div>
             <button
               id="detalle-pago-accion"
@@ -363,7 +365,9 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
                   type="button"
                   class="hidden h-auto min-h-10 w-full min-w-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 px-2 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span class="flex items-center justify-center gap-1.5 text-center leading-tight">
+                  <span
+                    class="flex items-center justify-center gap-1.5 text-center leading-tight"
+                  >
                     <svg
                       class="h-3.5 w-3.5 shrink-0"
                       viewBox="0 0 24 24"
@@ -387,7 +391,9 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
                   type="button"
                   class="hidden h-auto min-h-10 w-full min-w-0 items-center justify-center rounded-xl bg-slate-900 px-2 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span class="flex items-center justify-center gap-1.5 text-center leading-tight">
+                  <span
+                    class="flex items-center justify-center gap-1.5 text-center leading-tight"
+                  >
                     <span id="detalle-avanzar-texto">Avanzar</span>
 
                     <svg
@@ -413,6 +419,77 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
               </p>
             </div>
           </div>
+        </section>
+
+        <!-- Imagen de referencia -->
+        <section
+          id="detalle-referencia-seccion"
+          class="hidden border-b border-slate-200 px-5 py-5"
+        >
+          <div class="space-y-4">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="text-sm font-semibold text-slate-900">
+                Imagen de referencia
+              </h3>
+              <button
+                id="detalle-referencia-ver"
+                type="button"
+                class="shrink-0 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Ver imagen
+              </button>
+            </div>
+            <div
+              id="detalle-referencia-adjuntar"
+              tabindex="0"
+              class="hidden w-full rounded-xl border-2 border-dashed border-cyan-300 bg-cyan-50/60 px-4 py-5 text-center outline-none transition hover:border-cyan-500 hover:bg-cyan-50 focus-visible:ring-2 focus-visible:ring-cyan-600/30"
+            >
+              <span
+                class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-cyan-700 shadow-sm"
+                aria-hidden="true"
+              >
+                <svg
+                  class="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14.5v3A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5v-3"
+                  />
+                </svg>
+              </span>
+              <p
+                id="detalle-referencia-adjuntar-texto"
+                class="mt-3 text-sm font-semibold text-cyan-950"
+              >
+                Pega aquí una captura para adjuntar o actualizar la imagen
+              </p>
+              <p class="mt-1 text-xs text-slate-600">
+                Copia la imagen y presiona <kbd
+                  class="rounded border border-cyan-200 bg-white px-1.5 py-0.5 font-sans font-semibold text-cyan-900 shadow-sm"
+                  >Ctrl</kbd
+                > + <kbd
+                  class="rounded border border-cyan-200 bg-white px-1.5 py-0.5 font-sans font-semibold text-cyan-900 shadow-sm"
+                  >V</kbd
+                >
+              </p>
+            </div>
+          </div>
+          <p
+            id="detalle-referencia-estado"
+            class="mt-2 hidden text-xs text-slate-500"
+            aria-live="polite"
+          >
+          </p>
+          <img
+            id="detalle-referencia-imagen"
+            class="mt-3 hidden max-h-[60vh] w-full rounded-lg border border-slate-200 bg-white object-contain"
+            alt="Imagen de referencia del pedido"
+          />
         </section>
 
         <!-- Precio -->
@@ -504,7 +581,10 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
               </div>
 
               <!-- Acciones precio especial -->
-              <div class="mt-3 flex justify-end gap-2">
+              <div
+                id="detalle-precio-especial-acciones"
+                class="mt-3 flex justify-end gap-2"
+              >
                 <button
                   id="detalle-precio-especial-editar"
                   type="button"
@@ -589,7 +669,10 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         </section>
 
         <!-- Mensajes para WhatsApp -->
-        <section class="border-b border-slate-200 px-5 py-5">
+        <section
+          id="detalle-whatsapp-seccion"
+          class="border-b border-slate-200 px-5 py-5"
+        >
           <div>
             <h3 class="text-sm font-semibold text-slate-900">
               Mensajes para WhatsApp
@@ -733,10 +816,12 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       cambiarPrecioEspecial,
       eliminarPedido,
       obtenerHistorialPedido,
+      obtenerImagenReferenciaPedido,
       obtenerPagosPedido,
       obtenerPedido,
       registrarPagoPedido,
       revertirUltimoPagoPedido,
+      subirImagenReferenciaPedido,
     } from "../../services/api";
 
     import { suscribirsePedidos } from "../../services/pedidos-store";
@@ -800,16 +885,42 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     ) as HTMLButtonElement | null;
 
     const usuarioActual = obtenerUsuario();
+    const esEmpleado = usuarioActual?.rol === "EMPLEADO";
 
     if (usuarioActual?.rol === "ADMIN") {
       eliminar?.classList.remove("hidden");
       eliminar?.classList.add("flex");
     }
+    if (esEmpleado) {
+      opcionesContenedor?.classList.add("hidden");
+    }
+    document
+      .getElementById("detalle-whatsapp-seccion")
+      ?.classList.toggle("hidden", esEmpleado);
     const titulo = document.getElementById("detalle-titulo");
     const loading = document.getElementById("detalle-loading");
     const error = document.getElementById("detalle-error");
     const errorMensaje = document.getElementById("detalle-error-mensaje");
     const contenido = document.getElementById("detalle-contenido");
+    const referenciaSeccion = document.getElementById(
+      "detalle-referencia-seccion",
+    );
+    const referenciaVer = document.getElementById(
+      "detalle-referencia-ver",
+    ) as HTMLButtonElement | null;
+    const referenciaAdjuntar = document.getElementById(
+      "detalle-referencia-adjuntar",
+    );
+    const referenciaEstado = document.getElementById(
+      "detalle-referencia-estado",
+    );
+    const referenciaImagen = document.getElementById(
+      "detalle-referencia-imagen",
+    ) as HTMLImageElement | null;
+    const referenciaAdjuntarTexto = document.getElementById(
+      "detalle-referencia-adjuntar-texto",
+    );
+    let solicitudImagenReferencia = 0;
 
     const estadoElemento = document.getElementById("detalle-estado");
     const prioridad = document.getElementById("detalle-prioridad");
@@ -841,9 +952,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     const clienteTarifaEspecial = document.getElementById(
       "detalle-cliente-tarifa-especial",
     );
-    const metodosPagoElemento = document.getElementById(
-      "detalle-metodos-pago",
-    );
+    const metodosPagoElemento = document.getElementById("detalle-metodos-pago");
     const metodosPagoIconos = document.getElementById(
       "detalle-metodos-pago-iconos",
     );
@@ -915,6 +1024,15 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     const precioEspecialError = document.getElementById(
       "detalle-precio-especial-error",
     );
+    const precioEspecialAcciones = document.getElementById(
+      "detalle-precio-especial-acciones",
+    );
+
+    if (esEmpleado) {
+      costoDisenoEditar?.classList.add("hidden");
+      precioEspecialAcciones?.classList.add("hidden");
+      precioEspecialEstablecer?.classList.add("hidden");
+    }
 
     const observacionesSeccion = document.getElementById(
       "detalle-observaciones-seccion",
@@ -1247,11 +1365,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
       procesandoCostoDiseno = true;
       if (modalCostoDisenoGuardar) {
-        establecerCargaBoton(
-          modalCostoDisenoGuardar,
-          true,
-          "Guardando...",
-        );
+        establecerCargaBoton(modalCostoDisenoGuardar, true, "Guardando...");
       }
       modalCostoDisenoError?.classList.add("hidden");
 
@@ -1280,11 +1394,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       } finally {
         procesandoCostoDiseno = false;
         if (modalCostoDisenoGuardar) {
-          establecerCargaBoton(
-            modalCostoDisenoGuardar,
-            false,
-            "Guardar costo",
-          );
+          establecerCargaBoton(modalCostoDisenoGuardar, false, "Guardar costo");
         }
       }
     }
@@ -1402,11 +1512,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       procesandoPrecioEspecial = true;
 
       if (modalPrecioEspecialGuardar) {
-        establecerCargaBoton(
-          modalPrecioEspecialGuardar,
-          true,
-          "Guardando...",
-        );
+        establecerCargaBoton(modalPrecioEspecialGuardar, true, "Guardando...");
       }
 
       modalPrecioEspecialError?.classList.add("hidden");
@@ -1881,7 +1987,8 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         if (metodosPagoIconos) metodosPagoIconos.innerHTML = "";
       }
       if (pagoAccion) {
-        const puedeGestionarPago = pedido.estado !== "CANCELADO";
+        const puedeGestionarPago =
+          !esEmpleado && pedido.estado !== "CANCELADO";
         pagoAccion.classList.toggle("hidden", !puedeGestionarPago);
         pagoAccion.textContent =
           estadoPago === "PAGADO" ? "Revertir último pago" : "Registrar pago";
@@ -1902,7 +2009,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
         precioEspecialEstablecer.classList.toggle(
           "hidden",
-          tienePrecioEspecial,
+          tienePrecioEspecial || esEmpleado,
         );
       }
 
@@ -1936,7 +2043,31 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
     function renderizarPedido(pedido: Pedido) {
       pedidoActual = pedido;
+      solicitudImagenReferencia += 1;
+      referenciaImagen?.classList.add("hidden");
+      if (referenciaImagen) referenciaImagen.removeAttribute("src");
+      referenciaEstado?.classList.add("hidden");
+      if (referenciaEstado) referenciaEstado.textContent = "";
+      if (referenciaVer) {
+        referenciaVer.disabled = false;
+        referenciaVer.textContent = "Ver imagen";
+      }
 
+      const venceReferencia =
+        new Date(pedido.createdAt).getTime() + 5 * 24 * 60 * 60 * 1000;
+      const referenciaDisponible =
+        Number.isFinite(venceReferencia) &&
+        venceReferencia > Date.now() &&
+        pedido.estado !== "ENTREGADO" &&
+        pedido.estado !== "CANCELADO";
+      referenciaSeccion?.classList.toggle("hidden", !referenciaDisponible);
+      referenciaAdjuntar?.classList.toggle(
+        "hidden",
+        !referenciaDisponible ||
+          !["ADMIN", "DISEÑADOR", "DISENADOR"].includes(
+            usuarioActual?.rol ?? "",
+          ),
+      );
       const estado = estados[pedido.estado];
 
       if (titulo) {
@@ -2084,6 +2215,144 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         );
       }
     }
+
+    referenciaVer?.addEventListener("click", async () => {
+      const pedido = pedidoActual;
+      if (!pedido || !referenciaEstado || !referenciaImagen) return;
+
+      const solicitud = ++solicitudImagenReferencia;
+      referenciaVer.disabled = true;
+      referenciaVer.textContent = "Cargando...";
+      referenciaEstado.textContent = "Cargando imagen de referencia...";
+      referenciaEstado.classList.remove("hidden");
+
+      try {
+        const referencia = await obtenerImagenReferenciaPedido(pedido.id);
+        if (
+          pedidoActual?.id !== pedido.id ||
+          solicitud !== solicitudImagenReferencia
+        ) {
+          return;
+        }
+        referenciaImagen.src = referencia.url;
+        referenciaImagen.classList.remove("hidden");
+        referenciaVer.textContent = "Ver imagen";
+        referenciaEstado.textContent = "";
+        referenciaEstado.classList.add("hidden");
+      } catch (error) {
+        if (
+          pedidoActual?.id !== pedido.id ||
+          solicitud !== solicitudImagenReferencia
+        ) {
+          return;
+        }
+        referenciaEstado.textContent =
+          error instanceof Error
+            ? error.message
+            : "No se pudo cargar la imagen de referencia.";
+      } finally {
+        if (
+          pedidoActual?.id === pedido.id &&
+          solicitud === solicitudImagenReferencia
+        ) {
+          referenciaVer.disabled = false;
+        }
+      }
+    });
+
+    document.addEventListener("paste", async (event: ClipboardEvent) => {
+      const pedido = pedidoActual;
+      if (
+        !pedido ||
+        !referenciaEstado ||
+        !referenciaAdjuntar ||
+        !referenciaSeccion ||
+        referenciaSeccion.classList.contains("hidden") ||
+        overlay?.classList.contains("invisible") ||
+        !["ADMIN", "DISEÑADOR", "DISENADOR"].includes(
+          usuarioActual?.rol ?? "",
+        ) ||
+        !event.clipboardData
+      ) {
+        return;
+      }
+
+      const archivoPegado = Array.from(event.clipboardData.items)
+        .filter((item) => item.type.startsWith("image/"))
+        .map((item) => item.getAsFile())
+        .find((archivo): archivo is File => archivo !== null);
+      if (!archivoPegado) return;
+
+      event.preventDefault();
+      const extensionPorTipo: Record<string, string> = {
+        "image/jpeg": "jpg",
+        "image/png": "png",
+        "image/webp": "webp",
+      };
+      const extension = extensionPorTipo[archivoPegado.type];
+      const archivo = extension
+        ? new File([archivoPegado], `captura-${Date.now()}.${extension}`, {
+            type: archivoPegado.type,
+            lastModified: Date.now(),
+          })
+        : archivoPegado;
+
+      if (!["image/jpeg", "image/png", "image/webp"].includes(archivo.type)) {
+        referenciaEstado.textContent = "La imagen debe ser JPG, PNG o WebP.";
+        referenciaEstado.classList.remove("hidden");
+        return;
+      }
+      if (archivo.size > 5 * 1024 * 1024) {
+        referenciaEstado.textContent = "La imagen no puede superar 5 MB.";
+        referenciaEstado.classList.remove("hidden");
+        return;
+      }
+
+      const solicitud = ++solicitudImagenReferencia;
+      if (referenciaAdjuntarTexto) {
+        referenciaAdjuntarTexto.textContent = "Guardando imagen...";
+      }
+      referenciaEstado.textContent = "Guardando imagen de referencia...";
+      referenciaEstado.classList.remove("hidden");
+      try {
+        await subirImagenReferenciaPedido(pedido.id, archivo);
+        const referencia = await obtenerImagenReferenciaPedido(pedido.id);
+        if (
+          pedidoActual?.id !== pedido.id ||
+          solicitud !== solicitudImagenReferencia
+        ) {
+          return;
+        }
+        if (referenciaImagen) {
+          referenciaImagen.src = referencia.url;
+          referenciaImagen.classList.remove("hidden");
+        }
+        referenciaVer && (referenciaVer.textContent = "Ver imagen");
+        referenciaEstado.textContent = "Imagen guardada correctamente.";
+        mostrarNotificacion("Imagen de referencia actualizada correctamente.");
+      } catch (error) {
+        if (
+          pedidoActual?.id === pedido.id &&
+          solicitud === solicitudImagenReferencia
+        ) {
+          referenciaEstado.textContent =
+            error instanceof Error
+              ? error.message
+              : "No se pudo guardar la imagen de referencia.";
+          referenciaEstado.classList.remove("hidden");
+        }
+      } finally {
+        if (
+          pedidoActual?.id === pedido.id &&
+          solicitud === solicitudImagenReferencia
+        ) {
+          if (referenciaAdjuntarTexto) {
+            referenciaAdjuntarTexto.textContent =
+              "Pega aquí una captura para adjuntar o actualizar la imagen";
+          }
+        }
+      }
+    });
 
     /*
      * --------------------------------------------------------------------------
@@ -2428,11 +2697,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       )
         return;
       procesandoEliminacion = true;
-      establecerCargaBoton(
-        modalEliminarPedidoConfirmar,
-        true,
-        "Eliminando...",
-      );
+      establecerCargaBoton(modalEliminarPedidoConfirmar, true, "Eliminando...");
       botonEliminar.disabled = true;
 
       try {
@@ -2451,11 +2716,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       } finally {
         procesandoEliminacion = false;
         botonEliminar.disabled = false;
-        establecerCargaBoton(
-          modalEliminarPedidoConfirmar,
-          false,
-          "Eliminar",
-        );
+        establecerCargaBoton(modalEliminarPedidoConfirmar, false, "Eliminar");
       }
     }
 

@@ -106,6 +106,13 @@ export function crearFilaPedido(pedido: Pedido): string {
     ? crearBotonCopiarTelefono(pedido.cliente.telefono)
     : "";
   const botonCopiarEtiqueta = crearBotonCopiarEtiqueta(pedido);
+  const fechaVencimientoReferencia =
+    new Date(pedido.createdAt).getTime() + 5 * 24 * 60 * 60 * 1000;
+  const referenciaDisponible =
+    Number.isFinite(fechaVencimientoReferencia) &&
+    fechaVencimientoReferencia > Date.now() &&
+    pedido.estado !== "ENTREGADO" &&
+    pedido.estado !== "CANCELADO";
 
   return `
     <tr
@@ -228,27 +235,59 @@ export function crearFilaPedido(pedido: Pedido): string {
       </td>
 
       <td class="px-5 py-4 text-right">
-        <button
-          type="button"
-          data-pedido-id="${pedido.id}"
-          class="pedido-accion rounded-lg border border-transparent p-2 text-slate-400 transition hover:border-slate-200 hover:bg-white hover:text-cyan-800"
-          aria-label="Ver pedido ${pedido.id}"
-          title="Ver pedido"
-        >
-          <svg
-            class="h-5 w-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
+        <div class="inline-flex items-center gap-1">
+          ${
+            referenciaDisponible
+              ? `
+                <button
+                  type="button"
+                  data-referencia-preview="${pedido.id}"
+                  class="pedido-accion rounded-lg border border-transparent p-2 text-slate-400 transition hover:border-cyan-200 hover:bg-white hover:text-cyan-800"
+                  aria-label="Vista previa de imagen del pedido ${pedido.id}"
+                  title="Vista previa de imagen"
+                >
+                  <svg
+                    class="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
+                    />
+                    <circle cx="12" cy="12" r="2.5" />
+                  </svg>
+                </button>
+              `
+              : ""
+          }
+          <button
+            type="button"
+            data-pedido-id="${pedido.id}"
+            class="pedido-accion rounded-lg border border-transparent p-2 text-slate-400 transition hover:border-slate-200 hover:bg-white hover:text-cyan-800"
+            aria-label="Ver pedido ${pedido.id}"
+            title="Ver pedido"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
+            <svg
+              class="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
       </td>
     </tr>
   `;
