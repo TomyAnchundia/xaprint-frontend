@@ -1,9 +1,5 @@
 export type EstadoPedido =
-  | "REVISION"
-  | "IMPRIMIENDO"
-  | "LISTO"
-  | "ENTREGADO"
-  | "CANCELADO";
+  "REVISION" | "IMPRIMIENDO" | "LISTO" | "ENTREGADO" | "CANCELADO";
 
 export type ServicioPedido = "TEXTIL" | "UV";
 
@@ -34,6 +30,8 @@ export interface Pedido {
   aporteDesarrollador: number | null;
 
   servicio: ServicioPedido;
+
+  aplicaPromocion: boolean;
 
   ancho: number;
 

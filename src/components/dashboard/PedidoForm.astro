@@ -187,7 +187,9 @@ const { mode = "crear" } = Astro.props;
                   Más datos
                 </summary>
 
-                <div class="grid gap-3 border-t border-blue-100 p-3 sm:grid-cols-2">
+                <div
+                  class="grid gap-3 border-t border-blue-100 p-3 sm:grid-cols-2"
+                >
                   <div>
                     <label
                       for="nuevo-cliente-cedula"
@@ -244,7 +246,7 @@ const { mode = "crear" } = Astro.props;
               </p>
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-3">
+            <div class="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <label
                   for="pedido-servicio"
@@ -302,36 +304,58 @@ const { mode = "crear" } = Astro.props;
                   class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
-            </div>
 
-            <!-- Precio -->
-            <div
-              id="precio-preview"
-              class="mt-4 flex items-center justify-between gap-4 rounded-xl border border-cyan-200 bg-cyan-50/70 px-4 py-3"
-            >
-              <div>
+              <div
+                id="precio-preview"
+                class="flex min-h-[68px] self-stretch flex-col items-start justify-between gap-2 rounded-lg border border-cyan-200 bg-cyan-50/70 px-3 py-2"
+              >
                 <p
                   id="valor-cobrar-etiqueta"
-                  class="text-sm font-semibold text-cyan-950"
+                  class="text-xs font-semibold leading-tight text-cyan-950"
                 >
                   Valor a cobrar estimado
                 </p>
-
                 <p
-                  id="precio-preview-ayuda"
-                  class="mt-0.5 text-xs text-slate-600"
+                  id="precio-preview-valor"
+                  class="shrink-0 text-lg font-bold text-cyan-950"
                 >
-                  Ingresa el largo para calcular.
+                  —
                 </p>
               </div>
-
-              <p
-                id="precio-preview-valor"
-                class="shrink-0 text-2xl font-bold text-cyan-950"
-              >
-                —
-              </p>
             </div>
+
+            <label
+              id="pedido-aplica-promocion-contenedor"
+              class="mt-4 hidden cursor-pointer items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2.5"
+            >
+              <input
+                id="pedido-aplica-promocion"
+                type="checkbox"
+                class="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-700 focus:ring-amber-600"
+              />
+              <span>
+                <span
+                  id="pedido-aplica-promocion-etiqueta"
+                  class="block text-sm font-semibold text-amber-950"
+                >
+                  Aplicar tarifa promocional
+                </span>
+                <span
+                  id="pedido-aplica-promocion-ayuda"
+                  class="mt-0.5 block text-xs text-amber-800"
+                >
+                  Selecciona esta opción si el pedido cumple las condiciones de la promoción.
+                </span>
+              </span>
+            </label>
+
+            <p
+              id="precio-preview-ayuda"
+              class="mt-2 min-h-4 text-xs text-slate-600"
+              aria-live="polite"
+            >
+              Ingresa el largo para calcular.
+            </p>
           </section>
 
           <section
@@ -354,6 +378,16 @@ const { mode = "crear" } = Astro.props;
             >
               Haz clic aquí y pega una captura con Ctrl+V
             </button>
+            <div
+              id="pedido-imagen-referencia-preview"
+              class="mt-3 hidden overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-2"
+            >
+              <img
+                id="pedido-imagen-referencia-preview-img"
+                class="mx-auto max-h-64 max-w-full rounded-md object-contain"
+                alt="Vista previa de la imagen de referencia"
+              />
+            </div>
             <p
               id="pedido-imagen-referencia-ayuda"
               class="mt-2 text-xs text-slate-500"
@@ -496,7 +530,6 @@ const { mode = "crear" } = Astro.props;
                 class="block w-full resize-y rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               ></textarea>
             </div>
-
           </section>
 
           <!-- Mensaje -->
@@ -559,6 +592,7 @@ const { mode = "crear" } = Astro.props;
     obtenerClientes,
     obtenerPedido,
     actualizarPedido,
+    obtenerPromocionesServicio,
     subirImagenReferenciaPedido,
   } from "../../services/api";
   import {
@@ -594,6 +628,13 @@ const { mode = "crear" } = Astro.props;
   const pegarImagenReferencia = document.getElementById(
     "pedido-imagen-referencia-pegar",
   ) as HTMLButtonElement | null;
+  const imagenReferenciaPreview = document.getElementById(
+    "pedido-imagen-referencia-preview",
+  );
+  const imagenReferenciaPreviewImg = document.getElementById(
+    "pedido-imagen-referencia-preview-img",
+  ) as HTMLImageElement | null;
+  let imagenReferenciaPreviewUrl: string | null = null;
 
   const clienteSelect = document.getElementById(
     "pedido-cliente",
@@ -648,6 +689,23 @@ const { mode = "crear" } = Astro.props;
 
   const precioAyuda = document.getElementById("precio-preview-ayuda");
   const valorCobrarEtiqueta = document.getElementById("valor-cobrar-etiqueta");
+  const aplicaPromocionContenedor = document.getElementById(
+    "pedido-aplica-promocion-contenedor",
+  );
+  const aplicaPromocionInput = document.getElementById(
+    "pedido-aplica-promocion",
+  ) as HTMLInputElement | null;
+  const aplicaPromocionEtiqueta = document.getElementById(
+    "pedido-aplica-promocion-etiqueta",
+  );
+  const aplicaPromocionAyuda = document.getElementById(
+    "pedido-aplica-promocion-ayuda",
+  );
+  let promocionesActivas: Record<Servicio, boolean> = {
+    TEXTIL: false,
+    UV: false,
+  };
+  let errorCargaPromociones: string | null = null;
 
   const contraerInput = document.getElementById(
     "pedido-contraer",
@@ -714,6 +772,76 @@ const { mode = "crear" } = Astro.props;
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(valor);
+  }
+
+  async function cargarPromocionesServicio() {
+    try {
+      const promociones = await obtenerPromocionesServicio();
+      promocionesActivas = {
+        TEXTIL: promociones.find((item) => item.servicio === "TEXTIL")?.activo
+          ?? false,
+        UV: promociones.find((item) => item.servicio === "UV")?.activo ?? false,
+      };
+      errorCargaPromociones = null;
+    } catch (error) {
+      console.error("No se pudo consultar el estado de las promociones:", error);
+      errorCargaPromociones =
+        "No se pudo consultar si hay promociones activas.";
+    }
+
+    actualizarControlPromocion();
+  }
+
+  function actualizarControlPromocion() {
+    if (!servicioSelect || !aplicaPromocionInput) return;
+
+    const servicio = servicioSelect.value as Servicio;
+    const promocionActiva = promocionesActivas[servicio];
+    const promocionGuardada =
+      modoActual === "editar" &&
+      pedidoEnEdicion?.aplicaPromocion === true &&
+      pedidoEnEdicion.servicio === servicio;
+    const mostrarControl =
+      promocionActiva || promocionGuardada || errorCargaPromociones !== null;
+
+    aplicaPromocionContenedor?.classList.toggle("hidden", !mostrarControl);
+    aplicaPromocionContenedor?.classList.toggle("flex", mostrarControl);
+    aplicaPromocionInput.disabled =
+      !promocionActiva && !(promocionGuardada && aplicaPromocionInput.checked);
+
+    if (aplicaPromocionEtiqueta) {
+      aplicaPromocionEtiqueta.textContent = `Aplicar tarifa promocional de ${servicio === "TEXTIL" ? "DTF Textil" : "DTF UV"}`;
+    }
+
+    if (aplicaPromocionAyuda) {
+      aplicaPromocionAyuda.textContent = errorCargaPromociones
+        ? errorCargaPromociones
+        : promocionActiva
+          ? "Marca esta opción si el pedido cumple las condiciones. La promoción tiene prioridad sobre la tarifa exclusiva del cliente."
+          : "La promoción de este servicio ya no está activa. Puedes quitarla de este pedido para usar la tarifa normal.";
+    }
+  }
+
+  function mostrarVistaPreviaImagenReferencia(archivo: File) {
+    if (!imagenReferenciaPreview || !imagenReferenciaPreviewImg) return;
+
+    if (imagenReferenciaPreviewUrl) {
+      URL.revokeObjectURL(imagenReferenciaPreviewUrl);
+    }
+
+    imagenReferenciaPreviewUrl = URL.createObjectURL(archivo);
+    imagenReferenciaPreviewImg.src = imagenReferenciaPreviewUrl;
+    imagenReferenciaPreview.classList.remove("hidden");
+  }
+
+  function limpiarVistaPreviaImagenReferencia() {
+    if (imagenReferenciaPreviewUrl) {
+      URL.revokeObjectURL(imagenReferenciaPreviewUrl);
+      imagenReferenciaPreviewUrl = null;
+    }
+
+    imagenReferenciaPreviewImg?.removeAttribute("src");
+    imagenReferenciaPreview?.classList.add("hidden");
   }
 
   function normalizarBusqueda(valor: string): string {
@@ -875,6 +1003,7 @@ const { mode = "crear" } = Astro.props;
     }
 
     aplicarReglasImpresion(servicio === "TEXTIL");
+    actualizarControlPromocion();
     actualizarPrecio();
   }
 
@@ -890,22 +1019,34 @@ const { mode = "crear" } = Astro.props;
     }
 
     const largo = Number(largoInput.value);
+    const aplicaPromocion = aplicaPromocionInput?.checked ?? false;
 
     if (!Number.isFinite(largo) || largo <= 0) {
       if (!mantenerValorActual) {
         precioValor.textContent = "—";
         if (valorCobrarEtiqueta) {
-          valorCobrarEtiqueta.textContent = "Valor a cobrar estimado";
+          valorCobrarEtiqueta.textContent = aplicaPromocion
+            ? "Valor promocional"
+            : "Valor a cobrar estimado";
         }
       }
       precioAyuda.textContent = "Ingresa el largo para calcular.";
       return;
     }
 
+    if (mantenerValorActual) {
+      precioAyuda.textContent = aplicaPromocion
+        ? "Importe promocional guardado en el pedido."
+        : "Importe actual guardado en el pedido.";
+      return;
+    }
+
     if (!mantenerValorActual) {
       precioValor.textContent = "...";
       if (valorCobrarEtiqueta) {
-        valorCobrarEtiqueta.textContent = "Valor a cobrar estimado";
+        valorCobrarEtiqueta.textContent = aplicaPromocion
+          ? "Valor promocional"
+          : "Valor a cobrar estimado";
       }
     }
     precioAyuda.textContent = "Calculando precio...";
@@ -916,6 +1057,7 @@ const { mode = "crear" } = Astro.props;
         ancho: Number(anchoSelect.value),
         largo,
         clienteId: Number(clienteSelect?.value) || undefined,
+        aplicaPromocion,
       });
       const valorCalculado =
         resultado.valorCobrar ?? resultado.valor_cobrar ?? resultado.precio;
@@ -936,8 +1078,8 @@ const { mode = "crear" } = Astro.props;
       const clienteSeleccionado = clientesDisponibles.find(
         (cliente) => cliente.id === Number(clienteSelect?.value),
       );
-      precioAyuda.textContent = mantenerValorActual
-        ? "Importe actual guardado en el pedido."
+      precioAyuda.textContent = aplicaPromocion
+        ? "Estimación calculada con la tarifa promocional."
         : clienteSeleccionado?.tarifaEspecial
           ? "Estimación con la tarifa exclusiva de este cliente."
           : "Estimación calculada con la tarifa general.";
@@ -1062,6 +1204,9 @@ const { mode = "crear" } = Astro.props;
     if (clienteSelect) {
       clienteSelect.value = "";
     }
+    if (aplicaPromocionInput) {
+      aplicaPromocionInput.checked = false;
+    }
     if (busquedaCliente) {
       busquedaCliente.value = "";
     }
@@ -1112,6 +1257,7 @@ const { mode = "crear" } = Astro.props;
     if (imagenReferencia) {
       imagenReferencia.value = "";
     }
+    limpiarVistaPreviaImagenReferencia();
     if (pegarImagenReferencia) {
       pegarImagenReferencia.textContent =
         "Haz clic aquí y pega una captura con Ctrl+V";
@@ -1134,6 +1280,7 @@ const { mode = "crear" } = Astro.props;
       valorCobrarEtiqueta.textContent = "Valor a cobrar estimado";
     }
 
+    actualizarControlPromocion();
     ocultarNuevoCliente();
     ocultarMensaje();
   }
@@ -1144,7 +1291,12 @@ const { mode = "crear" } = Astro.props;
         pedido.valorCobrar === null ? "—" : formatearPrecio(pedido.valorCobrar);
     }
     if (valorCobrarEtiqueta) {
-      valorCobrarEtiqueta.textContent = "Valor a cobrar actual";
+      valorCobrarEtiqueta.textContent = pedido.aplicaPromocion
+        ? "Valor promocional actual"
+        : "Valor a cobrar actual";
+    }
+    if (aplicaPromocionInput) {
+      aplicaPromocionInput.checked = pedido.aplicaPromocion;
     }
 
     if (clienteSelect) {
@@ -1188,6 +1340,7 @@ const { mode = "crear" } = Astro.props;
     }
 
     aplicarReglasImpresion(false);
+    actualizarControlPromocion();
 
     if (prioridadSelect) {
       prioridadSelect.value = String(pedido.prioridad);
@@ -1215,6 +1368,7 @@ const { mode = "crear" } = Astro.props;
     pedidoEnEdicion = null;
 
     actualizarTextosModal();
+    await cargarPromocionesServicio();
     resetearFormulario();
 
     modal.classList.remove("hidden");
@@ -1249,6 +1403,7 @@ const { mode = "crear" } = Astro.props;
       const pedido = await obtenerPedido(id);
 
       pedidoEnEdicion = pedido;
+      await cargarPromocionesServicio();
 
       await cargarClientes(pedido.cliente.id);
 
@@ -1337,6 +1492,7 @@ const { mode = "crear" } = Astro.props;
     try {
       const datos = {
         clienteId,
+        aplicaPromocion: aplicaPromocionInput?.checked ?? false,
         servicio,
         ancho,
         largo,
@@ -1366,13 +1522,12 @@ const { mode = "crear" } = Astro.props;
       } else {
         const nuevoPedido = await crearPedido(datos);
         if (archivoReferencia && !errorCargaImagen) {
-          establecerCargaBoton(
-            btnGuardarPedido,
-            true,
-            "Guardando imagen...",
-          );
+          establecerCargaBoton(btnGuardarPedido, true, "Guardando imagen...");
           try {
-            await subirImagenReferenciaPedido(nuevoPedido.id, archivoReferencia);
+            await subirImagenReferenciaPedido(
+              nuevoPedido.id,
+              archivoReferencia,
+            );
           } catch (error) {
             console.error(
               "El pedido se creó, pero no se pudo adjuntar la imagen:",
@@ -1438,10 +1593,11 @@ const { mode = "crear" } = Astro.props;
 
   imagenReferencia?.addEventListener("change", () => {
     const archivo = imagenReferencia.files?.[0];
-    if (!archivo) return;
-    if (pegarImagenReferencia) {
-      pegarImagenReferencia.textContent = `Imagen seleccionada: ${archivo.name}`;
+    if (!archivo) {
+      limpiarVistaPreviaImagenReferencia();
+      return;
     }
+    mostrarVistaPreviaImagenReferencia(archivo);
     if (imagenReferenciaAyuda) {
       imagenReferenciaAyuda.textContent = `${archivo.name} · ${(archivo.size / (1024 * 1024)).toFixed(2)} MB`;
       imagenReferenciaAyuda.className = "mt-2 text-xs text-slate-500";
@@ -1494,7 +1650,17 @@ const { mode = "crear" } = Astro.props;
     }
   });
 
-  servicioSelect?.addEventListener("change", actualizarAnchos);
+  servicioSelect?.addEventListener("change", () => {
+    if (aplicaPromocionInput) {
+      aplicaPromocionInput.checked = false;
+    }
+    actualizarAnchos();
+  });
+
+  aplicaPromocionInput?.addEventListener("change", () => {
+    actualizarControlPromocion();
+    void actualizarPrecio();
+  });
 
   busquedaCliente?.addEventListener("input", () => {
     if (clienteSelect) clienteSelect.value = "";

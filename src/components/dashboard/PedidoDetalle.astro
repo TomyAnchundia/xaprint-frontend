@@ -496,6 +496,12 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         <section class="border-b border-slate-200 px-5 py-5">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-semibold text-slate-900">Precio</h3>
+            <span
+              id="detalle-tarifa-promocional"
+              class="hidden rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800"
+            >
+              Promoción aplicada
+            </span>
           </div>
 
           <div class="mt-4 rounded-xl border border-slate-200 bg-white p-4">
@@ -982,6 +988,9 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     const obstruccion = document.getElementById("detalle-obstruccion");
 
     const precioCalculado = document.getElementById("detalle-precio-calculado");
+    const tarifaPromocional = document.getElementById(
+      "detalle-tarifa-promocional",
+    );
     const costoDiseno = document.getElementById("detalle-costo-diseno");
     const costoDisenoEditar = document.getElementById(
       "detalle-costo-diseno-editar",
@@ -1880,6 +1889,11 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
      */
 
     function renderizarPrecio(pedido: Pedido) {
+      tarifaPromocional?.classList.toggle(
+        "hidden",
+        !pedido.aplicaPromocion,
+      );
+
       const valorCobrarActual =
         pedido.valorCobrar ??
         pedido.precioFinal ??

@@ -61,6 +61,7 @@ export type ActualizarUsuarioData = Partial<CrearUsuarioData>;
 export interface Tarifa {
   id: number;
   servicio: ServicioPedido;
+  tipo: "NORMAL" | "PROMOCIONAL";
   ancho: number;
   desde: number;
   hasta: number | null;
@@ -72,10 +73,16 @@ export interface Tarifa {
 
 export interface TarifaData {
   servicio: ServicioPedido;
+  tipo: "NORMAL" | "PROMOCIONAL";
   ancho: number;
   desde: number;
   hasta?: number | null;
   precio: number;
+}
+
+export interface PromocionServicio {
+  servicio: ServicioPedido;
+  activo: boolean;
 }
 
 export interface ResumenProduccionItem {
@@ -185,6 +192,7 @@ export interface CrearClienteData {
 
 export interface CrearPedidoData {
   clienteId: number;
+  aplicaPromocion?: boolean;
   servicio: ServicioPedido;
   ancho: number;
   largo?: number | null;
@@ -198,6 +206,7 @@ export interface CrearPedidoData {
 
 export interface ActualizarPedidoData {
   clienteId?: number;
+  aplicaPromocion?: boolean;
   costoDiseno?: number;
   servicio?: ServicioPedido;
   ancho?: number;
@@ -214,6 +223,7 @@ export interface CalcularPrecioData {
   ancho: number;
   largo: number;
   clienteId?: number;
+  aplicaPromocion?: boolean;
 }
 
 export interface CalcularPrecioResponse {
@@ -360,23 +370,19 @@ export async function actualizarTarifaCliente(
   tarifaId: number,
   data: TarifaClienteData,
 ): Promise<TarifaCliente> {
-  return request<TarifaCliente>(
-    `/tarifas/clientes/${clienteId}/${tarifaId}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    },
-  );
+  return request<TarifaCliente>(`/tarifas/clientes/${clienteId}/${tarifaId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
 }
 
 export async function eliminarTarifaCliente(
   clienteId: number,
   tarifaId: number,
 ): Promise<TarifaCliente> {
-  return request<TarifaCliente>(
-    `/tarifas/clientes/${clienteId}/${tarifaId}`,
-    { method: "DELETE" },
-  );
+  return request<TarifaCliente>(`/tarifas/clientes/${clienteId}/${tarifaId}`, {
+    method: "DELETE",
+  });
 }
 
 export async function actualizarCliente(
@@ -432,13 +438,10 @@ export async function registrarAbonoCliente(
     monto: number;
     aplicado: number;
     pedidoIds: number[];
-  }>(
-    "/pagos",
-    {
-      method: "POST",
-      body: JSON.stringify({ clienteId, monto, metodoPago }),
-    },
-  );
+  }>("/pagos", {
+    method: "POST",
+    body: JSON.stringify({ clienteId, monto, metodoPago }),
+  });
 }
 
 export async function revertirUltimoPagoPedido(
@@ -500,6 +503,22 @@ export async function cambiarTarifaActiva(
   activo: boolean,
 ): Promise<Tarifa> {
   return request<Tarifa>(`/tarifas/${id}/activo`, {
+    method: "PATCH",
+    body: JSON.stringify({ activo }),
+  });
+}
+
+export async function obtenerPromocionesServicio(): Promise<
+  PromocionServicio[]
+> {
+  return request<PromocionServicio[]>("/precios/promociones");
+}
+
+export async function cambiarPromocionServicio(
+  servicio: ServicioPedido,
+  activo: boolean,
+): Promise<PromocionServicio> {
+  return request<PromocionServicio>(`/tarifas/promociones/${servicio}/activo`, {
     method: "PATCH",
     body: JSON.stringify({ activo }),
   });

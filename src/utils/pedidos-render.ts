@@ -195,6 +195,15 @@ export function crearFilaPedido(pedido: Pedido): string {
             `
             : ""
         }
+        ${
+          pedido.aplicaPromocion
+            ? `
+              <span class="ml-1 text-xs font-semibold text-amber-700">
+                promo
+              </span>
+            `
+            : ""
+        }
       </td>
 
       <td class="px-5 py-4">

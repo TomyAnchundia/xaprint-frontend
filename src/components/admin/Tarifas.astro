@@ -18,6 +18,46 @@
   </header>
 
   <div
+    class="grid gap-2 sm:grid-cols-2"
+    role="group"
+    aria-label="Activar promociones por servicio"
+  >
+    {
+      (
+        [
+          ["TEXTIL", "DTF Textil"],
+          ["UV", "DTF UV"],
+        ] as const
+      ).map(([servicio, nombre]) => (
+        <button
+          type="button"
+          data-promocion-servicio={servicio}
+          aria-pressed="false"
+          class="flex min-h-12 items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-amber-300"
+        >
+          <span>
+            <span class="block text-sm font-semibold text-slate-800">
+              Promoción {nombre}
+            </span>
+            <span
+              data-promocion-estado={servicio}
+              class="block text-xs text-slate-500"
+            >
+              Inactiva
+            </span>
+          </span>
+          <span
+            data-promocion-control={servicio}
+            class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"
+          >
+            Activar
+          </span>
+        </button>
+      ))
+    }
+  </div>
+
+  <div
     class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white"
   >
     <div
@@ -64,6 +104,7 @@
         >
           <tr
             ><th class="px-4 py-3 font-semibold">Servicio</th><th
+              class="px-4 py-3 font-semibold">Tipo</th><th
               class="px-4 py-3 font-semibold">Ancho</th
             ><th class="px-4 py-3 font-semibold">Rango</th><th
               class="px-4 py-3 text-right font-semibold">Precio / m</th
@@ -75,7 +116,7 @@
         </thead>
         <tbody id="tarifas-body" class="divide-y divide-slate-100"
           ><tr
-            ><td colspan="7" class="px-4 py-8 text-center text-slate-500"
+            ><td colspan="8" class="px-4 py-8 text-center text-slate-500"
               >Cargando tarifas...</td
             ></tr
           ></tbody
@@ -108,6 +149,19 @@
               >DTF UV</option
             ></select
           >
+        </div>
+        <div>
+          <label
+            for="tarifa-tipo"
+            class="mb-1 block text-sm font-medium text-slate-700"
+            >Tipo de tarifa</label
+          ><select
+            id="tarifa-tipo"
+            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
+          >
+            <option value="NORMAL">Normal</option>
+            <option value="PROMOCIONAL">Promocional</option>
+          </select>
         </div>
         <div>
           <label
@@ -188,10 +242,13 @@
 <script>
   import {
     actualizarTarifa,
+    cambiarPromocionServicio,
     cambiarTarifaActiva,
     calcularCotizacionTarifa,
     crearTarifa,
+    obtenerPromocionesServicio,
     obtenerTarifas,
+    type PromocionServicio,
     type Tarifa,
   } from "../../services/api";
   import type { ServicioPedido } from "../../types/pedido";
@@ -219,9 +276,13 @@
   const precio = document.getElementById(
     "tarifa-precio",
   ) as HTMLInputElement | null;
+  const tipo = document.getElementById(
+    "tarifa-tipo",
+  ) as HTMLSelectElement | null;
   const titulo = document.getElementById("tarifa-form-titulo");
   const error = document.getElementById("tarifa-form-error");
   let tarifas: Tarifa[] = [];
+  let promociones: PromocionServicio[] = [];
   let datosCargados = false;
   let cargandoDatos = false;
   let servicioFiltro = "TODOS";
@@ -238,6 +299,35 @@
     mostrarNotificacion(texto, esError ? "error" : "success");
   }
 
+  function renderizarPromociones() {
+    promociones.forEach((promocion) => {
+      const boton = document.querySelector<HTMLButtonElement>(
+        `[data-promocion-servicio="${promocion.servicio}"]`,
+      );
+      const estado = document.querySelector<HTMLElement>(
+        `[data-promocion-estado="${promocion.servicio}"]`,
+      );
+      const control = document.querySelector<HTMLElement>(
+        `[data-promocion-control="${promocion.servicio}"]`,
+      );
+      if (!boton || !estado || !control) return;
+
+      boton.setAttribute("aria-pressed", String(promocion.activo));
+      boton.classList.toggle("border-emerald-300", promocion.activo);
+      boton.classList.toggle("bg-emerald-50", promocion.activo);
+      estado.textContent = promocion.activo
+        ? "Activa: disponible al crear pedidos"
+        : "Inactiva";
+      estado.className = promocion.activo
+        ? "block text-xs text-emerald-700"
+        : "block text-xs text-slate-500";
+      control.textContent = promocion.activo ? "Desactivar" : "Activar";
+      control.className = promocion.activo
+        ? "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800"
+        : "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600";
+    });
+  }
+
   function renderizar() {
     if (!cuerpo) return;
     const filtradas = tarifas.filter(
@@ -249,11 +339,44 @@
     cuerpo.innerHTML = filtradas.length
       ? filtradas
           .map(
-            (tarifa) =>
-              `<tr class="transition hover:bg-amber-50/50"><td class="px-4 py-3 font-semibold text-slate-800">${tarifa.servicio === "TEXTIL" ? "DTF Textil" : "DTF UV"}</td><td class="px-4 py-3 text-slate-600">${tarifa.ancho} cm</td><td class="px-4 py-3 text-slate-600">${tarifa.desde} – ${tarifa.hasta ?? "∞"} cm</td><td class="px-4 py-3 text-right font-bold text-slate-900">${moneda(tarifa.precio)}</td><td class="px-4 py-3 text-right"><span data-cotizacion="${tarifa.id}" class="font-bold tabular-nums text-slate-900">Calculando...</span><span data-cotizacion-largo="${tarifa.id}" class="mt-0.5 block text-[10px] text-slate-500"></span></td><td class="px-4 py-3"><span class="rounded-full px-2.5 py-1 text-xs font-semibold ${tarifa.activo ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-500"}">${tarifa.activo ? "Activa" : "Inactiva"}</span></td><td class="px-4 py-3 text-right"><div class="flex justify-end gap-2"><button type="button" data-editar="${tarifa.id}" class="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-white">Editar</button><button type="button" data-activa="${tarifa.id}" data-valor="${!tarifa.activo}" class="rounded-md border px-2.5 py-1.5 text-xs font-semibold ${tarifa.activo ? "border-red-200 text-red-700 hover:bg-red-50" : "border-emerald-200 text-emerald-800 hover:bg-emerald-50"}">${tarifa.activo ? "Desactivar" : "Activar"}</button></div></td></tr>`,
+            (tarifa) => `
+              <tr class="transition hover:bg-amber-50/50">
+                <td class="px-4 py-3 font-semibold text-slate-800">${tarifa.servicio === "TEXTIL" ? "DTF Textil" : "DTF UV"}</td>
+                <td class="px-4 py-3">
+                  <span class="rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    tarifa.tipo === "PROMOCIONAL"
+                      ? "bg-amber-50 text-amber-800"
+                      : "bg-slate-100 text-slate-700"
+                  }">${tarifa.tipo === "PROMOCIONAL" ? "Promocional" : "Normal"}</span>
+                </td>
+                <td class="px-4 py-3 text-slate-600">${tarifa.ancho} cm</td>
+                <td class="px-4 py-3 text-slate-600">${tarifa.desde} – ${tarifa.hasta ?? "∞"} cm</td>
+                <td class="px-4 py-3 text-right font-bold text-slate-900">${moneda(tarifa.precio)}</td>
+                <td class="px-4 py-3 text-right">
+                  <span data-cotizacion="${tarifa.id}" class="font-bold tabular-nums text-slate-900">Calculando...</span>
+                  <span data-cotizacion-largo="${tarifa.id}" class="mt-0.5 block text-[10px] text-slate-500"></span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    tarifa.activo
+                      ? "bg-emerald-50 text-emerald-800"
+                      : "bg-slate-100 text-slate-500"
+                  }">${tarifa.activo ? "Activa" : "Inactiva"}</span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <div class="flex justify-end gap-2">
+                    <button type="button" data-editar="${tarifa.id}" class="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-white">Editar</button>
+                    <button type="button" data-activa="${tarifa.id}" data-valor="${!tarifa.activo}" class="rounded-md border px-2.5 py-1.5 text-xs font-semibold ${
+                      tarifa.activo
+                        ? "border-red-200 text-red-700 hover:bg-red-50"
+                        : "border-emerald-200 text-emerald-800 hover:bg-emerald-50"
+                    }">${tarifa.activo ? "Desactivar" : "Activar"}</button>
+                  </div>
+                </td>
+              </tr>`,
           )
           .join("")
-      : `<tr><td colspan="7" class="px-4 py-10 text-center text-sm text-slate-500">No hay tarifas para este filtro.</td></tr>`;
+      : `<tr><td colspan="8" class="px-4 py-10 text-center text-sm text-slate-500">No hay tarifas para este filtro.</td></tr>`;
     filtradas.forEach((tarifa) => {
       const largoMinimo = Math.max(tarifa.desde, 0.01);
       const largo =
@@ -311,14 +434,18 @@
     if (cargandoDatos) return;
     cargandoDatos = true;
     if (cuerpo)
-      cuerpo.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">Cargando tarifas...</td></tr>`;
+      cuerpo.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-500">Cargando tarifas...</td></tr>`;
     try {
-      tarifas = await obtenerTarifas();
+      [tarifas, promociones] = await Promise.all([
+        obtenerTarifas(),
+        obtenerPromocionesServicio(),
+      ]);
       datosCargados = true;
+      renderizarPromociones();
       renderizar();
     } catch (caught) {
       if (cuerpo)
-        cuerpo.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-700">${caught instanceof Error ? caught.message : "No se pudieron cargar las tarifas."}</td></tr>`;
+        cuerpo.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-red-700">${caught instanceof Error ? caught.message : "No se pudieron cargar las tarifas."}</td></tr>`;
     } finally {
       cargandoDatos = false;
     }
@@ -328,6 +455,7 @@
     editandoId = tarifa?.id ?? null;
     if (titulo) titulo.textContent = tarifa ? "Editar tarifa" : "Nueva tarifa";
     if (servicio) servicio.value = tarifa?.servicio ?? "TEXTIL";
+    if (tipo) tipo.value = tarifa?.tipo ?? "NORMAL";
     actualizarAnchos(tarifa?.ancho);
     if (desde) desde.value = tarifa ? String(tarifa.desde) : "";
     if (hasta)
@@ -372,6 +500,48 @@
     }
   }
 
+  async function cambiarPromocion(
+    servicio: ServicioPedido,
+    activo: boolean,
+    boton: HTMLButtonElement,
+  ) {
+    boton.disabled = true;
+    try {
+      await cambiarPromocionServicio(servicio, activo);
+      promociones = await obtenerPromocionesServicio();
+      renderizarPromociones();
+      mostrarAviso(
+        activo
+          ? `Promoción de ${servicio === "TEXTIL" ? "DTF Textil" : "DTF UV"} activada.`
+          : `Promoción de ${servicio === "TEXTIL" ? "DTF Textil" : "DTF UV"} desactivada.`,
+      );
+    } catch (caught) {
+      mostrarAviso(
+        caught instanceof Error
+          ? caught.message
+          : "No se pudo cambiar el estado de la promoción.",
+        true,
+      );
+    } finally {
+      boton.disabled = false;
+    }
+  }
+
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-promocion-servicio]")
+    .forEach((boton) =>
+      boton.addEventListener("click", () => {
+        const servicio = boton.dataset.promocionServicio as
+          | ServicioPedido
+          | undefined;
+        if (!servicio) return;
+        const activo = promociones.find(
+          (item) => item.servicio === servicio,
+        )?.activo;
+        void cambiarPromocion(servicio, !activo, boton);
+      }),
+    );
+
   document
     .getElementById("tarifas-nueva")
     ?.addEventListener("click", () => abrir());
@@ -400,9 +570,10 @@
     );
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!servicio || !ancho || !desde || !hasta || !precio) return;
+    if (!servicio || !tipo || !ancho || !desde || !hasta || !precio) return;
     const datos = {
       servicio: servicio.value as ServicioPedido,
+      tipo: tipo.value as "NORMAL" | "PROMOCIONAL",
       ancho: Number(ancho.value),
       desde: Number(desde.value),
       hasta: hasta.value ? Number(hasta.value) : null,

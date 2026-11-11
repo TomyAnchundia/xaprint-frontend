@@ -325,12 +325,54 @@ const periodosFinancieros = [
 
           <span
             id="estadisticas-total-metros"
-            class="mb-0.5 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700"
+            class="mb-0.5 hidden rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 md:inline-flex"
           >
             — m producidos
           </span>
         </div>
       </div>
+
+      <dl
+        class="grid grid-cols-2 gap-3 border-b border-slate-200 bg-slate-50 p-4 md:hidden"
+        aria-label="Total producción"
+      >
+        <div class="col-span-2 flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2">
+          <dt class="text-xs font-semibold text-slate-600">Total producción</dt>
+          <dd
+            id="estadisticas-total-metros-movil"
+            class="text-lg font-bold tabular-nums text-slate-900"
+          >
+            — m
+          </dd>
+        </div>
+        <div>
+          <dt class="text-[11px] text-slate-500">Valor a cobrar</dt>
+          <dd
+            id="estadisticas-total-cobrar-movil"
+            class="mt-0.5 text-sm font-bold tabular-nums text-slate-900"
+          >
+            —
+          </dd>
+        </div>
+        <div>
+          <dt class="text-[11px] text-slate-500">Aporte</dt>
+          <dd
+            id="estadisticas-total-aporte-movil"
+            class="mt-0.5 text-sm font-bold tabular-nums text-slate-900"
+          >
+            —
+          </dd>
+        </div>
+        <div class="col-span-2">
+          <dt class="text-[11px] text-slate-500">Ingreso negocio</dt>
+          <dd
+            id="estadisticas-total-ingreso-movil"
+            class="mt-0.5 text-sm font-bold tabular-nums text-slate-900"
+          >
+            —
+          </dd>
+        </div>
+      </dl>
 
       <div class="overflow-x-auto">
         <table class="w-full min-w-160 text-left text-sm">
@@ -362,7 +404,7 @@ const periodosFinancieros = [
 
           <tfoot
             id="estadisticas-produccion-total"
-            class="bg-slate-50 font-bold text-slate-900"
+            class="hidden bg-slate-50 font-bold text-slate-900 md:table-footer-group"
           >
           </tfoot>
         </table>
@@ -394,6 +436,18 @@ const periodosFinancieros = [
     const error = document.getElementById("estadisticas-error");
 
     const metrosTotal = document.getElementById("estadisticas-total-metros");
+    const metrosTotalMovil = document.getElementById(
+      "estadisticas-total-metros-movil",
+    );
+    const totalCobrarMovil = document.getElementById(
+      "estadisticas-total-cobrar-movil",
+    );
+    const totalAporteMovil = document.getElementById(
+      "estadisticas-total-aporte-movil",
+    );
+    const totalIngresoMovil = document.getElementById(
+      "estadisticas-total-ingreso-movil",
+    );
     const periodoAporteInput = document.getElementById(
       "estadisticas-aporte-periodo",
     ) as HTMLInputElement | null;
@@ -718,6 +772,22 @@ const periodosFinancieros = [
 
         if (metrosTotal) {
           metrosTotal.textContent = `${produccion.totalGeneral.metros.toFixed(2)} m producidos`;
+        }
+        if (metrosTotalMovil) {
+          metrosTotalMovil.textContent = `${produccion.totalGeneral.metros.toFixed(2)} m`;
+        }
+        if (totalCobrarMovil) {
+          totalCobrarMovil.textContent = moneda(produccion.totalGeneral.total);
+        }
+        if (totalAporteMovil) {
+          totalAporteMovil.textContent = moneda(
+            produccion.totalGeneral.aporteDesarrollador,
+          );
+        }
+        if (totalIngresoMovil) {
+          totalIngresoMovil.textContent = moneda(
+            produccion.totalGeneral.ingresoNegocio,
+          );
         }
       } catch (caught) {
         console.error("No se pudieron cargar las estadísticas:", caught);
