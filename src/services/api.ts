@@ -232,6 +232,25 @@ export interface CalcularPrecioResponse {
   valor_cobrar?: number | string;
 }
 
+export interface NotaVentaDetalle {
+  pedidoId: number;
+  servicio: ServicioPedido;
+  ancho: number;
+  largo: number | null;
+  valor: number;
+}
+
+export interface NotaVenta {
+  numero: string;
+  fecha: string;
+  cliente: {
+    id: number;
+    nombre: string;
+  };
+  pedidos: NotaVentaDetalle[];
+  total: number;
+}
+
 export class ApiError extends Error {
   status: number;
 
@@ -586,6 +605,16 @@ export async function crearPedido(data: CrearPedidoData): Promise<Pedido> {
   return request<Pedido>("/pedidos", {
     method: "POST",
     body: JSON.stringify(data),
+  });
+}
+
+export async function emitirNotaVenta(
+  pedidoIds: number[],
+  idempotencyKey: string,
+): Promise<NotaVenta> {
+  return request<NotaVenta>("/pedidos/nota-venta", {
+    method: "POST",
+    body: JSON.stringify({ pedidoIds, idempotencyKey }),
   });
 }
 

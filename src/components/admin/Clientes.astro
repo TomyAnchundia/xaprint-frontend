@@ -243,17 +243,26 @@
         <div class="min-w-0 rounded-lg border border-slate-200">
           <table class="w-full table-auto text-left text-xs sm:table-fixed sm:text-sm">
             <colgroup>
-              <col class="sm:w-[9%]" />
-              <col class="sm:w-[23%]" />
-              <col class="sm:w-[17%]" />
-              <col class="sm:w-[17%]" />
-              <col class="sm:w-[17%]" />
-              <col class="sm:w-[17%]" />
+              <col class="sm:w-[5%]" />
+              <col class="sm:w-[8%]" />
+              <col class="sm:w-[22%]" />
+              <col class="sm:w-[15%]" />
+              <col class="sm:w-[15%]" />
+              <col class="sm:w-[15%]" />
+              <col class="sm:w-[20%]" />
             </colgroup>
             <thead class="hidden bg-slate-50 text-xs uppercase text-slate-500 sm:table-header-group">
               <tr>
+                <th scope="col" class="px-2 py-3 text-center sm:px-3">
+                  <input
+                    id="cliente-deuda-seleccionar-todos"
+                    type="checkbox"
+                    aria-label="Seleccionar todos los pedidos con saldo pendiente"
+                    class="h-4 w-4 rounded border-slate-300 accent-cyan-700 focus:ring-cyan-600"
+                  />
+                </th>
                 <th scope="col" class="break-words px-2 py-3 sm:px-3">Pedido</th>
-                <th scope="col" class="break-words px-2 py-3 sm:px-3">Pedidos</th>
+                <th scope="col" class="break-words px-2 py-3 sm:px-3">Servicio y medidas</th>
                 <th scope="col" class="break-words px-2 py-3 sm:px-3">Fecha</th>
                 <th scope="col" class="break-words px-2 py-3 text-right sm:px-3">Total</th>
                 <th scope="col" class="break-words px-2 py-3 text-right sm:px-3">Pagado</th>
@@ -266,6 +275,44 @@
             >
             </tbody>
           </table>
+        </div>
+        <div
+          class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-cyan-200 bg-cyan-50 p-3"
+        >
+          <div class="min-w-0">
+            <p
+              id="cliente-deuda-seleccion-resumen"
+              class="text-sm font-semibold text-slate-800"
+              aria-live="polite"
+            >
+              Selecciona pedidos con saldo para generar una nota.
+            </p>
+            <p
+              id="cliente-deuda-seleccion-total"
+              class="mt-1 text-xs font-medium text-cyan-950"
+            >
+              Total seleccionado: $0.00
+            </p>
+            <p class="mt-1 text-xs text-slate-600">
+              La nota incluye el valor completo de los pedidos seleccionados,
+              sin descontar abonos.
+            </p>
+            <p
+              id="cliente-deuda-nota-estado"
+              class="mt-1 min-h-4 text-xs text-slate-600"
+              role="status"
+              aria-live="polite"
+            >
+            </p>
+          </div>
+          <button
+            id="cliente-deuda-generar-nota"
+            type="button"
+            disabled
+            class="rounded-lg bg-cyan-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-cyan-900 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Descargar nota de venta
+          </button>
         </div>
         <div
           class="mt-4 flex items-center justify-between gap-3 rounded-lg bg-amber-50 px-4 py-3"
@@ -462,6 +509,7 @@
     actualizarTarifaCliente,
     crearCliente,
     crearTarifaCliente,
+    emitirNotaVenta,
     eliminarCliente,
     eliminarTarifaCliente,
     establecerTarifaEspecialCliente,
@@ -482,6 +530,7 @@
     establecerCargaBoton,
     mostrarNotificacion,
   } from "../../utils/notificaciones";
+  import { descargarNotaVentaPdf } from "../../utils/nota-venta-pdf";
 
   const lista = document.getElementById("clientes-lista");
   const detalle = document.getElementById("cliente-detalle");
@@ -511,6 +560,19 @@
   const deudaPedidos = document.getElementById("cliente-deuda-pedidos");
   const deudaResumen = document.getElementById("cliente-deuda-resumen");
   const deudaTotal = document.getElementById("cliente-deuda-total");
+  const deudaSeleccionarTodos = document.getElementById(
+    "cliente-deuda-seleccionar-todos",
+  ) as HTMLInputElement | null;
+  const deudaSeleccionResumen = document.getElementById(
+    "cliente-deuda-seleccion-resumen",
+  );
+  const deudaSeleccionTotal = document.getElementById(
+    "cliente-deuda-seleccion-total",
+  );
+  const deudaNotaEstado = document.getElementById("cliente-deuda-nota-estado");
+  const deudaGenerarNota = document.getElementById(
+    "cliente-deuda-generar-nota",
+  ) as HTMLButtonElement | null;
   const nombreEliminar = document.getElementById("cliente-eliminar-nombre");
   const botonEliminarConfirmar = document.getElementById(
     "cliente-eliminar-confirmar",
@@ -526,6 +588,11 @@
   let solicitudDetalle = 0;
   let clientePendienteEliminar: Cliente | null = null;
   let deudaTrigger: HTMLElement | null = null;
+  let clienteDeudaActual: Cliente | null = null;
+  let pedidosDeudaActual: DeudaCliente["pedidos"] = [];
+  const pedidosDeudaSeleccionados = new Set<number>();
+  let claveSolicitudNotaDeuda: string | null = null;
+  let generandoNotaDeuda = false;
   let tarifasClienteActual: TarifaCliente[] = [];
   let editandoTarifaClienteId: number | null = null;
 
@@ -570,6 +637,61 @@
     mostrarNotificacion(texto, esError ? "error" : "success");
   }
 
+  function actualizarSeleccionDeuda() {
+    const seleccionados = pedidosDeudaActual.filter((pedido) =>
+      pedidosDeudaSeleccionados.has(pedido.id),
+    );
+    const total = Math.round(
+      seleccionados.reduce((suma, pedido) => suma + pedido.total, 0) * 100,
+    ) / 100;
+    if (deudaSeleccionResumen) {
+      deudaSeleccionResumen.textContent =
+        seleccionados.length > 0
+          ? `${seleccionados.length} ${seleccionados.length === 1 ? "pedido seleccionado" : "pedidos seleccionados"}`
+          : "Selecciona pedidos con saldo para generar una nota.";
+    }
+    if (deudaSeleccionTotal) {
+      deudaSeleccionTotal.textContent = `Total seleccionado: ${formatearMoneda(total)}`;
+    }
+    if (deudaSeleccionarTodos) {
+      deudaSeleccionarTodos.checked =
+        pedidosDeudaActual.length > 0 &&
+        pedidosDeudaActual.length === seleccionados.length;
+      deudaSeleccionarTodos.indeterminate =
+        seleccionados.length > 0 &&
+        seleccionados.length < pedidosDeudaActual.length;
+      deudaSeleccionarTodos.disabled =
+        generandoNotaDeuda || pedidosDeudaActual.length === 0;
+    }
+    deudaPedidos
+      ?.querySelectorAll<HTMLInputElement>("[data-deuda-pedido]")
+      .forEach((checkbox) => {
+        checkbox.checked = pedidosDeudaSeleccionados.has(
+          Number(checkbox.dataset.deudaPedido),
+        );
+        checkbox.disabled = generandoNotaDeuda;
+      });
+    if (deudaGenerarNota) {
+      deudaGenerarNota.disabled =
+        generandoNotaDeuda || seleccionados.length === 0;
+      deudaGenerarNota.textContent = generandoNotaDeuda
+        ? "Generando nota..."
+        : "Descargar nota de venta";
+    }
+    const modalCerrar = document.getElementById(
+      "cliente-deuda-cerrar",
+    ) as HTMLButtonElement | null;
+    const modalCerrarPie = document.getElementById(
+      "cliente-deuda-cerrar-pie",
+    ) as HTMLButtonElement | null;
+    const modalBackdrop = document.getElementById(
+      "cliente-deuda-backdrop",
+    ) as HTMLButtonElement | null;
+    for (const boton of [modalCerrar, modalCerrarPie, modalBackdrop]) {
+      if (boton) boton.disabled = generandoNotaDeuda;
+    }
+  }
+
   function abrirConfirmacionEliminar(cliente: Cliente) {
     clientePendienteEliminar = cliente;
     if (nombreEliminar) nombreEliminar.textContent = cliente.nombre;
@@ -594,19 +716,36 @@
   ) {
     if (!modalDeuda || !deudaPedidos || !deudaResumen || !deudaTotal) return;
     deudaTrigger = trigger;
-    deudaResumen.textContent = `${cliente.nombre} · ${deuda.pedidos.length} ${deuda.pedidos.length === 1 ? "pedido pendiente" : "pedidos pendientes"}`;
-    deudaPedidos.innerHTML = deuda.pedidos
+    clienteDeudaActual = cliente;
+    pedidosDeudaActual = deuda.pedidos
       .filter((pedido) => pedido.porCobrar > 0)
-      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-      .map(
-        (pedido) => `
+      .sort(
+        (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime(),
+      );
+    pedidosDeudaSeleccionados.clear();
+    claveSolicitudNotaDeuda = null;
+    if (deudaNotaEstado) deudaNotaEstado.textContent = "";
+    deudaResumen.textContent = `${cliente.nombre} · ${pedidosDeudaActual.length} ${pedidosDeudaActual.length === 1 ? "pedido pendiente" : "pedidos pendientes"}`;
+    deudaPedidos.innerHTML = pedidosDeudaActual.length
+      ? pedidosDeudaActual
+          .map(
+            (pedido) => `
           <tr class="grid grid-cols-2 border-b border-slate-100 last:border-b-0 sm:table-row">
+            <td class="block px-3 py-2.5 align-top text-center sm:table-cell sm:px-3 sm:py-3">
+              <span class="mb-1 block text-left text-[10px] font-medium uppercase tracking-wide text-slate-400 sm:hidden">Seleccionar pedido</span>
+              <input
+                type="checkbox"
+                data-deuda-pedido="${pedido.id}"
+                aria-label="Seleccionar pedido #${pedido.id}"
+                class="h-4 w-4 rounded border-slate-300 accent-cyan-700 focus:ring-cyan-600"
+              />
+            </td>
             <th scope="row" class="block px-3 py-2.5 text-left align-top font-semibold text-slate-800 sm:table-cell sm:px-3 sm:py-3">
               <span class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-400 sm:hidden">Pedido</span>
               #${pedido.id}
             </th>
             <td class="block px-3 py-2.5 align-top sm:table-cell sm:px-3 sm:py-3">
-              <span class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-400 sm:hidden">Pedidos</span>
+              <span class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-400 sm:hidden">Servicio y medidas</span>
               <span class="block font-medium text-slate-800">${pedido.servicio === "TEXTIL" ? "DTF Textil" : "DTF UV"}</span>
               <span class="mt-1 block text-xs text-slate-500">${pedido.ancho} × ${pedido.largo} cm</span>
             </td>
@@ -627,9 +766,11 @@
               ${formatearMoneda(pedido.porCobrar)}
             </td>
           </tr>`,
-      )
-      .join("");
+          )
+          .join("")
+      : `<tr><td colspan="7" class="px-3 py-8 text-center text-sm text-slate-500">Este cliente no tiene pedidos pendientes por cobrar.</td></tr>`;
     deudaTotal.textContent = formatearMoneda(deuda.totalDeuda);
+    actualizarSeleccionDeuda();
     modalDeuda.classList.remove("hidden");
     modalDeuda.classList.add("flex");
     document.getElementById("cliente-deuda-cerrar")?.focus();
@@ -734,11 +875,90 @@
   }
 
   function cerrarDetalleDeuda() {
+    if (generandoNotaDeuda) return;
     modalDeuda?.classList.add("hidden");
     modalDeuda?.classList.remove("flex");
     deudaTrigger?.focus();
     deudaTrigger = null;
+    clienteDeudaActual = null;
+    pedidosDeudaActual = [];
+    pedidosDeudaSeleccionados.clear();
+    claveSolicitudNotaDeuda = null;
+    if (deudaNotaEstado) deudaNotaEstado.textContent = "";
   }
+
+  deudaPedidos?.addEventListener("change", (event) => {
+    const checkbox = event.target;
+    if (
+      !(checkbox instanceof HTMLInputElement) ||
+      !checkbox.matches("[data-deuda-pedido]")
+    ) {
+      return;
+    }
+
+    const pedidoId = Number(checkbox.dataset.deudaPedido);
+    if (!Number.isInteger(pedidoId)) return;
+    if (checkbox.checked) {
+      pedidosDeudaSeleccionados.add(pedidoId);
+    } else {
+      pedidosDeudaSeleccionados.delete(pedidoId);
+    }
+    claveSolicitudNotaDeuda = null;
+    if (deudaNotaEstado) deudaNotaEstado.textContent = "";
+    actualizarSeleccionDeuda();
+  });
+
+  deudaSeleccionarTodos?.addEventListener("change", () => {
+    if (deudaSeleccionarTodos.checked) {
+      pedidosDeudaActual.forEach((pedido) =>
+        pedidosDeudaSeleccionados.add(pedido.id),
+      );
+    } else {
+      pedidosDeudaSeleccionados.clear();
+    }
+    claveSolicitudNotaDeuda = null;
+    if (deudaNotaEstado) deudaNotaEstado.textContent = "";
+    actualizarSeleccionDeuda();
+  });
+
+  deudaGenerarNota?.addEventListener("click", async () => {
+    if (!clienteDeudaActual || generandoNotaDeuda) return;
+    const seleccionados = pedidosDeudaActual.filter((pedido) =>
+      pedidosDeudaSeleccionados.has(pedido.id),
+    );
+    if (seleccionados.length === 0) return;
+
+    const idempotencyKey =
+      claveSolicitudNotaDeuda ?? crypto.randomUUID();
+    claveSolicitudNotaDeuda = idempotencyKey;
+    generandoNotaDeuda = true;
+    if (deudaNotaEstado) {
+      deudaNotaEstado.textContent = "Emitiendo la nota de venta...";
+    }
+    actualizarSeleccionDeuda();
+
+    try {
+      const nota = await emitirNotaVenta(
+        seleccionados.map((pedido) => pedido.id),
+        idempotencyKey,
+      );
+      await descargarNotaVentaPdf(nota);
+      if (deudaNotaEstado) {
+        deudaNotaEstado.textContent = `Nota de venta ${nota.numero} descargada.`;
+      }
+      avisar(`Nota de venta ${nota.numero} descargada.`);
+    } catch (caught) {
+      const mensaje =
+        caught instanceof Error
+          ? `No se pudo generar la nota de venta: ${caught.message}`
+          : "No se pudo generar la nota de venta.";
+      if (deudaNotaEstado) deudaNotaEstado.textContent = mensaje;
+      avisar(mensaje, true);
+    } finally {
+      generandoNotaDeuda = false;
+      actualizarSeleccionDeuda();
+    }
+  });
 
   modalDeuda?.addEventListener("keydown", (event: KeyboardEvent) => {
     if (event.key !== "Tab") return;

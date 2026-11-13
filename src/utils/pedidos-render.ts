@@ -123,6 +123,14 @@ export function crearFilaPedido(pedido: Pedido): string {
       title="Abrir detalle del pedido"
       class="pedido-row group cursor-pointer transition-colors duration-150 hover:bg-slate-100/70 focus-visible:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-700 active:bg-slate-200"
     >
+      <td class="px-3 py-4">
+        <input
+          type="checkbox"
+          data-pedido-seleccion="${pedido.id}"
+          aria-label="Seleccionar pedido #${pedido.id}"
+          class="h-4 w-4 rounded border-slate-300 accent-cyan-700 focus:ring-cyan-600"
+        />
+      </td>
       <td class="px-5 py-4">
         <div class="flex items-center gap-2">
           ${

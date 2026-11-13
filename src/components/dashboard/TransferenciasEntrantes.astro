@@ -8,40 +8,9 @@ import TransferenciaArchivos from "./TransferenciaArchivos.astro";
   aria-label="Transferencias de archivos"
   aria-live="polite"
 >
-  <button
-    id="transferencias-indicador"
-    type="button"
-    class="pointer-events-auto relative mb-2 flex size-16 items-center justify-center rounded-full border-2 border-white/80 bg-green-500 text-white shadow-xl shadow-violet-950/25 transition hover:scale-105 hover:bg-green-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-300"
-    aria-expanded="false"
-    aria-controls="transferencias-bandeja"
-    aria-label="Transferencias de archivos: No hay archivos"
-  >
-    <svg
-      class="size-7 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.8"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 16V4m0 0L7 9m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"
-      ></path>
-    </svg>
-    <span id="transferencias-indicador-texto" class="sr-only">
-      Abrir transferencias
-    </span>
-    <span
-      id="transferencias-indicador-cantidad"
-      class="absolute -right-1 -top-1 hidden h-6 min-w-6 items-center justify-center rounded-full border-2 border-violet-700 bg-red-500 px-1 text-xs font-bold text-white shadow-sm"
-    ></span>
-  </button>
-
   <section
     id="transferencias-bandeja"
-    class="pointer-events-auto hidden w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-2xl"
+    class="pointer-events-auto mb-3 hidden w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-2xl"
     aria-label="Bandeja de transferencias"
   >
     <header
@@ -69,6 +38,171 @@ import TransferenciaArchivos from "./TransferenciaArchivos.astro";
     >
     </div>
   </section>
+
+  <div
+    id="transferencias-speed-dial"
+    data-dial-init
+    class="pointer-events-auto group flex flex-col items-end"
+  >
+    <div
+      id="transferencias-speed-dial-acciones"
+      class="mb-3 hidden flex flex-col items-end gap-2"
+    >
+      <div
+        id="transferencias-acciones-envio"
+        class="hidden flex flex-col items-end gap-2"
+        aria-label="Seleccionar área para enviar archivos"
+      >
+      <div class="flex items-center gap-2">
+        <span
+          class="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-lg"
+        >
+          UV
+        </span>
+        <button
+          id="transferencias-accion-uv"
+          type="button"
+          class="flex size-12 items-center justify-center rounded-full border border-slate-200 bg-white text-cyan-800 shadow-lg transition hover:bg-cyan-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200"
+          aria-label="Seleccionar archivos para UV"
+        >
+          <svg
+            class="size-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 16V4m0 0L7 9m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"
+            ></path>
+          </svg>
+        </button>
+      </div>
+      <div class="flex items-center gap-2">
+        <span
+          class="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-lg"
+        >
+          Textil 58
+        </span>
+        <button
+          id="transferencias-accion-textil58"
+          type="button"
+          class="flex size-12 items-center justify-center rounded-full border border-slate-200 bg-white text-cyan-800 shadow-lg transition hover:bg-cyan-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200"
+          aria-label="Seleccionar archivos para Textil 58"
+        >
+          <svg
+            class="size-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 16V4m0 0L7 9m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"
+            ></path>
+          </svg>
+        </button>
+      </div>
+      <div class="flex items-center gap-2">
+        <span
+          class="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-lg"
+        >
+          Textil 31
+        </span>
+        <button
+          id="transferencias-accion-textil31"
+          type="button"
+          class="flex size-12 items-center justify-center rounded-full border border-slate-200 bg-white text-cyan-800 shadow-lg transition hover:bg-cyan-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200"
+          aria-label="Seleccionar archivos para Textil 31"
+        >
+          <svg
+            class="size-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 16V4m0 0L7 9m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"
+            ></path>
+          </svg>
+        </button>
+      </div>
+      </div>
+      <div
+        id="transferencias-acciones-recepcion"
+        class="hidden flex flex-col items-end gap-2"
+        aria-label="Acciones de transferencia"
+      >
+      <div class="flex items-center gap-2">
+        <span
+          class="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-lg"
+        >
+          Bandeja de transferencias
+        </span>
+        <button
+          id="transferencias-accion-bandeja"
+          type="button"
+          class="flex size-12 items-center justify-center rounded-full border border-slate-200 bg-white text-cyan-800 shadow-lg transition hover:bg-cyan-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200"
+          aria-label="Abrir bandeja de transferencias"
+        >
+          <svg
+            class="size-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M3 8.5 5 4h14l2 4.5M3 8.5h5l2 3h4l2-3h5M3 8.5V19a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8.5"
+            ></path>
+          </svg>
+        </button>
+        </div>
+      </div>
+    </div>
+    <button
+      id="transferencias-indicador"
+      type="button"
+      data-dial-toggle="transferencias-speed-dial-acciones"
+      aria-controls="transferencias-speed-dial-acciones"
+      aria-expanded="false"
+      aria-label="Acciones de transferencias"
+      class="relative flex size-16 items-center justify-center rounded-full border-2 border-white/80 bg-cyan-800 text-white shadow-xl shadow-cyan-950/25 transition hover:scale-105 hover:bg-cyan-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-300"
+    >
+      <svg
+        class="size-7 shrink-0 transition-transform group-hover:rotate-45 group-focus-within:rotate-45"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 5v14m-7-7h14"></path>
+      </svg>
+      <span id="transferencias-indicador-texto" class="sr-only">
+        Abrir acciones de transferencias
+      </span>
+      <span
+        id="transferencias-indicador-cantidad"
+        class="absolute -right-1 -top-1 hidden h-6 min-w-6 items-center justify-center rounded-full border-2 border-cyan-950 bg-red-500 px-1 text-xs font-bold text-white shadow-sm"
+      ></span>
+    </button>
+  </div>
 </aside>
 
 <script>
@@ -78,6 +212,7 @@ import TransferenciaArchivos from "./TransferenciaArchivos.astro";
     prepararRecepcionP2P,
     responderTransferencia,
     suscribirseTransferencia,
+    type AreaTransferencia,
     type SolicitudTransferencia,
   } from "../../services/transferencias";
 
@@ -108,6 +243,22 @@ import TransferenciaArchivos from "./TransferenciaArchivos.astro";
   const indicadorCantidad = document.getElementById(
     "transferencias-indicador-cantidad",
   );
+  const accionesDial = document.getElementById(
+    "transferencias-speed-dial-acciones",
+  );
+  const accionesEnvio = document.getElementById("transferencias-acciones-envio");
+  const accionesRecepcion = document.getElementById(
+    "transferencias-acciones-recepcion",
+  );
+  const accionBandeja = document.getElementById(
+    "transferencias-accion-bandeja",
+  );
+  const selectorAreaEnvio = document.getElementById(
+    "transferencia-area",
+  ) as HTMLInputElement | null;
+  const entradaArchivos = document.getElementById(
+    "transferencia-archivos-input",
+  ) as HTMLInputElement | null;
   const bandeja = document.getElementById("transferencias-bandeja");
   const resumenBandeja = document.getElementById(
     "transferencias-bandeja-resumen",
@@ -235,8 +386,11 @@ import TransferenciaArchivos from "./TransferenciaArchivos.astro";
       0,
     );
     const haySolicitudesPendientes = solicitudesPendientes.length > 0;
+    const puedeEnviar =
+      usuario?.rol === "ADMIN" || usuario?.rol === "DISENADOR";
+    accionesEnvio?.classList.toggle("hidden", !puedeEnviar);
+    accionesRecepcion?.classList.toggle("hidden", puedeEnviar);
     indicador.classList.toggle("animate-pulse", haySolicitudesPendientes);
-    indicador.setAttribute("aria-expanded", String(bandejaAbierta));
     if (indicadorTexto) {
       const textoIndicador = haySolicitudesPendientes
         ? solicitudesPendientes.length === 1
@@ -248,7 +402,7 @@ import TransferenciaArchivos from "./TransferenciaArchivos.astro";
       indicadorTexto.textContent = textoIndicador;
       indicador.setAttribute(
         "aria-label",
-        `Transferencias de archivos: ${textoIndicador}`,
+        `Transferencias de archivos: ${textoIndicador}. Abrir acciones.`,
       );
     }
     if (indicadorCantidad) {
@@ -582,10 +736,48 @@ import TransferenciaArchivos from "./TransferenciaArchivos.astro";
     renderizar();
   }
 
-  indicador?.addEventListener("click", () => {
-    bandejaAbierta = !bandejaAbierta;
+  function ocultarAccionesDial() {
+    accionesDial?.classList.add("hidden");
+    indicador?.setAttribute("aria-expanded", "false");
+  }
+
+  function abrirBandejaTransferencias() {
+    bandejaAbierta = true;
     renderizar();
-  });
+    ocultarAccionesDial();
+    cerrarBandeja?.focus();
+  }
+
+  function iniciarEnvioPorArea(area: AreaTransferencia) {
+    if (!selectorAreaEnvio || !entradaArchivos) {
+      console.error(
+        "No se pudo iniciar el envío: faltan los controles del área o de archivos.",
+      );
+      return;
+    }
+
+    selectorAreaEnvio.value = area;
+    selectorAreaEnvio.dispatchEvent(new Event("change", { bubbles: true }));
+    bandejaAbierta = true;
+    renderizar();
+    ocultarAccionesDial();
+    entradaArchivos.click();
+  }
+
+  const accionesPorArea: [AreaTransferencia, string][] = [
+    ["UV", "transferencias-accion-uv"],
+    ["TEXTIL58", "transferencias-accion-textil58"],
+    ["TEXTIL31", "transferencias-accion-textil31"],
+  ];
+  for (const [area, id] of accionesPorArea) {
+    document.getElementById(id)?.addEventListener("click", () =>
+      iniciarEnvioPorArea(area),
+    );
+  }
+
+  accionBandeja?.addEventListener("click", () =>
+    abrirBandejaTransferencias(),
+  );
   cerrarBandeja?.addEventListener("click", () => {
     bandejaAbierta = false;
     renderizar();

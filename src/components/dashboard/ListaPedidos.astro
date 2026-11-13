@@ -121,6 +121,51 @@
             >
           </div>
         </div>
+
+        <div
+          id="pedidos-seleccion-acciones"
+          class="mt-3 hidden flex flex-wrap items-center gap-3 rounded-xl border border-cyan-200 bg-cyan-50 p-3"
+          aria-live="polite"
+        >
+          <p
+            id="pedidos-seleccion-resumen"
+            class="text-sm font-semibold text-slate-800"
+          >
+          </p>
+          <p
+            id="pedidos-seleccion-mensaje"
+            class="min-w-0 flex-1 text-xs text-slate-600"
+          >
+          </p>
+          <p
+            id="pedidos-seleccion-total-ayuda"
+            class="min-w-0 flex-1 text-xs text-slate-600"
+          >
+          </p>
+          <button
+            id="pedidos-seleccion-ver-total"
+            type="button"
+            disabled
+            class="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-xs font-semibold text-cyan-900 transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Ver valor total
+          </button>
+          <button
+            id="pedidos-seleccion-avanzar"
+            type="button"
+            disabled
+            class="rounded-lg bg-cyan-800 px-3 py-2 text-xs font-semibold text-white transition hover:bg-cyan-900 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Avanzar
+          </button>
+          <button
+            id="pedidos-seleccion-limpiar"
+            type="button"
+            class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Limpiar selección
+          </button>
+        </div>
       </div>
 
       <button
@@ -177,6 +222,14 @@
           class="sticky top-0 z-10 bg-slate-50 text-xs uppercase tracking-wide text-slate-400"
         >
           <tr>
+            <th class="w-12 px-3 py-3">
+              <input
+                id="pedidos-seleccionar-visibles"
+                type="checkbox"
+                aria-label="Seleccionar todos los pedidos disponibles del filtro actual"
+                class="h-4 w-4 rounded border-slate-300 accent-cyan-700 focus:ring-cyan-600"
+              />
+            </th>
             <th class="px-5 py-3 font-medium">Pedido</th>
             <th class="px-5 py-3 font-medium">Cliente</th>
             <th class="px-5 py-3 font-medium">Servicio</th>
@@ -245,25 +298,127 @@
   </div>
 </div>
 
+<div
+  id="pedidos-valor-modal"
+  class="invisible fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4 opacity-0 transition-opacity"
+  aria-hidden="true"
+>
+  <section
+    class="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="pedidos-valor-titulo"
+  >
+    <header class="mb-4 flex items-start justify-between gap-3">
+      <div>
+        <h2
+          id="pedidos-valor-titulo"
+          class="text-lg font-semibold text-slate-900"
+        >
+          Detalle de pedidos
+        </h2>
+        <p
+          id="pedidos-valor-cliente"
+          class="mt-1 text-sm text-slate-500"
+        >
+        </p>
+      </div>
+      <button
+        id="pedidos-valor-cerrar"
+        type="button"
+        class="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+        aria-label="Cerrar detalle de pedidos"
+      >
+        <svg
+          class="h-5 w-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path stroke-linecap="round" d="m6 6 12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+    </header>
+
+    <ul
+      id="pedidos-valor-detalle"
+      class="min-h-0 divide-y divide-slate-200 overflow-y-auto rounded-xl border border-slate-200 px-3"
+      aria-label="Detalle de los pedidos seleccionados"
+    >
+    </ul>
+
+    <div
+      class="mt-4 flex items-center justify-between border-t border-slate-200 pt-4"
+    >
+      <span class="text-sm font-semibold text-slate-700">Total a pagar</span>
+      <span
+        id="pedidos-valor-total"
+        class="text-xl font-bold text-slate-900"
+      ></span>
+    </div>
+    <p
+      id="pedidos-valor-estado"
+      class="mt-2 min-h-5 text-xs text-slate-500"
+      aria-live="polite"
+    >
+    </p>
+
+    <footer class="mt-4 flex flex-wrap justify-end gap-2">
+      <button
+        id="pedidos-valor-cerrar-secundario"
+        type="button"
+        class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+      >
+        Cerrar
+      </button>
+      <button
+        id="pedidos-valor-copiar"
+        type="button"
+        class="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50"
+      >
+        Copiar para WhatsApp
+      </button>
+      <button
+        id="pedidos-valor-pdf"
+        type="button"
+        class="rounded-lg bg-cyan-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-cyan-900 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Descargar comprobante PDF
+      </button>
+    </footer>
+  </section>
+</div>
+
 <script>
   import {
     iniciarPedidosStore,
     suscribirsePedidos,
   } from "../../services/pedidos-store";
 
-  import type { Pedido } from "../../types/pedido";
-  import { obtenerImagenReferenciaPedido } from "../../services/api";
+  import type { EstadoPedido, Pedido } from "../../types/pedido";
+  import {
+    cambiarEstadoPedido,
+    emitirNotaVenta,
+    obtenerImagenReferenciaPedido,
+    type NotaVentaDetalle,
+  } from "../../services/api";
   import { copiarTelefono, copiarTexto } from "../../utils/copiar-telefono";
   import { crearFilaPedido } from "../../utils/pedidos-render";
   import { mostrarNotificacion } from "../../utils/notificaciones";
+  import { descargarNotaVentaPdf } from "../../utils/nota-venta-pdf";
   import { obtenerUsuario } from "../../services/auth";
   import { pedidoPerteneceAlArea } from "../../services/permisos";
   import {
     estados,
+    formatearMedidas,
+    formatearPrecio,
     obtenerPedidosFiltrados as obtenerPedidosFiltradosLista,
     type FiltroPedido,
     type FiltroServicioPedido,
   } from "../../utils/pedidos-lista";
+  import { estadosSiguientes } from "../../utils/pedido-detalle";
 
   const loading = document.getElementById("pedidos-loading");
   const vacio = document.getElementById("pedidos-vacio");
@@ -278,6 +433,45 @@
   const resultadosBusqueda = document.getElementById(
     "pedidos-busqueda-resultados",
   );
+  const accionesSeleccion = document.getElementById(
+    "pedidos-seleccion-acciones",
+  );
+  const resumenSeleccion = document.getElementById(
+    "pedidos-seleccion-resumen",
+  );
+  const mensajeSeleccion = document.getElementById(
+    "pedidos-seleccion-mensaje",
+  );
+  const ayudaVerTotal = document.getElementById(
+    "pedidos-seleccion-total-ayuda",
+  );
+  const botonVerTotal = document.getElementById(
+    "pedidos-seleccion-ver-total",
+  ) as HTMLButtonElement | null;
+  const modalTotalPedidos = document.getElementById("pedidos-valor-modal");
+  const modalTotalCliente = document.getElementById("pedidos-valor-cliente");
+  const modalTotalDetalle = document.getElementById("pedidos-valor-detalle");
+  const modalTotalValor = document.getElementById("pedidos-valor-total");
+  const modalTotalEstado = document.getElementById("pedidos-valor-estado");
+  const modalTotalCerrar = document.getElementById("pedidos-valor-cerrar");
+  const modalTotalCerrarSecundario = document.getElementById(
+    "pedidos-valor-cerrar-secundario",
+  );
+  const modalTotalCopiar = document.getElementById(
+    "pedidos-valor-copiar",
+  ) as HTMLButtonElement | null;
+  const modalTotalPdf = document.getElementById(
+    "pedidos-valor-pdf",
+  ) as HTMLButtonElement | null;
+  const botonAvanzarSeleccion = document.getElementById(
+    "pedidos-seleccion-avanzar",
+  ) as HTMLButtonElement | null;
+  const botonLimpiarSeleccion = document.getElementById(
+    "pedidos-seleccion-limpiar",
+  ) as HTMLButtonElement | null;
+  const checkboxSeleccionarVisibles = document.getElementById(
+    "pedidos-seleccionar-visibles",
+  ) as HTMLInputElement | null;
   const previewModal = document.getElementById(
     "pedido-referencia-preview-modal",
   );
@@ -344,6 +538,11 @@
   let filtroActual: FiltroPedido = "TODOS";
   let filtroServicioActual: FiltroServicioPedido = "TODOS";
   let nombreBuscado = "";
+  const pedidosSeleccionados = new Set<number>();
+  let procesandoCambioMasivo = false;
+  let progresoCambioMasivo = "";
+  let pedidosResumenModal: Pedido[] = [];
+  let idempotencyKeyNotaVenta: string | null = null;
 
   /*
    * Pedidos recibidos del store.
@@ -401,6 +600,260 @@
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toLocaleLowerCase("es");
+  }
+
+  function obtenerSiguienteEstadoMasivo(
+    estado: EstadoPedido,
+  ): EstadoPedido | null {
+    return estadosSiguientes[estado] ?? null;
+  }
+
+  function obtenerPrecioPedido(pedido: Pedido): number | null {
+    const precio =
+      pedido.valorCobrar ?? pedido.precioFinal ?? pedido.precioCalculado;
+    return typeof precio === "number" && Number.isFinite(precio)
+      ? precio
+      : null;
+  }
+
+  function generarMensajePedidosSeleccionados(
+    pedidos: Pedido[],
+  ): string | null {
+    const primerPedido = pedidos[0];
+    if (
+      !primerPedido ||
+      pedidos.some((pedido) => pedido.cliente.id !== primerPedido.cliente.id)
+    ) {
+      return null;
+    }
+
+    const precios = pedidos.map(obtenerPrecioPedido);
+    if (precios.some((precio) => precio === null)) return null;
+
+    const detalle = pedidos
+      .map((pedido, indice) => {
+        const servicio =
+          pedido.servicio === "TEXTIL" ? "DTF textil" : "DTF UV";
+        return `• Pedido #${pedido.id} — ${servicio} — ${formatearMedidas(pedido)}: ${formatearPrecio(precios[indice])}`;
+      })
+      .join("\n");
+    const total = precios.reduce((suma, precio) => suma + (precio ?? 0), 0);
+
+    return `Hola ${primerPedido.cliente.nombre}, te comparto el detalle de tus pedidos:\n\n${detalle}\n\nTotal a pagar: ${formatearPrecio(total)}`;
+  }
+
+  function obtenerPedidosSeleccionadosVisibles(): Pedido[] {
+    return obtenerPedidosFiltrados().filter((pedido) =>
+      pedidosSeleccionados.has(pedido.id),
+    );
+  }
+
+  function actualizarDetalleModalNota(
+    cliente: string,
+    pedidos: NotaVentaDetalle[],
+    total: number,
+  ) {
+    if (!modalTotalCliente || !modalTotalValor || !modalTotalDetalle) return;
+
+    modalTotalCliente.textContent = `Cliente: ${cliente}`;
+    modalTotalValor.textContent = formatearPrecio(total);
+    modalTotalDetalle.replaceChildren();
+
+    for (const pedido of pedidos) {
+      const item = document.createElement("li");
+      item.className = "flex items-center justify-between gap-4 py-3";
+      const descripcion = document.createElement("div");
+      descripcion.className = "min-w-0";
+      const titulo = document.createElement("p");
+      titulo.className = "text-sm font-semibold text-slate-800";
+      titulo.textContent = `Pedido #${pedido.pedidoId} · ${
+        pedido.servicio === "TEXTIL" ? "DTF textil" : "DTF UV"
+      }`;
+      const medidas = document.createElement("p");
+      medidas.className = "mt-0.5 text-xs text-slate-500";
+      medidas.textContent = `Medida: ${
+        pedido.largo === null
+          ? `${pedido.ancho} cm`
+          : `${pedido.ancho} × ${pedido.largo} cm`
+      }`;
+      const precio = document.createElement("p");
+      precio.className = "shrink-0 text-sm font-semibold text-slate-800";
+      precio.textContent = formatearPrecio(pedido.valor);
+      descripcion.append(titulo, medidas);
+      item.append(descripcion, precio);
+      modalTotalDetalle.append(item);
+    }
+  }
+
+  function abrirModalTotalPedidos() {
+    const seleccionados = obtenerPedidosSeleccionadosVisibles();
+    const mensaje = generarMensajePedidosSeleccionados(seleccionados);
+    if (
+      !mensaje ||
+      !modalTotalPedidos ||
+      !modalTotalDetalle ||
+      !modalTotalCliente ||
+      !modalTotalValor
+    ) {
+      return;
+    }
+
+    pedidosResumenModal = seleccionados;
+    idempotencyKeyNotaVenta = crypto.randomUUID();
+    const precios = seleccionados.map(obtenerPrecioPedido);
+    const detalle = seleccionados.flatMap((pedido, indice) => {
+      const valor = precios[indice];
+      return valor === null
+        ? []
+        : [
+            {
+              pedidoId: pedido.id,
+              servicio: pedido.servicio,
+              ancho: pedido.ancho,
+              largo: pedido.largo,
+              valor,
+            },
+          ];
+    });
+    if (detalle.length !== seleccionados.length) {
+      mostrarNotificacion(
+        "No se pudo calcular el total de los pedidos seleccionados.",
+        "error",
+      );
+      return;
+    }
+    const total = detalle.reduce((suma, pedido) => suma + pedido.valor, 0);
+    actualizarDetalleModalNota(
+      seleccionados[0]?.cliente.nombre ?? "",
+      detalle,
+      total,
+    );
+
+    modalTotalEstado && (modalTotalEstado.textContent = "");
+    modalTotalPedidos.classList.remove("invisible", "opacity-0");
+    modalTotalPedidos.setAttribute("aria-hidden", "false");
+    document.body.classList.add("overflow-hidden");
+    modalTotalCerrar?.focus();
+  }
+
+  function cerrarModalTotalPedidos() {
+    if (modalTotalPdf?.disabled) return;
+    modalTotalPedidos?.classList.add("invisible", "opacity-0");
+    modalTotalPedidos?.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("overflow-hidden");
+    pedidosResumenModal = [];
+    idempotencyKeyNotaVenta = null;
+    botonVerTotal?.focus();
+  }
+
+  function actualizarResumenSeleccion(pedidosVisibles: Pedido[]) {
+    if (buscadorCliente) {
+      buscadorCliente.disabled = procesandoCambioMasivo;
+    }
+    document
+      .querySelectorAll<HTMLButtonElement>(
+        "[data-filtro], [data-servicio-filtro]",
+      )
+      .forEach((boton) => {
+        boton.disabled = procesandoCambioMasivo;
+      });
+
+    const pedidosPorId = new Map<number, Pedido>(
+      pedidosVisibles.map((pedido) => [pedido.id, pedido] as const),
+    );
+    for (const id of pedidosSeleccionados) {
+      const pedido = pedidosPorId.get(id);
+      if (!pedido) pedidosSeleccionados.delete(id);
+    }
+
+    const seleccionados = pedidosVisibles.filter((pedido) =>
+      pedidosSeleccionados.has(pedido.id),
+    );
+    const totalSeleccionadosVisibles = seleccionados.length;
+    if (checkboxSeleccionarVisibles) {
+      checkboxSeleccionarVisibles.checked =
+        pedidosVisibles.length > 0 &&
+        pedidosVisibles.length === totalSeleccionadosVisibles;
+      checkboxSeleccionarVisibles.indeterminate =
+        totalSeleccionadosVisibles > 0 &&
+        totalSeleccionadosVisibles < pedidosVisibles.length;
+      checkboxSeleccionarVisibles.disabled =
+        procesandoCambioMasivo || pedidosVisibles.length === 0;
+    }
+
+    accionesSeleccion?.classList.toggle(
+      "hidden",
+      totalSeleccionadosVisibles === 0,
+    );
+    if (totalSeleccionadosVisibles === 0) return;
+
+    if (resumenSeleccion) {
+      resumenSeleccion.textContent = `${totalSeleccionadosVisibles} ${
+        totalSeleccionadosVisibles === 1
+          ? "pedido seleccionado"
+          : "pedidos seleccionados"
+      }`;
+    }
+
+    const preciosSeleccionados = seleccionados.map(obtenerPrecioPedido);
+    const totalSeleccionado =
+      preciosSeleccionados.every((precio) => precio !== null)
+        ? preciosSeleccionados.reduce(
+            (suma, precio) => suma + (precio ?? 0),
+            0,
+          )
+        : null;
+    const mismoCliente = seleccionados.every(
+      (pedido) => pedido.cliente.id === seleccionados[0]?.cliente.id,
+    );
+    if (ayudaVerTotal) {
+      ayudaVerTotal.textContent = !mismoCliente
+        ? "Selecciona pedidos de un solo cliente para ver el total."
+        : totalSeleccionado === null
+          ? "Hay pedidos sin precio confirmado; no se puede calcular el total."
+          : `Ver el comprobante de ${seleccionados[0]?.cliente.nombre}.`;
+    }
+    if (botonVerTotal) {
+      botonVerTotal.disabled =
+        procesandoCambioMasivo || !mismoCliente || totalSeleccionado === null;
+    }
+
+    const estadoActual = seleccionados[0]?.estado;
+    const mismoEstado = seleccionados.every(
+      (pedido) => pedido.estado === estadoActual,
+    );
+    const estadoSiguiente =
+      mismoEstado && estadoActual
+        ? estadosSiguientes[estadoActual]
+        : undefined;
+    const destinoMasivo =
+      estadoSiguiente && estadoSiguiente !== "ENTREGADO"
+        ? estadoSiguiente
+        : null;
+
+    if (mensajeSeleccion) {
+      mensajeSeleccion.textContent = procesandoCambioMasivo
+        ? progresoCambioMasivo
+        : !mismoEstado
+          ? "Selecciona pedidos que estén todos en el mismo estado."
+          : estadoSiguiente === "ENTREGADO"
+            ? "La entrega se gestiona desde cada pedido para registrar el pago."
+            : destinoMasivo
+              ? `Se aplicará la transición a ${estados[destinoMasivo].label}.`
+              : "Estos pedidos no tienen un siguiente estado disponible.";
+    }
+    if (botonAvanzarSeleccion) {
+      botonAvanzarSeleccion.textContent = procesandoCambioMasivo
+        ? "Actualizando..."
+        : destinoMasivo
+          ? `Pasar a ${estados[destinoMasivo].label}`
+          : "Avanzar";
+      botonAvanzarSeleccion.disabled =
+        procesandoCambioMasivo || !destinoMasivo || !mismoEstado;
+    }
+    if (botonLimpiarSeleccion) {
+      botonLimpiarSeleccion.disabled = procesandoCambioMasivo;
+    }
   }
 
   /*
@@ -564,6 +1017,7 @@
     actualizarEstadoBotonesFiltro();
     actualizarEstadoBotonesServicio();
     actualizarMensajeVacio();
+    actualizarResumenSeleccion(pedidos);
 
     if (resultadosBusqueda) {
       const consultando = Boolean(nombreBuscado.trim());
@@ -589,6 +1043,26 @@
 
       if (!fila) {
         return;
+      }
+
+      const checkboxSeleccion = fila.querySelector<HTMLInputElement>(
+        "[data-pedido-seleccion]",
+      );
+      if (checkboxSeleccion) {
+        checkboxSeleccion.checked = pedidosSeleccionados.has(pedido.id);
+        checkboxSeleccion.disabled = procesandoCambioMasivo;
+        if (pedido.estado === "LISTO") {
+          checkboxSeleccion.title =
+            "La entrega debe gestionarse desde el detalle para registrar el pago.";
+        }
+        checkboxSeleccion.addEventListener("change", () => {
+          if (checkboxSeleccion.checked) {
+            pedidosSeleccionados.add(pedido.id);
+          } else {
+            pedidosSeleccionados.delete(pedido.id);
+          }
+          actualizarResumenSeleccion(pedidos);
+        });
       }
 
       /*
@@ -654,7 +1128,247 @@
     });
   }
 
+  if (checkboxSeleccionarVisibles) {
+    checkboxSeleccionarVisibles.addEventListener("change", () => {
+      const pedidosVisibles = obtenerPedidosFiltrados();
+      for (const pedido of pedidosVisibles) {
+        if (checkboxSeleccionarVisibles.checked) {
+          pedidosSeleccionados.add(pedido.id);
+        } else {
+          pedidosSeleccionados.delete(pedido.id);
+        }
+      }
+      renderizarPedidos();
+    });
+  }
+
+  botonLimpiarSeleccion?.addEventListener("click", () => {
+    pedidosSeleccionados.clear();
+    renderizarPedidos();
+  });
+
+  botonVerTotal?.addEventListener("click", () => {
+    if (!procesandoCambioMasivo) abrirModalTotalPedidos();
+  });
+
+  modalTotalCerrar?.addEventListener("click", cerrarModalTotalPedidos);
+  modalTotalCerrarSecundario?.addEventListener(
+    "click",
+    cerrarModalTotalPedidos,
+  );
+  modalTotalPedidos?.addEventListener("click", (event) => {
+    if (event.target === modalTotalPedidos) cerrarModalTotalPedidos();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (modalTotalPedidos?.getAttribute("aria-hidden") !== "false") return;
+    if (event.key === "Escape") {
+      cerrarModalTotalPedidos();
+      return;
+    }
+
+    if (event.key === "Tab") {
+      const elementosEnfocables =
+        modalTotalPedidos.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+      const primero = elementosEnfocables[0];
+      const ultimo = elementosEnfocables[elementosEnfocables.length - 1];
+      if (!primero || !ultimo) return;
+
+      if (
+        event.shiftKey &&
+        (document.activeElement === primero ||
+          !modalTotalPedidos.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        ultimo.focus();
+      } else if (!event.shiftKey && document.activeElement === ultimo) {
+        event.preventDefault();
+        primero.focus();
+      }
+    }
+  });
+
+  modalTotalCopiar?.addEventListener("click", () => {
+    if (!modalTotalCopiar) return;
+    const mensaje = generarMensajePedidosSeleccionados(pedidosResumenModal);
+    if (!mensaje) {
+      if (modalTotalEstado) {
+        modalTotalEstado.textContent =
+          "Selecciona pedidos de un solo cliente con precios confirmados.";
+      }
+      return;
+    }
+
+    void copiarTexto(
+      modalTotalCopiar,
+      mensaje,
+      "el detalle de pedidos",
+      "Detalle copiado",
+      "Copiar para WhatsApp",
+    );
+  });
+
+  modalTotalPdf?.addEventListener("click", async () => {
+    if (!modalTotalPdf) return;
+    const seleccionados = pedidosResumenModal;
+    const mensaje = generarMensajePedidosSeleccionados(seleccionados);
+    if (!mensaje) {
+      if (modalTotalEstado) {
+        modalTotalEstado.textContent =
+          "No se puede generar el comprobante: revisa el cliente y los precios.";
+      }
+      return;
+    }
+
+    const idempotencyKey = idempotencyKeyNotaVenta;
+    if (!idempotencyKey) {
+      if (modalTotalEstado) {
+        modalTotalEstado.textContent =
+          "Cierra y vuelve a abrir el detalle para generar la nota de venta.";
+      }
+      return;
+    }
+
+    const textoOriginal = modalTotalPdf.textContent;
+    modalTotalPdf.disabled = true;
+    modalTotalPdf.textContent = "Generando PDF...";
+    if (modalTotalEstado) {
+      modalTotalEstado.textContent = "Asignando el número de nota de venta...";
+    }
+
+    try {
+      const nota = await emitirNotaVenta(
+        seleccionados.map((pedido) => pedido.id),
+        idempotencyKey,
+      );
+      actualizarDetalleModalNota(
+        nota.cliente.nombre,
+        nota.pedidos,
+        nota.total,
+      );
+      await descargarNotaVentaPdf(nota);
+      if (modalTotalEstado) {
+        modalTotalEstado.textContent = `Nota de venta ${nota.numero} descargada.`;
+      }
+    } catch (error) {
+      console.error("No se pudo generar el comprobante de pedidos:", error);
+      if (modalTotalEstado) {
+        modalTotalEstado.textContent =
+          "No se pudo generar el comprobante PDF.";
+      }
+      mostrarNotificacion(
+        error instanceof Error
+          ? `No se pudo generar el comprobante PDF: ${error.message}`
+          : "No se pudo generar el comprobante PDF.",
+        "error",
+      );
+    } finally {
+      modalTotalPdf.disabled = false;
+      modalTotalPdf.textContent = textoOriginal;
+    }
+  });
+
+  async function avanzarPedidosSeleccionados() {
+    if (procesandoCambioMasivo) return;
+
+    const seleccionados = obtenerPedidosFiltrados().filter((pedido) =>
+      pedidosSeleccionados.has(pedido.id),
+    );
+    const estadoActual = seleccionados[0]?.estado;
+    const mismoEstado = seleccionados.every(
+      (pedido) => pedido.estado === estadoActual,
+    );
+    const estadoSiguiente =
+      mismoEstado && estadoActual
+        ? estadosSiguientes[estadoActual]
+        : undefined;
+    if (
+      seleccionados.length === 0 ||
+      !estadoSiguiente ||
+      estadoSiguiente === "ENTREGADO"
+    ) {
+      actualizarResumenSeleccion(obtenerPedidosFiltrados());
+      return;
+    }
+
+    procesandoCambioMasivo = true;
+    const total = seleccionados.length;
+    let actualizados = 0;
+    let fallidos = 0;
+    progresoCambioMasivo = `Actualizando 0 de ${total}...`;
+    renderizarPedidos();
+
+    try {
+      for (const [indice, pedido] of seleccionados.entries()) {
+        progresoCambioMasivo = `Actualizando ${indice + 1} de ${total}...`;
+        actualizarResumenSeleccion(obtenerPedidosFiltrados());
+
+        const pedidoActual = pedidosActuales.find(
+          (actual) => actual.id === pedido.id,
+        );
+        if (!pedidoActual || pedidoActual.estado !== estadoActual) {
+          pedidosSeleccionados.delete(pedido.id);
+          fallidos += 1;
+          console.error(
+            `No se actualizó el pedido #${pedido.id}: su estado cambió antes de aplicar la acción masiva.`,
+          );
+          continue;
+        }
+
+        try {
+          const pedidoActualizado = await cambiarEstadoPedido(
+            pedido.id,
+            estadoSiguiente,
+          );
+          pedidosActuales = pedidosActuales.map((actual) =>
+            actual.id === pedidoActualizado.id ? pedidoActualizado : actual,
+          );
+          pedidosSeleccionados.delete(pedido.id);
+          actualizados += 1;
+          renderizarPedidos();
+        } catch (errorApi) {
+          fallidos += 1;
+          console.error(
+            `No se pudo actualizar el estado del pedido #${pedido.id}:`,
+            errorApi,
+          );
+        }
+      }
+    } finally {
+      procesandoCambioMasivo = false;
+      progresoCambioMasivo = "";
+      renderizarPedidos();
+    }
+
+    if (fallidos > 0) {
+      const resumenActualizados = `${actualizados} ${
+        actualizados === 1 ? "pedido se actualizó" : "pedidos se actualizaron"
+      }`;
+      const resumenFallidos = `${fallidos} ${
+        fallidos === 1
+          ? "pedido no se pudo actualizar"
+          : "pedidos no se pudieron actualizar"
+      }`;
+      mostrarNotificacion(
+        `${resumenActualizados} y ${resumenFallidos}. Revisa los seleccionados e inténtalo de nuevo.`,
+        "error",
+      );
+    } else if (actualizados > 0) {
+      mostrarNotificacion(
+        `${actualizados} ${
+          actualizados === 1 ? "pedido actualizado" : "pedidos actualizados"
+        } a ${estados[estadoSiguiente].label}.`,
+      );
+    }
+  }
+
+  botonAvanzarSeleccion?.addEventListener("click", () => {
+    void avanzarPedidosSeleccionados();
+  });
+
   buscadorCliente?.addEventListener("input", () => {
+    pedidosSeleccionados.clear();
     nombreBuscado = buscadorCliente.value;
     renderizarPedidos();
   });
@@ -672,6 +1386,7 @@
           return;
         }
 
+        pedidosSeleccionados.clear();
         filtroActual = filtro;
 
         renderizarPedidos();
@@ -689,6 +1404,7 @@
           return;
         }
 
+        pedidosSeleccionados.clear();
         filtroServicioActual = filtro;
         renderizarPedidos();
       });
