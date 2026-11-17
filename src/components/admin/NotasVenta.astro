@@ -62,7 +62,7 @@
     >
       <div>
         <p class="text-xs font-semibold uppercase text-cyan-800">
-          Revisión de nota
+          Pedidos seleccionados
         </p>
         <h3
           id="modal-nota-venta-titulo"
@@ -115,6 +115,27 @@
         Cerrar
       </button>
       <button
+        id="modal-nota-venta-compartir"
+        type="button"
+        class="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <svg
+          class="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <rect x="4" y="8" width="12" height="12" rx="2"></rect>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M8 8V5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3"></path>
+        </svg>
+        Compartir resumen
+      </button>
+      <button
         id="modal-nota-venta-descargar"
         type="button"
         class="h-10 rounded-lg bg-cyan-800 px-4 text-sm font-semibold text-white transition hover:bg-cyan-900 focus:outline-none focus:ring-2 focus:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
@@ -142,6 +163,7 @@
     formatearMedidas,
     formatearPrecio,
   } from "../../utils/pedidos-lista";
+  import { copiarImagenResumenPedidos } from "../../utils/resumen-pedidos-imagen";
   import { descargarNotaVentaPdf } from "../../utils/nota-venta-pdf";
   import { mostrarNotificacion } from "../../utils/notificaciones";
 
@@ -171,6 +193,9 @@
   const modalCancelar = document.getElementById(
     "modal-nota-venta-cancelar",
   ) as HTMLButtonElement | null;
+  const modalCompartir = document.getElementById(
+    "modal-nota-venta-compartir",
+  ) as HTMLButtonElement | null;
   const modalDescargar = document.getElementById(
     "modal-nota-venta-descargar",
   ) as HTMLButtonElement | null;
@@ -190,7 +215,7 @@
   const selecciones = new Map<number, Set<number>>();
   const clavesSolicitud = new Map<number, string>();
   const notasEmitidas = new Map<string, NotaVenta>();
-  const notasGenerandose = new Set<number>();
+  const accionesEnCurso = new Set<number>();
   const mensajesEstado = new Map<
     number,
     { texto: string; tipo: "success" | "error" }
@@ -201,6 +226,7 @@
   let errorCarga: string | null = null;
   let notaEnRevision: NotaEnRevision | null = null;
   let mensajeModal: { texto: string; tipo: "success" | "error" } | null = null;
+  let accionEnCurso: "pdf" | "imagen" | null = null;
 
   function normalizar(valor: string): string {
     return valor
@@ -304,7 +330,7 @@
     if (!notaEnRevision || !modalDetalle) return;
 
     const { grupo, pedidos, notaEmitida } = notaEnRevision;
-    const procesando = notasGenerandose.has(grupo.clienteId);
+    const procesando = accionesEnCurso.has(grupo.clienteId);
     const total = pedidos.reduce(
       (suma, pedido) => suma + (obtenerPrecio(pedido) ?? 0),
       0,
@@ -321,8 +347,8 @@
             : ""
         }
         <p class="mt-3 text-xs leading-5 text-slate-500">
-          Revisa los pedidos incluidos y el total antes de descargar el documento.
-          La nota es un comprobante interno no tributario.
+          Revisa los pedidos y el total. Puedes generar la nota en PDF o
+          compartir un resumen temporal que no se guarda como nota.
         </p>
         ${
           notaEmitida
@@ -353,6 +379,10 @@
         <p class="text-sm font-semibold text-slate-700">Total a pagar</p>
         <p class="text-lg font-bold tabular-nums text-cyan-900">${formatearPrecio(total)}</p>
       </div>
+      <p class="mt-3 text-xs leading-5 text-slate-500">
+        Compartir crea una imagen temporal de este resumen, sin emitir ni
+        registrar una nota. Luego puedes pegarla en WhatsApp con Ctrl+V.
+      </p>
     `;
 
     if (modalMensaje) {
@@ -371,17 +401,23 @@
     if (modalDescargar) {
       modalDescargar.disabled = procesando;
       modalDescargar.textContent = procesando
-        ? "Generando y descargando..."
+        ? accionEnCurso === "pdf"
+          ? "Generando y descargando..."
+          : "Espera..."
         : notaEmitida
           ? "Volver a descargar PDF"
           : "Descargar PDF";
+    }
+    if (modalCompartir) {
+      modalCompartir.disabled = procesando;
+      modalCompartir.setAttribute("aria-busy", String(procesando));
     }
     if (modalCerrar) modalCerrar.disabled = procesando;
     if (modalCancelar) modalCancelar.disabled = procesando;
   }
 
   function abrirModalNota(clienteId: number) {
-    if (!modal || notasGenerandose.has(clienteId)) return;
+    if (!modal || accionesEnCurso.has(clienteId)) return;
     const grupo = agruparPedidosElegibles().find(
       (actual) => actual.clienteId === clienteId,
     );
@@ -407,7 +443,7 @@
 
   function cerrarModalNota() {
     const clienteId = notaEnRevision?.grupo.clienteId;
-    if (clienteId !== undefined && notasGenerandose.has(clienteId)) return;
+    if (clienteId !== undefined && accionesEnCurso.has(clienteId)) return;
     modal?.classList.add("hidden");
     modal?.classList.remove("flex");
     notaEnRevision = null;
@@ -473,7 +509,7 @@
             0,
           ) * 100,
         ) / 100;
-        const procesando = notasGenerandose.has(grupo.clienteId);
+        const procesando = accionesEnCurso.has(grupo.clienteId);
 
         return `
           <section
@@ -568,7 +604,7 @@
                 ${procesando || pedidosSeleccionados.length === 0 ? "disabled" : ""}
                 class="rounded-lg bg-cyan-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-cyan-900 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                ${procesando ? "Generando nota..." : "Revisar detalle"}
+                ${procesando ? "Procesando..." : "Revisar detalle"}
               </button>
             </footer>
           </section>
@@ -603,7 +639,7 @@
     const grupo = agruparPedidosElegibles().find(
       (actual) => actual.clienteId === clienteId,
     );
-    if (!grupo || notasGenerandose.has(clienteId)) return;
+    if (!grupo || accionesEnCurso.has(clienteId)) return;
 
     const seleccion = obtenerSeleccion(clienteId);
     if (target.matches("[data-seleccionar-cliente]")) {
@@ -651,76 +687,151 @@
     }
   });
   modalDescargar?.addEventListener("click", () => {
-    void descargarNotaEnRevision();
+    void procesarNotaEnRevision("pdf");
+  });
+  modalCompartir?.addEventListener("click", () => {
+    void procesarNotaEnRevision("imagen");
   });
 
-  async function descargarNotaEnRevision() {
-    const revision = notaEnRevision;
-    if (!revision || notasGenerandose.has(revision.grupo.clienteId)) return;
-    const { grupo, pedidos } = revision;
-    const clienteId = grupo.clienteId;
-    const firma = obtenerFirmaNota(clienteId, pedidos);
+  function obtenerPedidosEnRevisionActualizados(
+    revision: NotaEnRevision,
+  ): Pedido[] {
+    const clienteId = revision.grupo.clienteId;
+    const pedidosPorId = new Map(
+      pedidosActuales.map((pedido) => [pedido.id, pedido]),
+    );
+    const actualizados: Pedido[] = [];
+    for (const pedido of revision.pedidos) {
+      const actual = pedidosPorId.get(pedido.id);
+      if (
+        !actual ||
+        actual.cliente.id !== clienteId ||
+        actual.estadoPago !== "NO_PAGADO" ||
+        !estadosElegibles.has(actual.estado) ||
+        obtenerPrecio(actual) !== obtenerPrecio(pedido)
+      ) {
+        throw new Error(
+          "La selección cambió. Cierra el detalle, actualiza la lista y vuelve a revisar.",
+        );
+      }
+      actualizados.push(actual);
+    }
+
+    return actualizados;
+  }
+
+  async function obtenerNotaEnRevision(
+    revision: NotaEnRevision,
+  ): Promise<NotaVenta> {
+    if (revision.notaEmitida) return revision.notaEmitida;
+
+    const clienteId = revision.grupo.clienteId;
+    const pedidos = obtenerPedidosEnRevisionActualizados(revision);
     const idempotencyKey =
       clavesSolicitud.get(clienteId) ?? crypto.randomUUID();
     clavesSolicitud.set(clienteId, idempotencyKey);
-    notasGenerandose.add(clienteId);
+    const nota = await emitirNotaVentaNoPagados(
+      pedidos.map((pedido) => pedido.id),
+      idempotencyKey,
+    );
+    revision.notaEmitida = nota;
+    notasEmitidas.set(
+      obtenerFirmaNota(clienteId, revision.pedidos),
+      nota,
+    );
+    clavesSolicitud.delete(clienteId);
+    return nota;
+  }
+
+  async function procesarNotaEnRevision(accion: "pdf" | "imagen") {
+    const revision = notaEnRevision;
+    if (!revision || accionesEnCurso.has(revision.grupo.clienteId)) return;
+    const { grupo } = revision;
+    const clienteId = grupo.clienteId;
+    const notaYaEmitida = accion === "pdf" && revision.notaEmitida !== null;
+    accionesEnCurso.add(clienteId);
+    accionEnCurso = accion;
     mensajeModal = {
-      texto: "Emitiendo la nota de venta y preparando el PDF...",
+      texto:
+        accion === "pdf"
+          ? notaYaEmitida
+            ? "Preparando el PDF..."
+            : "Emitiendo la nota de venta y preparando el PDF..."
+          : "Preparando el resumen temporal. No se guardará una nota.",
       tipo: "success",
     };
     mensajesEstado.set(clienteId, {
-      texto: "Emitiendo la nota de venta...",
+      texto:
+        accion === "pdf"
+          ? notaYaEmitida
+            ? "Preparando el PDF..."
+            : "Emitiendo la nota de venta..."
+          : "Preparando resumen temporal...",
       tipo: "success",
     });
     renderizarModalNota();
     renderizar();
 
     try {
-      let nota = revision.notaEmitida;
-      if (!nota) {
-        const pedidosActualesPorId = new Map(
-          pedidosActuales.map((pedido) => [pedido.id, pedido]),
-        );
-        const seleccionSigueVigente = pedidos.every((pedido) => {
-          const actual = pedidosActualesPorId.get(pedido.id);
-          return (
-            actual?.cliente.id === clienteId &&
-            actual.estadoPago === "NO_PAGADO" &&
-            estadosElegibles.has(actual.estado) &&
-            obtenerPrecio(actual) === obtenerPrecio(pedido)
-          );
+      let mensaje: string;
+      if (accion === "pdf") {
+        const nota = await obtenerNotaEnRevision(revision);
+        await descargarNotaVentaPdf(nota);
+        mensaje = `Nota de venta ${nota.numero} descargada.`;
+      } else {
+        const pedidos = obtenerPedidosEnRevisionActualizados(revision);
+        const pedidosResumen = pedidos.map((pedido) => {
+          const valor = obtenerPrecio(pedido);
+          if (valor === null) {
+            throw new Error(`El pedido #${pedido.id} no tiene un precio válido.`);
+          }
+          return {
+            id: pedido.id,
+            servicio: pedido.servicio === "TEXTIL" ? "DTF textil" : "DTF UV",
+            medidas: formatearMedidas(pedido),
+            valor,
+          };
         });
-        if (!seleccionSigueVigente) {
-          throw new Error(
-            "La selección cambió. Cierra el detalle, actualiza la lista y vuelve a revisar.",
-          );
-        }
-
-        nota = await emitirNotaVentaNoPagados(
-          pedidos.map((pedido) => pedido.id),
-          idempotencyKey,
+        const compartirPromesa = copiarImagenResumenPedidos({
+          cliente: grupo.nombre,
+          pedidos: pedidosResumen,
+          total:
+            Math.round(
+              pedidosResumen.reduce((total, pedido) => total + pedido.valor, 0) *
+                100,
+            ) / 100,
+        }).then(
+          (resultado) => ({ resultado }),
+          (error: unknown) => ({ error }),
         );
-        revision.notaEmitida = nota;
-        notasEmitidas.set(firma, nota);
-        clavesSolicitud.delete(clienteId);
+        const intentoCompartir = await compartirPromesa;
+        if ("error" in intentoCompartir) throw intentoCompartir.error;
+        const resultado = intentoCompartir.resultado;
+        mensaje = resultado.copiada
+          ? "Resumen temporal copiado. Abre WhatsApp y pégalo con Ctrl+V."
+          : `No se pudo copiar el resumen (${resultado.motivo}). Se descargó para compartirlo manualmente.`;
       }
-      await descargarNotaVentaPdf(nota);
-      const mensaje = `Nota de venta ${nota.numero} descargada.`;
+
       mensajeModal = { texto: mensaje, tipo: "success" };
       mensajesEstado.set(clienteId, { texto: mensaje, tipo: "success" });
       mostrarNotificacion(mensaje);
     } catch (caught) {
+      const prefijoError =
+        accion === "pdf"
+          ? revision.notaEmitida
+            ? "No se pudo descargar el PDF"
+            : "No se pudo generar la nota de venta"
+          : "No se pudo preparar el resumen temporal";
       const mensaje =
         caught instanceof Error
-          ? `${revision.notaEmitida ? "No se pudo descargar el PDF" : "No se pudo generar la nota de venta"}: ${caught.message}`
-          : revision.notaEmitida
-            ? "No se pudo descargar el PDF."
-            : "No se pudo generar la nota de venta.";
+          ? `${prefijoError}: ${caught.message}`
+          : `${prefijoError}.`;
       mensajeModal = { texto: mensaje, tipo: "error" };
       mensajesEstado.set(clienteId, { texto: mensaje, tipo: "error" });
       mostrarNotificacion(mensaje, "error");
     } finally {
-      notasGenerandose.delete(clienteId);
+      accionesEnCurso.delete(clienteId);
+      accionEnCurso = null;
       renderizarModalNota();
       renderizar();
     }
