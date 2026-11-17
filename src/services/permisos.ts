@@ -5,6 +5,7 @@ export type VistaDashboard =
   | "pedidos"
   | "historial"
   | "clientes"
+  | "notas-venta"
   | "usuarios"
   | "tarifas"
   | "estadisticas";

@@ -618,6 +618,16 @@ export async function emitirNotaVenta(
   });
 }
 
+export async function emitirNotaVentaNoPagados(
+  pedidoIds: number[],
+  idempotencyKey: string,
+): Promise<NotaVenta> {
+  return request<NotaVenta>("/pedidos/nota-venta-no-pagados", {
+    method: "POST",
+    body: JSON.stringify({ pedidoIds, idempotencyKey }),
+  });
+}
+
 export async function subirImagenReferenciaPedido(
   pedidoId: number,
   imagen: File,

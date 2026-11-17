@@ -436,20 +436,87 @@
         class="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm font-bold text-slate-900"
       >
       </p>
-      <label
+      <fieldset
         id="modal-confirmar-pago-metodo-contenedor"
-        for="modal-confirmar-pago-metodo"
-        class="mt-4 block text-xs font-semibold text-slate-600"
+        class="mt-4"
       >
-        Método de pago
-        <select
-          id="modal-confirmar-pago-metodo"
-          class="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
-        >
-          <option value="Efectivo">Efectivo</option>
-          <option value="Transferencia">Transferencia</option>
-        </select>
-      </label>
+        <legend class="mb-2 text-xs font-semibold text-slate-600">
+          Método de pago
+        </legend>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <input
+              id="modal-confirmar-pago-metodo-efectivo"
+              type="radio"
+              name="metodo-pago-pedido"
+              value="Efectivo"
+              checked
+              class="peer sr-only"
+            />
+            <label
+              for="modal-confirmar-pago-metodo-efectivo"
+              class="flex min-h-[4.5rem] cursor-pointer items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-300 hover:bg-emerald-50/50 peer-checked:border-emerald-600 peer-checked:bg-emerald-50 peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-500"
+            >
+              <span class="min-w-0">
+                <span class="block text-xs font-semibold text-slate-800">
+                  Efectivo
+                </span>
+                <span class="mt-0.5 block text-[11px] text-slate-500">
+                  Billetes o monedas
+                </span>
+              </span>
+              <svg
+                class="h-4 w-4 shrink-0 text-slate-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M5 12h14m-6-6 6 6-6 6"></path>
+              </svg>
+            </label>
+          </div>
+          <div>
+            <input
+              id="modal-confirmar-pago-metodo-transferencia"
+              type="radio"
+              name="metodo-pago-pedido"
+              value="Transferencia"
+              class="peer sr-only"
+            />
+            <label
+              for="modal-confirmar-pago-metodo-transferencia"
+              class="flex min-h-[4.5rem] cursor-pointer items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-300 hover:bg-emerald-50/50 peer-checked:border-emerald-600 peer-checked:bg-emerald-50 peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-500"
+            >
+              <span class="min-w-0">
+                <span class="block text-xs font-semibold text-slate-800">
+                  Transferencia
+                </span>
+                <span class="mt-0.5 block text-[11px] text-slate-500">
+                  Pago desde el banco
+                </span>
+              </span>
+              <svg
+                class="h-4 w-4 shrink-0 text-slate-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M5 12h14m-6-6 6 6-6 6"></path>
+              </svg>
+            </label>
+          </div>
+        </div>
+      </fieldset>
       <p
         id="modal-confirmar-pago-error"
         class="mt-3 hidden text-sm font-medium text-red-700"

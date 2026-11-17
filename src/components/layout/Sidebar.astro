@@ -18,6 +18,11 @@ const navigation = [
     view: "clientes",
   },
   {
+    label: "Notas de venta",
+    icon: "notes",
+    view: "notas-venta",
+  },
+  {
     label: "Usuarios",
     icon: "users",
     view: "usuarios",
@@ -112,6 +117,25 @@ const navigation = [
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2m12-13a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm3 2a3 3 0 0 1 0 6m3 5v-2a4 4 0 0 0-3-3.87"
+              />
+            </svg>
+          ) : item.icon === "notes" ? (
+            <svg
+              class="h-5 w-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M14 3v5h5M9 13h6M9 17h6"
               />
             </svg>
           ) : item.icon === "users" ? (

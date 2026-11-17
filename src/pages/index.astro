@@ -9,6 +9,7 @@ import TransferenciasEntrantes from "../components/dashboard/TransferenciasEntra
 import PedidoForm from "../components/dashboard/PedidoForm.astro";
 import Historial from "../components/historial/Historial.astro";
 import Clientes from "../components/admin/Clientes.astro";
+import NotasVenta from "../components/admin/NotasVenta.astro";
 import Usuarios from "../components/admin/Usuarios.astro";
 import Tarifas from "../components/admin/Tarifas.astro";
 import Estadisticas from "../components/admin/Estadisticas.astro";
@@ -78,6 +79,13 @@ import Estadisticas from "../components/admin/Estadisticas.astro";
               class="hidden min-h-[calc(100dvh-4rem)] flex-col lg:h-full lg:min-h-0"
             >
               <Clientes />
+            </section>
+
+            <section
+              id="vista-notas-venta"
+              class="hidden min-h-[calc(100dvh-4rem)] flex-col lg:h-full lg:min-h-0"
+            >
+              <NotasVenta />
             </section>
 
             <section
@@ -185,6 +193,10 @@ import Estadisticas from "../components/admin/Estadisticas.astro";
       clientes: {
         element: document.getElementById("vista-clientes"),
         titulo: "Clientes",
+      },
+      "notas-venta": {
+        element: document.getElementById("vista-notas-venta"),
+        titulo: "Notas de venta",
       },
       usuarios: {
         element: document.getElementById("vista-usuarios"),

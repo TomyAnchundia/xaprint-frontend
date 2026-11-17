@@ -392,6 +392,7 @@
 </div>
 
 <script>
+  import { Popover } from "flowbite";
   import {
     iniciarPedidosStore,
     suscribirsePedidos,
@@ -410,6 +411,11 @@
   import { descargarNotaVentaPdf } from "../../utils/nota-venta-pdf";
   import { obtenerUsuario } from "../../services/auth";
   import { pedidoPerteneceAlArea } from "../../services/permisos";
+  import {
+    generarMensajeImpresionLista,
+    generarMensajePrecio,
+  } from "../../utils/pedido-detalle";
+  import { copiarMensaje } from "../../utils/pedido-detalle-ui";
   import {
     estados,
     formatearMedidas,
@@ -548,6 +554,7 @@
    * Pedidos recibidos del store.
    */
   let pedidosActuales: Pedido[] = [];
+  const popoversMensajes: { instance: Popover; element: HTMLElement }[] = [];
 
   /*
    * Determina si una fecha corresponde al día
@@ -1018,6 +1025,11 @@
     actualizarEstadoBotonesServicio();
     actualizarMensajeVacio();
     actualizarResumenSeleccion(pedidos);
+    popoversMensajes.forEach(({ instance, element }) => {
+      instance.destroyAndRemoveInstance();
+      element.remove();
+    });
+    popoversMensajes.length = 0;
 
     if (resultadosBusqueda) {
       const consultando = Boolean(nombreBuscado.trim());
@@ -1043,6 +1055,30 @@
 
       if (!fila) {
         return;
+      }
+
+      const botonMensajes = fila.querySelector<HTMLButtonElement>(
+        "[data-pedido-mensajes-trigger]",
+      );
+      const popoverMensajes = fila.querySelector<HTMLDivElement>(
+        "[data-pedido-mensajes-popover]",
+      );
+      if (botonMensajes && popoverMensajes) {
+        document.body.appendChild(popoverMensajes);
+        const instance = new Popover(
+          popoverMensajes,
+          botonMensajes,
+          {
+            placement: "bottom",
+            offset: 8,
+            triggerType: "hover",
+            onShow: () => botonMensajes.setAttribute("aria-expanded", "true"),
+            onHide: () => botonMensajes.setAttribute("aria-expanded", "false"),
+          },
+          { id: popoverMensajes.id, override: true },
+        );
+        botonMensajes.addEventListener("click", () => instance.show());
+        popoversMensajes.push({ instance, element: popoverMensajes });
       }
 
       const checkboxSeleccion = fila.querySelector<HTMLInputElement>(
@@ -1418,6 +1454,39 @@
    */
   document.addEventListener("click", async (event) => {
     const target = event.target as HTMLElement;
+
+    const botonMensaje =
+      target.closest<HTMLButtonElement>("button[data-copiar-mensaje]");
+
+    if (botonMensaje) {
+      event.stopPropagation();
+      const pedidoId = Number(botonMensaje.dataset.pedidoIdMensaje);
+      const pedido = pedidosActuales.find((actual) => actual.id === pedidoId);
+      const tipoMensaje = botonMensaje.dataset.copiarMensaje;
+
+      if (!pedido || (tipoMensaje !== "listo" && tipoMensaje !== "precio")) {
+        mostrarNotificacion(
+          "No se encontró el pedido para copiar el mensaje.",
+          "error",
+        );
+        return;
+      }
+
+      const mensaje =
+        tipoMensaje === "listo"
+          ? generarMensajeImpresionLista(pedido)
+          : generarMensajePrecio(pedido);
+      const textoOriginal =
+        tipoMensaje === "listo" ? "Impresión lista" : "Detalle del precio";
+
+      await copiarMensaje(
+        mensaje,
+        botonMensaje,
+        botonMensaje.querySelector("span"),
+        textoOriginal,
+      );
+      return;
+    }
 
     const botonEtiqueta =
       target.closest<HTMLButtonElement>("button[data-etiqueta]");

@@ -1,3 +1,4 @@
+import { jsPDF } from "jspdf";
 import type { NotaVenta } from "../services/api";
 import { formatearPrecio } from "./pedidos-lista";
 
@@ -33,10 +34,7 @@ async function cargarLogoParaPdf(): Promise<string> {
 }
 
 export async function descargarNotaVentaPdf(nota: NotaVenta): Promise<void> {
-  const [logo, { jsPDF }] = await Promise.all([
-    cargarLogoParaPdf(),
-    import("jspdf"),
-  ]);
+  const logo = await cargarLogoParaPdf();
   const pdf = new jsPDF();
   const margen = 18;
   const anchoPagina = pdf.internal.pageSize.getWidth();
@@ -164,15 +162,7 @@ export async function descargarNotaVentaPdf(nota: NotaVenta): Promise<void> {
   }
   posicionY += 7;
   pdf.setFillColor(245, 248, 247);
-  pdf.roundedRect(
-    margen + anchoContenido - 73,
-    posicionY,
-    73,
-    20,
-    2,
-    2,
-    "F",
-  );
+  pdf.roundedRect(margen + anchoContenido - 73, posicionY, 73, 20, 2, 2, "F");
   pdf.setTextColor(100, 116, 113);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(8);

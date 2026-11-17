@@ -16,6 +16,8 @@ let socket: Socket | null = null;
 
 let iniciado = false;
 
+let inicioEnCurso: Promise<void> | null = null;
+
 const listeners = new Set<Listener>();
 
 const connectionListeners = new Set<ConnectionListener>();
@@ -137,14 +139,24 @@ function conectarWebSocket() {
   socket.on("finanzasActualizadas", notificarDatosFinancierosActualizados);
 }
 
-export async function iniciarPedidosStore() {
+export function iniciarPedidosStore(): Promise<void> {
+  if (inicioEnCurso) {
+    return inicioEnCurso;
+  }
+
   if (iniciado) {
-    return;
+    return Promise.resolve();
   }
 
   iniciado = true;
 
   conectarWebSocket();
 
-  await cargarPedidos();
+  inicioEnCurso = cargarPedidos()
+    .then(() => undefined)
+    .finally(() => {
+      inicioEnCurso = null;
+    });
+
+  return inicioEnCurso;
 }

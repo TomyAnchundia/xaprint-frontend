@@ -1,0 +1,753 @@
+<section class="flex h-full min-h-0 flex-col gap-4">
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <p class="text-xs font-semibold uppercase text-cyan-800">
+        Pedidos pendientes de pago
+      </p>
+      <h2 class="mt-1 text-2xl font-bold text-slate-900">Notas de venta</h2>
+      <p class="mt-1 text-sm text-slate-500">
+        Selecciona pedidos no pagados por cliente para generar una nota.
+      </p>
+    </div>
+    <label class="group relative block w-full max-w-sm">
+      <span class="sr-only">Buscar cliente</span>
+      <svg
+        class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="7"></circle>
+        <path stroke-linecap="round" d="m20 20-4-4"></path>
+      </svg>
+      <input
+        id="notas-venta-buscar"
+        type="search"
+        autocomplete="off"
+        placeholder="Buscar por cliente o teléfono"
+        class="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
+      />
+    </label>
+  </header>
+
+  <div
+    id="notas-venta-lista"
+    class="min-h-0 flex-1 space-y-3 overflow-y-auto"
+  >
+    <p class="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">
+      Cargando pedidos...
+    </p>
+  </div>
+</section>
+
+<div
+  id="modal-nota-venta"
+  class="fixed inset-0 z-[200] hidden items-center justify-center p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modal-nota-venta-titulo"
+>
+  <div
+    id="modal-nota-venta-backdrop"
+    class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm"
+  >
+  </div>
+  <section
+    class="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+  >
+    <header
+      class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4"
+    >
+      <div>
+        <p class="text-xs font-semibold uppercase text-cyan-800">
+          Revisión de nota
+        </p>
+        <h3
+          id="modal-nota-venta-titulo"
+          class="mt-1 text-lg font-bold text-slate-900"
+        >
+          Detalle de pedidos
+        </h3>
+      </div>
+      <button
+        id="modal-nota-venta-cerrar"
+        type="button"
+        aria-label="Cerrar detalle"
+        class="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-600"
+      >
+        <svg
+          class="h-5 w-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="m6 6 12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+    </header>
+    <div
+      id="modal-nota-venta-detalle"
+      class="min-h-0 flex-1 overflow-y-auto p-5"
+    >
+    </div>
+    <p
+      id="modal-nota-venta-mensaje"
+      class="hidden px-5 pb-3 text-sm"
+      role="status"
+      aria-live="polite"
+    >
+    </p>
+    <footer
+      class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3"
+    >
+      <button
+        id="modal-nota-venta-cancelar"
+        type="button"
+        class="h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300"
+      >
+        Cerrar
+      </button>
+      <button
+        id="modal-nota-venta-descargar"
+        type="button"
+        class="h-10 rounded-lg bg-cyan-800 px-4 text-sm font-semibold text-white transition hover:bg-cyan-900 focus:outline-none focus:ring-2 focus:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Descargar PDF
+      </button>
+    </footer>
+  </section>
+</div>
+
+<script>
+  import {
+    emitirNotaVentaNoPagados,
+    type NotaVenta,
+  } from "../../services/api";
+  import {
+    iniciarPedidosStore,
+    obtenerPedidosStore,
+    suscribirsePedidos,
+  } from "../../services/pedidos-store";
+  import type { EstadoPedido, Pedido } from "../../types/pedido";
+  import { formatearFechaCorta } from "../../utils/fecha";
+  import {
+    escaparHtml,
+    formatearMedidas,
+    formatearPrecio,
+  } from "../../utils/pedidos-lista";
+  import { descargarNotaVentaPdf } from "../../utils/nota-venta-pdf";
+  import { mostrarNotificacion } from "../../utils/notificaciones";
+
+  interface GrupoCliente {
+    clienteId: number;
+    nombre: string;
+    telefono: string | null;
+    pedidos: Pedido[];
+  }
+
+  interface NotaEnRevision {
+    grupo: GrupoCliente;
+    pedidos: Pedido[];
+    notaEmitida: NotaVenta | null;
+  }
+
+  const lista = document.getElementById("notas-venta-lista");
+  const busqueda = document.getElementById(
+    "notas-venta-buscar",
+  ) as HTMLInputElement | null;
+  const modal = document.getElementById("modal-nota-venta");
+  const modalDetalle = document.getElementById("modal-nota-venta-detalle");
+  const modalMensaje = document.getElementById("modal-nota-venta-mensaje");
+  const modalCerrar = document.getElementById(
+    "modal-nota-venta-cerrar",
+  ) as HTMLButtonElement | null;
+  const modalCancelar = document.getElementById(
+    "modal-nota-venta-cancelar",
+  ) as HTMLButtonElement | null;
+  const modalDescargar = document.getElementById(
+    "modal-nota-venta-descargar",
+  ) as HTMLButtonElement | null;
+  const estadosElegibles: ReadonlySet<EstadoPedido> = new Set([
+    "REVISION",
+    "IMPRIMIENDO",
+    "LISTO",
+    "ENTREGADO",
+  ]);
+  const etiquetasEstado: Record<EstadoPedido, string> = {
+    REVISION: "Revisión",
+    IMPRIMIENDO: "Imprimiendo",
+    LISTO: "Listo",
+    ENTREGADO: "Entregado",
+    CANCELADO: "Cancelado",
+  };
+  const selecciones = new Map<number, Set<number>>();
+  const clavesSolicitud = new Map<number, string>();
+  const notasEmitidas = new Map<string, NotaVenta>();
+  const notasGenerandose = new Set<number>();
+  const mensajesEstado = new Map<
+    number,
+    { texto: string; tipo: "success" | "error" }
+  >();
+
+  let pedidosActuales: Pedido[] = [];
+  let pedidosCargados = false;
+  let errorCarga: string | null = null;
+  let notaEnRevision: NotaEnRevision | null = null;
+  let mensajeModal: { texto: string; tipo: "success" | "error" } | null = null;
+
+  function normalizar(valor: string): string {
+    return valor
+      .trim()
+      .toLocaleLowerCase("es")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function obtenerPrecio(pedido: Pedido): number | null {
+    const precio =
+      pedido.valorCobrar ?? pedido.precioEspecial ?? pedido.precioCalculado;
+    return typeof precio === "number" && Number.isFinite(precio)
+      ? precio
+      : null;
+  }
+
+  function agruparPedidosElegibles(): GrupoCliente[] {
+    const grupos = new Map<number, GrupoCliente>();
+
+    for (const pedido of pedidosActuales) {
+      if (
+        pedido.estadoPago !== "NO_PAGADO" ||
+        !estadosElegibles.has(pedido.estado) ||
+        !Number.isSafeInteger(pedido.cliente?.id) ||
+        pedido.cliente.id <= 0
+      ) {
+        continue;
+      }
+
+      let grupo = grupos.get(pedido.cliente.id);
+      if (!grupo) {
+        grupo = {
+          clienteId: pedido.cliente.id,
+          nombre: pedido.cliente.nombre,
+          telefono: pedido.cliente.telefono,
+          pedidos: [],
+        };
+        grupos.set(pedido.cliente.id, grupo);
+      }
+      grupo.pedidos.push(pedido);
+    }
+
+    return [...grupos.values()]
+      .map((grupo) => ({
+        ...grupo,
+        pedidos: grupo.pedidos.sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        ),
+      }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  }
+
+  function reconciliarSelecciones(grupos: GrupoCliente[]) {
+    const pedidosPorCliente = new Map(
+      grupos.map((grupo) => [
+        grupo.clienteId,
+        new Set(
+          grupo.pedidos
+            .filter((pedido) => obtenerPrecio(pedido) !== null)
+            .map((pedido) => pedido.id),
+        ),
+      ]),
+    );
+
+    for (const [clienteId, seleccion] of selecciones) {
+      const elegibles = pedidosPorCliente.get(clienteId);
+      let cambio = false;
+      for (const pedidoId of seleccion) {
+        if (!elegibles?.has(pedidoId)) {
+          seleccion.delete(pedidoId);
+          cambio = true;
+        }
+      }
+      if (cambio) {
+        clavesSolicitud.delete(clienteId);
+        mensajesEstado.delete(clienteId);
+      }
+      if (seleccion.size === 0) selecciones.delete(clienteId);
+    }
+  }
+
+  function obtenerSeleccion(clienteId: number): Set<number> {
+    let seleccion = selecciones.get(clienteId);
+    if (!seleccion) {
+      seleccion = new Set<number>();
+      selecciones.set(clienteId, seleccion);
+    }
+    return seleccion;
+  }
+
+  function obtenerFirmaNota(clienteId: number, pedidos: Pedido[]): string {
+    const ids = pedidos
+      .map((pedido) => pedido.id)
+      .sort((a, b) => a - b)
+      .join(",");
+    return `${clienteId}:${ids}`;
+  }
+
+  function renderizarModalNota() {
+    if (!notaEnRevision || !modalDetalle) return;
+
+    const { grupo, pedidos, notaEmitida } = notaEnRevision;
+    const procesando = notasGenerandose.has(grupo.clienteId);
+    const total = pedidos.reduce(
+      (suma, pedido) => suma + (obtenerPrecio(pedido) ?? 0),
+      0,
+    );
+    const titulo = document.getElementById("modal-nota-venta-titulo");
+    if (titulo) titulo.textContent = `Detalle para ${grupo.nombre}`;
+
+    modalDetalle.innerHTML = `
+      <div class="mb-4 rounded-lg bg-slate-50 p-4">
+        <p class="text-sm font-semibold text-slate-900">${escaparHtml(grupo.nombre)}</p>
+        ${
+          grupo.telefono
+            ? `<p class="mt-1 text-sm text-slate-500">${escaparHtml(grupo.telefono)}</p>`
+            : ""
+        }
+        <p class="mt-3 text-xs leading-5 text-slate-500">
+          Revisa los pedidos incluidos y el total antes de descargar el documento.
+          La nota es un comprobante interno no tributario.
+        </p>
+        ${
+          notaEmitida
+            ? `<p class="mt-2 text-sm font-semibold text-emerald-700">Nota ${escaparHtml(notaEmitida.numero)} emitida.</p>`
+            : ""
+        }
+      </div>
+      <ul class="divide-y divide-slate-100 rounded-lg border border-slate-200">
+        ${pedidos
+          .map((pedido) => `
+            <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-semibold text-slate-800">
+                  Pedido #${pedido.id} · ${pedido.servicio === "TEXTIL" ? "DTF textil" : "DTF UV"}
+                </p>
+                <p class="mt-1 text-xs text-slate-500">
+                  ${formatearMedidas(pedido)} · ${etiquetasEstado[pedido.estado]}
+                </p>
+              </div>
+              <p class="shrink-0 text-sm font-semibold tabular-nums text-slate-800">
+                ${formatearPrecio(obtenerPrecio(pedido))}
+              </p>
+            </li>
+          `)
+          .join("")}
+      </ul>
+      <div class="mt-4 flex items-center justify-between gap-3 rounded-lg bg-cyan-50 px-4 py-3">
+        <p class="text-sm font-semibold text-slate-700">Total a pagar</p>
+        <p class="text-lg font-bold tabular-nums text-cyan-900">${formatearPrecio(total)}</p>
+      </div>
+    `;
+
+    if (modalMensaje) {
+      modalMensaje.textContent = mensajeModal?.texto ?? "";
+      modalMensaje.classList.toggle("hidden", !mensajeModal);
+      modalMensaje.classList.toggle(
+        "text-red-700",
+        mensajeModal?.tipo === "error",
+      );
+      modalMensaje.classList.toggle(
+        "text-emerald-700",
+        mensajeModal?.tipo === "success",
+      );
+    }
+
+    if (modalDescargar) {
+      modalDescargar.disabled = procesando;
+      modalDescargar.textContent = procesando
+        ? "Generando y descargando..."
+        : notaEmitida
+          ? "Volver a descargar PDF"
+          : "Descargar PDF";
+    }
+    if (modalCerrar) modalCerrar.disabled = procesando;
+    if (modalCancelar) modalCancelar.disabled = procesando;
+  }
+
+  function abrirModalNota(clienteId: number) {
+    if (!modal || notasGenerandose.has(clienteId)) return;
+    const grupo = agruparPedidosElegibles().find(
+      (actual) => actual.clienteId === clienteId,
+    );
+    const seleccion = selecciones.get(clienteId);
+    const pedidos =
+      grupo?.pedidos.filter(
+        (pedido) => seleccion?.has(pedido.id) && obtenerPrecio(pedido) !== null,
+      ) ?? [];
+    if (!grupo || pedidos.length === 0) return;
+
+    const firma = obtenerFirmaNota(clienteId, pedidos);
+    notaEnRevision = {
+      grupo,
+      pedidos,
+      notaEmitida: notasEmitidas.get(firma) ?? null,
+    };
+    mensajeModal = null;
+    renderizarModalNota();
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    modalCerrar?.focus();
+  }
+
+  function cerrarModalNota() {
+    const clienteId = notaEnRevision?.grupo.clienteId;
+    if (clienteId !== undefined && notasGenerandose.has(clienteId)) return;
+    modal?.classList.add("hidden");
+    modal?.classList.remove("flex");
+    notaEnRevision = null;
+    mensajeModal = null;
+    if (clienteId !== undefined) {
+      lista
+        ?.querySelector<HTMLButtonElement>(
+          `[data-generar-nota="${clienteId}"]`,
+        )
+        ?.focus();
+    }
+  }
+
+  function renderizar() {
+    if (!lista) return;
+
+    if (!pedidosCargados) {
+      lista.innerHTML = `<p class="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">Cargando pedidos...</p>`;
+      return;
+    }
+    if (errorCarga) {
+      lista.innerHTML = `<p class="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">${escaparHtml(errorCarga)}</p>`;
+      return;
+    }
+
+    const todosLosGrupos = agruparPedidosElegibles();
+    reconciliarSelecciones(todosLosGrupos);
+    const consulta = normalizar(busqueda?.value ?? "");
+    const grupos = todosLosGrupos.filter((grupo) =>
+      normalizar(`${grupo.nombre} ${grupo.telefono ?? ""}`).includes(consulta),
+    );
+
+    if (grupos.length === 0) {
+      lista.innerHTML = `
+        <div class="rounded-xl border border-slate-200 bg-white p-8 text-center">
+          <p class="font-medium text-slate-700">
+            ${
+              todosLosGrupos.length === 0
+                ? "No hay pedidos no pagados en estos estados."
+                : "No se encontraron clientes con esa búsqueda."
+            }
+          </p>
+          <p class="mt-1 text-sm text-slate-500">
+            Se muestran pedidos en revisión, imprimiendo, listos o entregados.
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    lista.innerHTML = grupos
+      .map((grupo) => {
+        const seleccion = selecciones.get(grupo.clienteId) ?? new Set<number>();
+        const pedidosConPrecio = grupo.pedidos.filter(
+          (pedido) => obtenerPrecio(pedido) !== null,
+        );
+        const pedidosSeleccionados = pedidosConPrecio.filter((pedido) =>
+          seleccion.has(pedido.id),
+        );
+        const totalSeleccionado = Math.round(
+          pedidosSeleccionados.reduce(
+            (total, pedido) => total + (obtenerPrecio(pedido) ?? 0),
+            0,
+          ) * 100,
+        ) / 100;
+        const procesando = notasGenerandose.has(grupo.clienteId);
+
+        return `
+          <section
+            class="overflow-hidden rounded-xl border border-slate-200 bg-white"
+            aria-labelledby="notas-cliente-${grupo.clienteId}"
+          >
+            <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/70 px-4 py-3">
+              <div class="min-w-0">
+                <h3 id="notas-cliente-${grupo.clienteId}" class="truncate font-semibold text-slate-900">
+                  ${escaparHtml(grupo.nombre)}
+                </h3>
+                <p class="mt-0.5 text-xs text-slate-500">
+                  ${grupo.telefono ? escaparHtml(grupo.telefono) + " · " : ""}
+                  ${grupo.pedidos.length} ${grupo.pedidos.length === 1 ? "pedido" : "pedidos"} sin pagar
+                </p>
+              </div>
+              <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-600">
+                <input
+                  type="checkbox"
+                  data-seleccionar-cliente="${grupo.clienteId}"
+                  aria-label="Seleccionar todos los pedidos de ${escaparHtml(grupo.nombre)}"
+                  ${pedidosConPrecio.length > 0 && pedidosSeleccionados.length === pedidosConPrecio.length ? "checked" : ""}
+                  ${procesando || pedidosConPrecio.length === 0 ? "disabled" : ""}
+                  class="h-4 w-4 rounded border-slate-300 accent-cyan-700 focus:ring-cyan-600 disabled:cursor-not-allowed"
+                />
+                Seleccionar todos
+              </label>
+            </header>
+            <div class="divide-y divide-slate-100">
+              ${grupo.pedidos
+                .map((pedido) => {
+                  const precio = obtenerPrecio(pedido);
+                  return `
+                    <label class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 transition hover:bg-slate-50 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
+                      <input
+                        type="checkbox"
+                        data-seleccionar-pedido="${pedido.id}"
+                        data-cliente-id="${grupo.clienteId}"
+                        aria-label="Seleccionar pedido #${pedido.id}"
+                        ${seleccion.has(pedido.id) ? "checked" : ""}
+                        ${procesando || precio === null ? "disabled" : ""}
+                        class="h-4 w-4 rounded border-slate-300 accent-cyan-700 focus:ring-cyan-600 disabled:cursor-not-allowed"
+                      />
+                      <span class="min-w-0">
+                        <span class="block truncate text-sm font-semibold text-slate-800">
+                          Pedido #${pedido.id} · ${pedido.servicio === "TEXTIL" ? "DTF textil" : "DTF UV"}
+                        </span>
+                        <span class="mt-0.5 block text-xs text-slate-500">
+                          ${formatearMedidas(pedido)} · ${formatearFechaCorta(pedido.createdAt)}
+                        </span>
+                        ${
+                          precio === null
+                            ? `<span class="mt-1 block text-xs font-medium text-red-600">No tiene un precio confirmado</span>`
+                            : ""
+                        }
+                      </span>
+                      <span class="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-600">
+                        ${etiquetasEstado[pedido.estado]}
+                      </span>
+                      <span class="col-span-2 text-right text-sm font-semibold tabular-nums text-slate-800 sm:col-span-1">
+                        ${formatearPrecio(precio)}
+                      </span>
+                    </label>
+                  `;
+                })
+                .join("")}
+            </div>
+            <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3">
+              <div>
+                <p class="text-sm font-semibold text-slate-800">
+                  ${pedidosSeleccionados.length} ${pedidosSeleccionados.length === 1 ? "pedido seleccionado" : "pedidos seleccionados"}
+                  <span class="ml-1 font-normal text-slate-500">
+                    · ${formatearPrecio(totalSeleccionado)}
+                  </span>
+                </p>
+                <p
+                  data-nota-estado="${grupo.clienteId}"
+                  class="mt-1 text-xs ${
+                    mensajesEstado.get(grupo.clienteId)?.tipo === "error"
+                      ? "text-red-700"
+                      : "text-emerald-700"
+                  }"
+                  role="status"
+                  aria-live="polite"
+                >
+                  ${mensajesEstado.has(grupo.clienteId) ? escaparHtml(mensajesEstado.get(grupo.clienteId)!.texto) : ""}
+                </p>
+              </div>
+              <button
+                type="button"
+                data-generar-nota="${grupo.clienteId}"
+                ${procesando || pedidosSeleccionados.length === 0 ? "disabled" : ""}
+                class="rounded-lg bg-cyan-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-cyan-900 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ${procesando ? "Generando nota..." : "Revisar detalle"}
+              </button>
+            </footer>
+          </section>
+        `;
+      })
+      .join("");
+
+    for (const grupo of grupos) {
+      const seleccion = selecciones.get(grupo.clienteId) ?? new Set<number>();
+      const cantidadElegible = grupo.pedidos.filter(
+        (pedido) => obtenerPrecio(pedido) !== null,
+      ).length;
+      const seleccionarTodos = lista.querySelector<HTMLInputElement>(
+        `[data-seleccionar-cliente="${grupo.clienteId}"]`,
+      );
+      if (seleccionarTodos) {
+        seleccionarTodos.indeterminate =
+          seleccion.size > 0 && seleccion.size < cantidadElegible;
+      }
+    }
+  }
+
+  lista?.addEventListener("change", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+
+    const clienteId = Number(
+      target.dataset.clienteId ?? target.dataset.seleccionarCliente,
+    );
+    if (!Number.isSafeInteger(clienteId) || clienteId <= 0) return;
+
+    const grupo = agruparPedidosElegibles().find(
+      (actual) => actual.clienteId === clienteId,
+    );
+    if (!grupo || notasGenerandose.has(clienteId)) return;
+
+    const seleccion = obtenerSeleccion(clienteId);
+    if (target.matches("[data-seleccionar-cliente]")) {
+      if (target.checked) {
+        grupo.pedidos.forEach((pedido) => {
+          if (obtenerPrecio(pedido) !== null) seleccion.add(pedido.id);
+        });
+      } else {
+        seleccion.clear();
+      }
+    } else {
+      const pedidoId = Number(target.dataset.seleccionarPedido);
+      if (!Number.isSafeInteger(pedidoId)) return;
+      if (target.checked) seleccion.add(pedidoId);
+      else seleccion.delete(pedidoId);
+    }
+
+    clavesSolicitud.delete(clienteId);
+    mensajesEstado.delete(clienteId);
+    if (seleccion.size === 0) selecciones.delete(clienteId);
+    renderizar();
+  });
+
+  lista?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const boton = target.closest<HTMLButtonElement>("button[data-generar-nota]");
+    if (!boton) return;
+    event.preventDefault();
+    const clienteId = Number(boton.dataset.generarNota);
+    if (Number.isSafeInteger(clienteId) && clienteId > 0) {
+      abrirModalNota(clienteId);
+    }
+  });
+
+  modalCerrar?.addEventListener("click", cerrarModalNota);
+  modalCancelar?.addEventListener("click", cerrarModalNota);
+  document
+    .getElementById("modal-nota-venta-backdrop")
+    ?.addEventListener("click", cerrarModalNota);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && modal?.classList.contains("flex")) {
+      event.preventDefault();
+      cerrarModalNota();
+    }
+  });
+  modalDescargar?.addEventListener("click", () => {
+    void descargarNotaEnRevision();
+  });
+
+  async function descargarNotaEnRevision() {
+    const revision = notaEnRevision;
+    if (!revision || notasGenerandose.has(revision.grupo.clienteId)) return;
+    const { grupo, pedidos } = revision;
+    const clienteId = grupo.clienteId;
+    const firma = obtenerFirmaNota(clienteId, pedidos);
+    const idempotencyKey =
+      clavesSolicitud.get(clienteId) ?? crypto.randomUUID();
+    clavesSolicitud.set(clienteId, idempotencyKey);
+    notasGenerandose.add(clienteId);
+    mensajeModal = {
+      texto: "Emitiendo la nota de venta y preparando el PDF...",
+      tipo: "success",
+    };
+    mensajesEstado.set(clienteId, {
+      texto: "Emitiendo la nota de venta...",
+      tipo: "success",
+    });
+    renderizarModalNota();
+    renderizar();
+
+    try {
+      let nota = revision.notaEmitida;
+      if (!nota) {
+        const pedidosActualesPorId = new Map(
+          pedidosActuales.map((pedido) => [pedido.id, pedido]),
+        );
+        const seleccionSigueVigente = pedidos.every((pedido) => {
+          const actual = pedidosActualesPorId.get(pedido.id);
+          return (
+            actual?.cliente.id === clienteId &&
+            actual.estadoPago === "NO_PAGADO" &&
+            estadosElegibles.has(actual.estado) &&
+            obtenerPrecio(actual) === obtenerPrecio(pedido)
+          );
+        });
+        if (!seleccionSigueVigente) {
+          throw new Error(
+            "La selección cambió. Cierra el detalle, actualiza la lista y vuelve a revisar.",
+          );
+        }
+
+        nota = await emitirNotaVentaNoPagados(
+          pedidos.map((pedido) => pedido.id),
+          idempotencyKey,
+        );
+        revision.notaEmitida = nota;
+        notasEmitidas.set(firma, nota);
+        clavesSolicitud.delete(clienteId);
+      }
+      await descargarNotaVentaPdf(nota);
+      const mensaje = `Nota de venta ${nota.numero} descargada.`;
+      mensajeModal = { texto: mensaje, tipo: "success" };
+      mensajesEstado.set(clienteId, { texto: mensaje, tipo: "success" });
+      mostrarNotificacion(mensaje);
+    } catch (caught) {
+      const mensaje =
+        caught instanceof Error
+          ? `${revision.notaEmitida ? "No se pudo descargar el PDF" : "No se pudo generar la nota de venta"}: ${caught.message}`
+          : revision.notaEmitida
+            ? "No se pudo descargar el PDF."
+            : "No se pudo generar la nota de venta.";
+      mensajeModal = { texto: mensaje, tipo: "error" };
+      mensajesEstado.set(clienteId, { texto: mensaje, tipo: "error" });
+      mostrarNotificacion(mensaje, "error");
+    } finally {
+      notasGenerandose.delete(clienteId);
+      renderizarModalNota();
+      renderizar();
+    }
+  }
+
+  busqueda?.addEventListener("input", () => {
+    selecciones.clear();
+    clavesSolicitud.clear();
+    mensajesEstado.clear();
+    renderizar();
+  });
+
+  suscribirsePedidos((pedidos) => {
+    pedidosActuales = pedidos;
+    renderizar();
+  });
+
+  iniciarPedidosStore()
+    .then(() => {
+      pedidosActuales = obtenerPedidosStore();
+      pedidosCargados = true;
+      renderizar();
+    })
+    .catch((error: unknown) => {
+      console.error("No se pudieron cargar los pedidos para notas de venta:", error);
+      errorCarga = "No se pudieron cargar los pedidos.";
+      pedidosCargados = true;
+      renderizar();
+    });
+</script>

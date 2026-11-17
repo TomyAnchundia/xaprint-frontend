@@ -1174,9 +1174,6 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     const modalPagoMonto = document.getElementById(
       "modal-confirmar-pago-monto",
     );
-    const modalPagoMetodo = document.getElementById(
-      "modal-confirmar-pago-metodo",
-    ) as HTMLSelectElement | null;
     const modalPagoMetodoContenedor = document.getElementById(
       "modal-confirmar-pago-metodo-contenedor",
     );
@@ -1654,7 +1651,6 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       modoModalPago = modo;
       const esReversion = modo === "revertir";
       modalPagoMetodoContenedor?.classList.toggle("hidden", esReversion);
-      modalPagoMetodoContenedor?.classList.toggle("hidden", esReversion);
 
       if (modalPagoTitulo) {
         modalPagoTitulo.textContent = esReversion
@@ -1710,7 +1706,9 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
           modalPagoConfirmar.textContent = "Registrando...";
           await registrarPagoPedido(
             pedidoActual.id,
-            modalPagoMetodo?.value === "Transferencia"
+            modalPagoMetodoContenedor?.querySelector<HTMLInputElement>(
+              'input[name="metodo-pago-pedido"]:checked',
+            )?.value === "Transferencia"
               ? "Transferencia"
               : "Efectivo",
           );
