@@ -1,5 +1,6 @@
 import { io, type Socket } from "socket.io-client";
 import { obtenerToken } from "./auth";
+import { generarUuidV4 } from "../utils/uuid";
 
 const API_URL =
   import.meta.env.PUBLIC_API_URL ??
@@ -567,20 +568,6 @@ export function prepararRecepcionP2P(
   };
 }
 
-function crearIdTransferenciaArchivo(): string {
-  if (typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  bytes[6] = (bytes[6]! & 0x0f) | 0x40;
-  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
-  const hexadecimal = Array.from(bytes, (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
-  return `${hexadecimal.slice(0, 8)}-${hexadecimal.slice(8, 12)}-${hexadecimal.slice(12, 16)}-${hexadecimal.slice(16, 20)}-${hexadecimal.slice(20)}`;
-}
-
 export function suscribirseTransferencia<T>(
   evento: string,
   listener: (datos: T) => void,
@@ -653,7 +640,7 @@ export async function enviarArchivos(
     { canales: Map<string, RTCDataChannel>; cerrar: () => void } | undefined;
   try {
     const archivosTransferencia = archivos.map((archivo) => ({
-      id: crearIdTransferenciaArchivo(),
+      id: generarUuidV4(),
       nombreArchivo: archivo.name,
       tamano: archivo.size,
       tipo: archivo.type,

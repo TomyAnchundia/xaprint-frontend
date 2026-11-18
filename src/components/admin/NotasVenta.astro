@@ -166,6 +166,7 @@
   import { copiarImagenResumenPedidos } from "../../utils/resumen-pedidos-imagen";
   import { descargarNotaVentaPdf } from "../../utils/nota-venta-pdf";
   import { mostrarNotificacion } from "../../utils/notificaciones";
+  import { generarUuidV4 } from "../../utils/uuid";
 
   interface GrupoCliente {
     clienteId: number;
@@ -728,7 +729,7 @@
     const clienteId = revision.grupo.clienteId;
     const pedidos = obtenerPedidosEnRevisionActualizados(revision);
     const idempotencyKey =
-      clavesSolicitud.get(clienteId) ?? crypto.randomUUID();
+      clavesSolicitud.get(clienteId) ?? generarUuidV4();
     clavesSolicitud.set(clienteId, idempotencyKey);
     const nota = await emitirNotaVentaNoPagados(
       pedidos.map((pedido) => pedido.id),

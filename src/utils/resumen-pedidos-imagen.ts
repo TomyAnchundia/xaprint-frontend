@@ -23,6 +23,11 @@ export interface ResultadoCompartirResumen {
   motivo?: string;
 }
 
+export interface OpcionesCopiarImagenResumen {
+  descargarSiNoSePuedeCopiar?: boolean;
+  intentarEnContextoNoSeguro?: boolean;
+}
+
 function dibujarRectangulo(
   contexto: CanvasRenderingContext2D,
   x: number,
@@ -211,13 +216,18 @@ function descargarImagenResumen(imagen: Blob, cliente: string): void {
 
 export function copiarImagenResumenPedidos(
   resumen: ResumenPedidosImagen,
+  opciones: OpcionesCopiarImagenResumen = {},
 ): Promise<ResultadoCompartirResumen> {
   const imagenPromesa = generarImagenResumenPedidos(resumen);
-  const descargarAlternativa = async (
+  const descargarSiNoSePuedeCopiar =
+    opciones.descargarSiNoSePuedeCopiar ?? true;
+  const alternativa = async (
     error: unknown,
   ): Promise<ResultadoCompartirResumen> => {
     const imagen = await imagenPromesa;
-    descargarImagenResumen(imagen, resumen.cliente);
+    if (descargarSiNoSePuedeCopiar) {
+      descargarImagenResumen(imagen, resumen.cliente);
+    }
     return {
       copiada: false,
       motivo:
@@ -228,11 +238,11 @@ export function copiarImagenResumenPedidos(
   };
 
   if (
-    !window.isSecureContext ||
+    (!window.isSecureContext && !opciones.intentarEnContextoNoSeguro) ||
     !navigator.clipboard?.write ||
     typeof ClipboardItem === "undefined"
   ) {
-    return descargarAlternativa(
+    return alternativa(
       new Error("Este navegador no permite copiar imágenes al portapapeles."),
     );
   }
@@ -242,9 +252,9 @@ export function copiarImagenResumenPedidos(
       .write([new ClipboardItem({ "image/png": imagenPromesa })])
       .then(
         () => ({ copiada: true }),
-        (error: unknown) => descargarAlternativa(error),
+        (error: unknown) => alternativa(error),
       );
   } catch (error) {
-    return descargarAlternativa(error);
+    return alternativa(error);
   }
 }

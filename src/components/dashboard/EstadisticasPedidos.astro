@@ -1,4 +1,4 @@
-<section id="estadisticas-pedidos" class="space-y-2">
+<section id="estadisticas-pedidos" class="space-y-1 sm:space-y-2">
   <div class="flex justify-end">
     <button
       id="estadisticas-sonido"
@@ -40,49 +40,85 @@
     </button>
   </div>
 
-  <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+  <div class="grid grid-cols-4 gap-1 sm:gap-2">
     <article
       id="stat-articulo-revision"
-      class="stat-card flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2"
+      class="stat-card flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border border-slate-200 bg-white px-1 py-1.5 sm:flex-row sm:justify-between sm:gap-2 sm:px-3 sm:py-2"
     >
-      <div>
-        <p class="text-xs font-semibold text-slate-700">En revisión</p>
-        <p class="text-[10px] text-slate-500">Requieren atención</p>
+      <div class="min-w-0 text-center sm:text-left">
+        <p
+          class="whitespace-nowrap text-[10px] font-semibold leading-tight text-slate-700 sm:text-xs"
+        >
+          En revisión
+        </p>
+        <p class="hidden text-[10px] text-slate-500 sm:block">Requieren atención</p>
       </div>
-      <p id="stat-en-revision" class="text-2xl font-bold text-slate-900">—</p>
+      <p
+        id="stat-en-revision"
+        class="text-lg font-bold leading-none text-slate-900 sm:text-2xl"
+      >
+        —
+      </p>
     </article>
 
     <article
       id="stat-articulo-impresion"
-      class="stat-card flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2"
+      class="stat-card flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border border-slate-200 bg-white px-1 py-1.5 sm:flex-row sm:justify-between sm:gap-2 sm:px-3 sm:py-2"
     >
-      <div>
-        <p class="text-xs font-semibold text-slate-700">En impresión</p>
-        <p class="text-[10px] text-slate-500">Trabajos activos</p>
+      <div class="min-w-0 text-center sm:text-left">
+        <p
+          class="whitespace-nowrap text-[10px] font-semibold leading-tight text-slate-700 sm:text-xs"
+        >
+          En impresión
+        </p>
+        <p class="hidden text-[10px] text-slate-500 sm:block">Trabajos activos</p>
       </div>
-      <p id="stat-en-impresion" class="text-2xl font-bold text-slate-900">—</p>
+      <p
+        id="stat-en-impresion"
+        class="text-lg font-bold leading-none text-slate-900 sm:text-2xl"
+      >
+        —
+      </p>
     </article>
 
     <article
       id="stat-articulo-listos"
-      class="stat-card flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2"
+      class="stat-card flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border border-slate-200 bg-white px-1 py-1.5 sm:flex-row sm:justify-between sm:gap-2 sm:px-3 sm:py-2"
     >
-      <div>
-        <p class="text-xs font-semibold text-slate-700">Listos</p>
-        <p class="text-[10px] text-slate-500">Esperando entrega</p>
+      <div class="min-w-0 text-center sm:text-left">
+        <p
+          class="whitespace-nowrap text-[10px] font-semibold leading-tight text-slate-700 sm:text-xs"
+        >
+          Listos
+        </p>
+        <p class="hidden text-[10px] text-slate-500 sm:block">Esperando entrega</p>
       </div>
-      <p id="stat-listos" class="text-2xl font-bold text-slate-900">—</p>
+      <p
+        id="stat-listos"
+        class="text-lg font-bold leading-none text-slate-900 sm:text-2xl"
+      >
+        —
+      </p>
     </article>
 
     <article
       id="stat-articulo-entregados"
-      class="stat-card flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2"
+      class="stat-card flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border border-slate-200 bg-white px-1 py-1.5 sm:flex-row sm:justify-between sm:gap-2 sm:px-3 sm:py-2"
     >
-      <div>
-        <p class="text-xs font-semibold text-slate-700">Entregados</p>
-        <p class="text-[10px] text-slate-500">Pedidos completados</p>
+      <div class="min-w-0 text-center sm:text-left">
+        <p
+          class="whitespace-nowrap text-[10px] font-semibold leading-tight text-slate-700 sm:text-xs"
+        >
+          Entregados
+        </p>
+        <p class="hidden text-[10px] text-slate-500 sm:block">Pedidos completados</p>
       </div>
-      <p id="stat-entregados" class="text-2xl font-bold text-slate-900">—</p>
+      <p
+        id="stat-entregados"
+        class="text-lg font-bold leading-none text-slate-900 sm:text-2xl"
+      >
+        —
+      </p>
     </article>
   </div>
 </section>

@@ -25,6 +25,16 @@ body {
   background: #f8fafc;
 }
 
+html:has(.dashboard-shell),
+body:has(.dashboard-shell) {
+  overflow: hidden;
+}
+
+body:has(.dashboard-shell) {
+  height: 100dvh;
+  min-height: 0;
+}
+
 .stat-card {
   border-color: #d7e9e8;
   background-color: #f7fbfb;
@@ -41,6 +51,10 @@ textarea {
 button,
 a {
   -webkit-tap-highlight-color: transparent;
+}
+
+.material-symbols-rounded.pedido-accion-icono {
+  font-size: 16px;
 }
 
 ::selection {
@@ -84,8 +98,8 @@ html[data-theme="dark"] .pedido-row:focus-visible .pedido-precio {
   color: #e4e4e7;
 }
 
-html[data-theme="dark"] .pedido-row:hover .pedido-accion,
-html[data-theme="dark"] .pedido-row:focus-visible .pedido-accion {
+html[data-theme="dark"] .pedido-accion:hover,
+html[data-theme="dark"] .pedido-accion:focus-visible {
   border-color: #52525b;
   background-color: #27272a;
   color: #e4e4e7;
@@ -700,24 +714,6 @@ html[data-theme="dark"]
   .group:hover
   [class~="group-hover:text-cyan-800"] {
   color: #93c5fd;
-}
-
-@media (max-width: 1023px) {
-  .dashboard-main {
-    overflow: visible;
-  }
-
-  .dashboard-views > section:not(#vista-pedidos) {
-    height: auto;
-  }
-
-  .dashboard-views > section:not(#vista-pedidos) > :first-child {
-    height: auto;
-  }
-
-  .dashboard-views > section:not(#vista-pedidos) > :first-child > .grid {
-    flex: none;
-  }
 }
 
 @media (max-width: 639px) {

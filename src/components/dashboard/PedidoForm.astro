@@ -104,15 +104,10 @@ const { mode = "crear" } = Astro.props;
                   type="button"
                   class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 sm:w-auto"
                 >
-                  <svg
-                    class="h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path d="M12 5v14M5 12h14"></path>
-                  </svg>
+                  <span
+                    class="material-symbols-rounded text-[18px] leading-none"
+                    aria-hidden="true"
+                  >add</span>
 
                   Nuevo cliente
                 </button>
@@ -557,9 +552,21 @@ const { mode = "crear" } = Astro.props;
           <button
             id="guardar-pedido"
             type="submit"
-            class="min-h-11 rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {mode === "editar" ? "Guardar cambios" : "Crear pedido"}
+            {
+              mode === "editar" ? null : (
+                <span
+                  class="material-symbols-rounded text-[18px] leading-none"
+                  aria-hidden="true"
+                >
+                  add
+                </span>
+              )
+            }
+            <span>
+              {mode === "editar" ? "Guardar cambios" : "Crear pedido"}
+            </span>
           </button>
         </div>
       </form>
@@ -931,9 +938,17 @@ const { mode = "crear" } = Astro.props;
     }
 
     if (btnGuardarPedido) {
-      btnGuardarPedido.textContent = esEdicion
-        ? "Guardar cambios"
-        : "Crear pedido";
+      const icono = document.createElement("span");
+      icono.className = "material-symbols-rounded text-[18px] leading-none";
+      icono.setAttribute("aria-hidden", "true");
+      icono.textContent = "add";
+
+      const texto = document.createElement("span");
+      texto.textContent = esEdicion ? "Guardar cambios" : "Crear pedido";
+
+      btnGuardarPedido.replaceChildren(
+        ...(esEdicion ? [texto] : [icono, texto]),
+      );
     }
   }
 
@@ -1588,6 +1603,7 @@ const { mode = "crear" } = Astro.props;
         false,
         modoActual === "editar" ? "Guardar cambios" : "Crear pedido",
       );
+      actualizarTextosModal();
     }
   });
 

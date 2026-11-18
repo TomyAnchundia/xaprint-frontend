@@ -8,10 +8,23 @@ const periodosFinancieros = [
   ["mes-anterior", "Mes anterior"],
   ["mes", "Este mes"],
 ];
+
+const serviciosGraficos = [
+  { id: "textil31", titulo: "Textil 31 cm", color: "bg-cyan-600" },
+  { id: "textil58", titulo: "Textil 58 cm", color: "bg-blue-600" },
+  { id: "uv", titulo: "UV 29 cm", color: "bg-amber-500" },
+];
+
+const indicadoresProduccion = [
+  { id: "metros", titulo: "Metros producidos" },
+  { id: "total", titulo: "Valor a cobrar" },
+  { id: "aporteDesarrollador", titulo: "Aporte" },
+  { id: "ingresoNegocio", titulo: "Ingreso negocio" },
+];
 ---
 
-<section class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1">
-  <header class="flex flex-wrap items-end justify-between gap-3">
+<section class="flex h-full min-h-0 flex-col gap-4 overflow-hidden pr-1">
+  <header class="flex shrink-0 flex-wrap items-end justify-between gap-3">
     <div>
       <p class="text-[10px] font-semibold uppercase text-cyan-800 sm:text-xs">
         Finanzas y producción
@@ -52,12 +65,12 @@ const periodosFinancieros = [
 
   <div
     id="estadisticas-error"
-    class="hidden rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    class="hidden shrink-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
     role="alert"
   >
   </div>
 
-  <section class="space-y-2" aria-label="Cobros y saldos por período">
+  <section class="shrink-0 space-y-2" aria-label="Cobros y saldos por período">
     <div
       class="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1"
       role="group"
@@ -78,82 +91,161 @@ const periodosFinancieros = [
       }
     </div>
 
-    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3 sm:gap-3">
-      {
-        periodosFinancieros.map(([id, titulo]) => (
-          <article
-            data-periodo-card={id}
-            aria-labelledby={`estadisticas-tab-${id}`}
-            class:list={[
-              "stat-card rounded-lg border border-slate-200 bg-white p-3 sm:p-4",
-              { hidden: id !== "hoy" },
-            ]}
-          >
-            <h3 class="text-xs font-semibold text-slate-700 sm:text-sm">
-              {titulo}
-            </h3>
-            <dl class="mt-2 grid grid-cols-2 gap-3">
-              <div>
-                <dt class="text-[11px] text-slate-500">Cobrado</dt>
-                <dd
-                  data-cobrado={id}
-                  class="mt-0.5 text-lg font-bold tabular-nums text-slate-900"
-                >
-                  —
-                </dd>
-              </div>
-              <div>
-                <dt class="text-[11px] text-slate-500">Por cobrar</dt>
-                <dd
-                  data-por-cobrar={id}
-                  class="mt-0.5 text-lg font-bold tabular-nums text-amber-800"
-                >
-                  —
-                </dd>
-                <p
-                  data-pedidos={id}
-                  class="mt-0.5 text-[10px] leading-snug text-slate-500"
-                >
-                  — pedidos con saldo
-                </p>
-              </div>
-              <div>
-                <dt class="text-[11px] text-slate-500">Efectivo</dt>
-                <dd
-                  data-efectivo={id}
-                  class="mt-0.5 text-base font-bold tabular-nums text-emerald-800"
-                >
-                  —
-                </dd>
-              </div>
-              <div>
-                <dt class="text-[11px] text-slate-500">Transferencia</dt>
-                <dd
-                  data-transferencia={id}
-                  class="mt-0.5 text-base font-bold tabular-nums text-blue-800"
-                >
-                  —
-                </dd>
-              </div>
-              <div>
-                <dt class="text-[11px] text-slate-500">Costo de diseño</dt>
-                <dd
-                  data-costo-diseno={id}
-                  class="mt-0.5 text-base font-bold tabular-nums text-cyan-900"
-                >
-                  —
-                </dd>
-                <dd
-                  data-costo-diseno-pedidos={id}
-                  class="text-[10px] text-slate-500"
-                >
-                  — pedidos
-                </dd>
-              </div>
-            </dl>
-          </article>
-        ))
-      }
+    <div class="grid gap-2 sm:gap-3 lg:grid-cols-2">
+      <div class="grid grid-cols-1 gap-2 sm:gap-3">
+        {
+          periodosFinancieros.map(([id, titulo]) => (
+            <article
+              data-periodo-card={id}
+              aria-labelledby={`estadisticas-tab-${id}`}
+              class:list={[
+                "stat-card rounded-lg border border-slate-200 bg-white p-3 sm:p-4",
+                { hidden: id !== "hoy" },
+              ]}
+            >
+              <h3 class="text-xs font-semibold text-slate-700 sm:text-sm">
+                {titulo}
+              </h3>
+              <dl class="mt-2 grid grid-cols-2 gap-3">
+                <div>
+                  <dt class="text-[11px] text-slate-500">Cobrado</dt>
+                  <dd
+                    data-cobrado={id}
+                    class="mt-0.5 text-lg font-bold tabular-nums text-slate-900"
+                  >
+                    —
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-[11px] text-slate-500">Por cobrar</dt>
+                  <dd
+                    data-por-cobrar={id}
+                    class="mt-0.5 text-lg font-bold tabular-nums text-amber-800"
+                  >
+                    —
+                  </dd>
+                  <p
+                    data-pedidos={id}
+                    class="mt-0.5 text-[10px] leading-snug text-slate-500"
+                  >
+                    — pedidos con saldo
+                  </p>
+                </div>
+                <div>
+                  <dt class="text-[11px] text-slate-500">Efectivo</dt>
+                  <dd
+                    data-efectivo={id}
+                    class="mt-0.5 text-base font-bold tabular-nums text-emerald-800"
+                  >
+                    —
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-[11px] text-slate-500">Transferencia</dt>
+                  <dd
+                    data-transferencia={id}
+                    class="mt-0.5 text-base font-bold tabular-nums text-blue-800"
+                  >
+                    —
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-[11px] text-slate-500">Costo de diseño</dt>
+                  <dd
+                    data-costo-diseno={id}
+                    class="mt-0.5 text-base font-bold tabular-nums text-cyan-900"
+                  >
+                    —
+                  </dd>
+                  <dd
+                    data-costo-diseno-pedidos={id}
+                    class="text-[10px] text-slate-500"
+                  >
+                    — pedidos
+                  </dd>
+                </div>
+              </dl>
+            </article>
+          ))
+        }
+      </div>
+
+      <aside
+        class="hidden rounded-lg border border-slate-200 bg-white p-3 lg:block sm:p-4"
+        aria-labelledby="grafico-financiero-titulo"
+      >
+        <h3
+          id="grafico-financiero-titulo"
+          class="text-xs font-bold text-slate-800 sm:text-sm"
+        >
+          Distribución de montos
+        </h3>
+        <p class="mt-0.5 text-[10px] text-slate-500">
+          Valores del período seleccionado, en USD.
+        </p>
+        <ul class="mt-4 space-y-3">
+          <li>
+            <div class="flex items-center justify-between gap-2 text-xs">
+              <span class="flex items-center gap-2 font-medium text-slate-700">
+                <span class="h-2.5 w-2.5 rounded-full bg-cyan-600"></span>
+                Cobrado
+              </span>
+              <span data-finance-value="cobrado" class="font-semibold tabular-nums text-slate-800">—</span>
+            </div>
+            <div data-finance-meter="cobrado" class="mt-1 h-2 overflow-hidden rounded-full bg-slate-100" role="meter" aria-label="Cobrado" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+              <span data-finance-bar="cobrado" class="block h-full w-0 rounded-full bg-cyan-600 transition-[width] duration-300"></span>
+            </div>
+          </li>
+          <li>
+            <div class="flex items-center justify-between gap-2 text-xs">
+              <span class="flex items-center gap-2 font-medium text-slate-700">
+                <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+                Por cobrar
+              </span>
+              <span data-finance-value="porCobrar" class="font-semibold tabular-nums text-slate-800">—</span>
+            </div>
+            <div data-finance-meter="porCobrar" class="mt-1 h-2 overflow-hidden rounded-full bg-slate-100" role="meter" aria-label="Por cobrar" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+              <span data-finance-bar="porCobrar" class="block h-full w-0 rounded-full bg-amber-500 transition-[width] duration-300"></span>
+            </div>
+          </li>
+          <li>
+            <div class="flex items-center justify-between gap-2 text-xs">
+              <span class="flex items-center gap-2 font-medium text-slate-700">
+                <span class="h-2.5 w-2.5 rounded-full bg-emerald-600"></span>
+                Efectivo
+              </span>
+              <span data-finance-value="efectivo" class="font-semibold tabular-nums text-slate-800">—</span>
+            </div>
+            <div data-finance-meter="efectivo" class="mt-1 h-2 overflow-hidden rounded-full bg-slate-100" role="meter" aria-label="Efectivo" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+              <span data-finance-bar="efectivo" class="block h-full w-0 rounded-full bg-emerald-600 transition-[width] duration-300"></span>
+            </div>
+          </li>
+          <li>
+            <div class="flex items-center justify-between gap-2 text-xs">
+              <span class="flex items-center gap-2 font-medium text-slate-700">
+                <span class="h-2.5 w-2.5 rounded-full bg-blue-600"></span>
+                Transferencia
+              </span>
+              <span data-finance-value="transferencia" class="font-semibold tabular-nums text-slate-800">—</span>
+            </div>
+            <div data-finance-meter="transferencia" class="mt-1 h-2 overflow-hidden rounded-full bg-slate-100" role="meter" aria-label="Transferencia" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+              <span data-finance-bar="transferencia" class="block h-full w-0 rounded-full bg-blue-600 transition-[width] duration-300"></span>
+            </div>
+          </li>
+          <li>
+            <div class="flex items-center justify-between gap-2 text-xs">
+              <span class="flex items-center gap-2 font-medium text-slate-700">
+                <span class="h-2.5 w-2.5 rounded-full bg-violet-600"></span>
+                Costo de diseño
+              </span>
+              <span data-finance-value="costoDiseno" class="font-semibold tabular-nums text-slate-800">—</span>
+            </div>
+            <div data-finance-meter="costoDiseno" class="mt-1 h-2 overflow-hidden rounded-full bg-slate-100" role="meter" aria-label="Costo de diseño" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+              <span data-finance-bar="costoDiseno" class="block h-full w-0 rounded-full bg-violet-600 transition-[width] duration-300"></span>
+            </div>
+          </li>
+        </ul>
+      </aside>
     </div>
 
     <div
@@ -299,10 +391,10 @@ const periodosFinancieros = [
     </div>
 
     <section
-      class="overflow-hidden rounded-xl border border-slate-200 bg-white"
+      class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white"
     >
       <div
-        class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3"
+        class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3"
       >
         <div>
           <h3 class="text-sm font-bold text-slate-900">Producción lista</h3>
@@ -333,7 +425,7 @@ const periodosFinancieros = [
       </div>
 
       <dl
-        class="grid grid-cols-2 gap-3 border-b border-slate-200 bg-slate-50 p-4 md:hidden"
+        class="grid shrink-0 grid-cols-2 gap-3 border-b border-slate-200 bg-slate-50 p-4 md:hidden"
         aria-label="Total producción"
       >
         <div class="col-span-2 flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2">
@@ -374,40 +466,122 @@ const periodosFinancieros = [
         </div>
       </dl>
 
-      <div class="overflow-x-auto">
-        <table class="w-full min-w-160 text-left text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-500">
-            <tr>
-              <th class="px-4 py-3 font-semibold"> Servicio </th>
+      <div
+        class="grid min-h-0 flex-1 grid-rows-1 gap-3 lg:grid-cols-[minmax(0,1.8fr)_minmax(15rem,1fr)]"
+      >
+        <div class="min-h-0 min-w-0 overflow-x-auto">
+          <table class="w-full min-w-160 text-left text-sm">
+            <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th class="px-4 py-3 font-semibold"> Servicio </th>
 
-              <th class="px-4 py-3 text-right font-semibold"> Metros </th>
+                <th class="px-4 py-3 text-right font-semibold"> Metros </th>
 
-              <th class="px-4 py-3 text-right font-semibold">
-                Valor a cobrar
-              </th>
+                <th class="px-4 py-3 text-right font-semibold">
+                  Valor a cobrar
+                </th>
 
-              <th class="px-4 py-3 text-right font-semibold"> Aporte </th>
+                <th class="px-4 py-3 text-right font-semibold"> Aporte </th>
 
-              <th class="px-4 py-3 text-right font-semibold">
-                Ingreso negocio
-              </th>
-            </tr>
-          </thead>
+                <th class="px-4 py-3 text-right font-semibold">
+                  Ingreso negocio
+                </th>
+              </tr>
+            </thead>
 
-          <tbody id="estadisticas-produccion" class="divide-y divide-slate-100">
-            <tr>
-              <td colspan="5" class="px-4 py-8 text-center text-slate-500">
-                Cargando estadísticas...
-              </td>
-            </tr>
-          </tbody>
+            <tbody
+              id="estadisticas-produccion"
+              class="divide-y divide-slate-100"
+            >
+              <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-slate-500">
+                  Cargando estadísticas...
+                </td>
+              </tr>
+            </tbody>
 
-          <tfoot
-            id="estadisticas-produccion-total"
-            class="hidden bg-slate-50 font-bold text-slate-900 md:table-footer-group"
+            <tfoot
+              id="estadisticas-produccion-total"
+              class="hidden bg-slate-50 font-bold text-slate-900 md:table-footer-group"
+            >
+            </tfoot>
+          </table>
+        </div>
+
+        <aside
+          class="hidden min-w-0 border-t border-slate-200 bg-slate-50 p-3 lg:block lg:border-l lg:border-t-0"
+          aria-labelledby="grafico-produccion-titulo"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h3
+                id="grafico-produccion-titulo"
+                class="text-xs font-bold text-slate-800"
+              >
+                Producción por servicio
+              </h3>
+              <p class="mt-0.5 text-[10px] text-slate-500">
+                Compara un indicador para la fecha seleccionada.
+              </p>
+            </div>
+            <label class="text-[10px] font-semibold text-slate-600">
+              Indicador
+              <select
+                id="estadisticas-grafico-metrica"
+                class="mt-0.5 block h-8 max-w-full rounded-md border border-slate-200 bg-white px-2 text-[11px] font-medium text-slate-700 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
+              >
+                {
+                  indicadoresProduccion.map(({ id, titulo }) => (
+                    <option value={id}>{titulo}</option>
+                  ))
+                }
+              </select>
+            </label>
+          </div>
+
+          <p
+            data-production-total
+            class="mt-3 text-lg font-bold tabular-nums text-slate-900"
           >
-          </tfoot>
-        </table>
+            —
+          </p>
+          <ul class="mt-2 space-y-3">
+            {
+              serviciosGraficos.map((servicio) => (
+                <li>
+                  <div class="flex items-center justify-between gap-2 text-[10px]">
+                    <span class="flex min-w-0 items-center gap-2 font-medium text-slate-600">
+                      <span
+                        class={`h-2.5 w-2.5 shrink-0 rounded-full ${servicio.color}`}
+                      />
+                      <span class="truncate">{servicio.titulo}</span>
+                    </span>
+                    <span
+                      data-production-value={servicio.id}
+                      class="shrink-0 font-semibold tabular-nums text-slate-800"
+                    >
+                      —
+                    </span>
+                  </div>
+                  <div
+                    data-production-meter={servicio.id}
+                    class="mt-1 h-2 overflow-hidden rounded-full bg-slate-100"
+                    role="meter"
+                    aria-label={servicio.titulo}
+                    aria-valuemin="0"
+                    aria-valuemax="1"
+                    aria-valuenow="0"
+                  >
+                    <span
+                      data-production-bar={servicio.id}
+                      class={`block h-full w-0 rounded-full ${servicio.color} transition-[width] duration-300`}
+                    />
+                  </div>
+                </li>
+              ))
+            }
+          </ul>
+        </aside>
       </div>
     </section>
   </section>
@@ -418,6 +592,7 @@ const periodosFinancieros = [
       obtenerResumenPagosPeriodo,
       obtenerResumenProduccion,
       registrarPagoDesarrollador,
+      type ResumenPagosPeriodo,
       type ResumenProduccionItem,
     } from "../../services/api";
     import { suscribirsePedidos } from "../../services/pedidos-store";
@@ -434,6 +609,9 @@ const periodosFinancieros = [
     const cuerpo = document.getElementById("estadisticas-produccion");
     const pie = document.getElementById("estadisticas-produccion-total");
     const error = document.getElementById("estadisticas-error");
+    const selectorGraficoProduccion = document.getElementById(
+      "estadisticas-grafico-metrica",
+    ) as HTMLSelectElement | null;
 
     const metrosTotal = document.getElementById("estadisticas-total-metros");
     const metrosTotalMovil = document.getElementById(
@@ -480,6 +658,16 @@ const periodosFinancieros = [
     );
     let solicitudAporte = 0;
     let solicitudFinanciera = 0;
+    let solicitudProduccion = 0;
+    let periodoFinancieroSeleccionado = "hoy";
+    let produccionActual:
+      | Awaited<ReturnType<typeof obtenerResumenProduccion>>
+      | null = null;
+    const costosDisenoPorPeriodo = new Map<string, number>();
+    const resumenesFinancieros = new Map<
+      string,
+      ResumenPagosPeriodo & { costoDiseno: number }
+    >();
 
     function fechaEcuador() {
       const partes = new Intl.DateTimeFormat("en-CA", {
@@ -501,6 +689,171 @@ const periodosFinancieros = [
         currency: "USD",
       }).format(valor);
     }
+
+    function limpiarGraficoFinanciero() {
+      document.querySelectorAll<HTMLElement>("[data-finance-value]").forEach((el) => {
+        el.textContent = "—";
+      });
+      document.querySelectorAll<HTMLElement>("[data-finance-bar]").forEach((el) => {
+        el.style.width = "0%";
+      });
+      document.querySelectorAll<HTMLElement>("[data-finance-meter]").forEach((el) => {
+        el.setAttribute("aria-valuemax", "1");
+        el.setAttribute("aria-valuenow", "0");
+        el.setAttribute("aria-valuetext", "Sin datos");
+      });
+    }
+
+    function actualizarGraficoFinanciero() {
+      const resumen = resumenesFinancieros.get(periodoFinancieroSeleccionado);
+      if (!resumen) {
+        limpiarGraficoFinanciero();
+        return;
+      }
+
+      const indicadores = [
+        { id: "cobrado", valor: resumen.cobrado },
+        { id: "porCobrar", valor: resumen.porCobrar },
+        { id: "efectivo", valor: resumen.efectivo },
+        { id: "transferencia", valor: resumen.transferencia },
+        { id: "costoDiseno", valor: resumen.costoDiseno },
+      ];
+      const maximo = Math.max(
+        ...indicadores.map(({ valor }) => Math.max(0, valor)),
+        0,
+      );
+
+      indicadores.forEach(({ id, valor }) => {
+        const valorSeguro = Math.max(0, valor);
+        const texto = moneda(valor);
+        const etiqueta = document.querySelector(
+          `[data-finance-value="${id}"]`,
+        );
+        const barra = document.querySelector<HTMLElement>(
+          `[data-finance-bar="${id}"]`,
+        );
+        const medidor = document.querySelector<HTMLElement>(
+          `[data-finance-meter="${id}"]`,
+        );
+
+        if (etiqueta) etiqueta.textContent = texto;
+        if (barra) {
+          barra.style.width = `${maximo > 0 ? (valorSeguro / maximo) * 100 : 0}%`;
+        }
+        if (medidor) {
+          medidor.setAttribute("aria-valuemax", String(maximo || 1));
+          medidor.setAttribute("aria-valuenow", String(valorSeguro));
+          medidor.setAttribute("aria-valuetext", texto);
+        }
+      });
+    }
+
+    function limpiarGraficoProduccion() {
+      produccionActual = null;
+      const total = document.querySelector<HTMLElement>(
+        "[data-production-total]",
+      );
+      if (total) total.textContent = "—";
+      document
+        .querySelectorAll<HTMLElement>("[data-production-value]")
+        .forEach((el) => {
+          el.textContent = "—";
+        });
+      document
+        .querySelectorAll<HTMLElement>("[data-production-bar]")
+        .forEach((el) => {
+          el.style.width = "0%";
+        });
+      document
+        .querySelectorAll<HTMLElement>("[data-production-meter]")
+        .forEach((el) => {
+          el.setAttribute("aria-valuemax", "1");
+          el.setAttribute("aria-valuenow", "0");
+          el.setAttribute("aria-valuetext", "Sin datos");
+        });
+    }
+
+    function actualizarGraficoProduccion(
+      produccion: Awaited<ReturnType<typeof obtenerResumenProduccion>>,
+    ) {
+      produccionActual = produccion;
+      const indicadores = [
+        {
+          id: "metros",
+          total: produccion.totalGeneral.metros,
+          valor: (resumen: ResumenProduccionItem) => resumen.metros,
+          formato: (valor: number) => `${valor.toFixed(2)} m`,
+        },
+        {
+          id: "total",
+          total: produccion.totalGeneral.total,
+          valor: (resumen: ResumenProduccionItem) => resumen.total,
+          formato: moneda,
+        },
+        {
+          id: "aporteDesarrollador",
+          total: produccion.totalGeneral.aporteDesarrollador,
+          valor: (resumen: ResumenProduccionItem) =>
+            resumen.aporteDesarrollador,
+          formato: moneda,
+        },
+        {
+          id: "ingresoNegocio",
+          total: produccion.totalGeneral.ingresoNegocio,
+          valor: (resumen: ResumenProduccionItem) => resumen.ingresoNegocio,
+          formato: moneda,
+        },
+      ];
+      const idIndicador = selectorGraficoProduccion?.value ?? "metros";
+      const indicador =
+        indicadores.find(({ id }) => id === idIndicador) ??
+        indicadores.find(({ id }) => id === "metros");
+      if (!indicador) return;
+      const servicios = [
+        { id: "textil31", resumen: produccion.textil31 },
+        { id: "textil58", resumen: produccion.textil58 },
+        { id: "uv", resumen: produccion.uv },
+      ];
+      const valores = servicios.map(({ resumen }) =>
+        Math.max(0, indicador.valor(resumen)),
+      );
+      const maximo = Math.max(...valores, 0);
+
+      const total = document.querySelector<HTMLElement>(
+        "[data-production-total]",
+      );
+      if (total) total.textContent = indicador.formato(indicador.total);
+
+      servicios.forEach((servicio, indice) => {
+        const valor = valores[indice] ?? 0;
+        const texto = indicador.formato(valor);
+        const etiqueta = document.querySelector(
+          `[data-production-value="${servicio.id}"]`,
+        );
+        const barra = document.querySelector<HTMLElement>(
+          `[data-production-bar="${servicio.id}"]`,
+        );
+        const medidor = document.querySelector<HTMLElement>(
+          `[data-production-meter="${servicio.id}"]`,
+        );
+
+        if (etiqueta) etiqueta.textContent = texto;
+        if (barra) {
+          barra.style.width = `${maximo > 0 ? (valor / maximo) * 100 : 0}%`;
+        }
+        if (medidor) {
+          medidor.setAttribute("aria-valuemax", String(maximo || 1));
+          medidor.setAttribute("aria-valuenow", String(valor));
+          medidor.setAttribute("aria-valuetext", texto);
+        }
+      });
+    }
+
+    selectorGraficoProduccion?.addEventListener("change", () => {
+      if (produccionActual) {
+        actualizarGraficoProduccion(produccionActual);
+      }
+    });
 
     function sumarDias(fecha: string, dias: number) {
       const resultado = new Date(`${fecha}T00:00:00Z`);
@@ -568,16 +921,26 @@ const periodosFinancieros = [
           (acumulado, pedido) => acumulado + (pedido.costoDiseno ?? 0),
           0,
         );
+        const totalRedondeado = Math.round(total * 100) / 100;
+        costosDisenoPorPeriodo.set(id, totalRedondeado);
+        const resumen = resumenesFinancieros.get(id);
+        if (resumen) {
+          resumenesFinancieros.set(id, {
+            ...resumen,
+            costoDiseno: totalRedondeado,
+          });
+        }
         const valor = document.querySelector(`[data-costo-diseno="${id}"]`);
         const cantidad = document.querySelector(
           `[data-costo-diseno-pedidos="${id}"]`,
         );
 
-        if (valor) valor.textContent = moneda(Math.round(total * 100) / 100);
+        if (valor) valor.textContent = moneda(totalRedondeado);
         if (cantidad) {
           cantidad.textContent = `${pedidosConDiseno.length} ${pedidosConDiseno.length === 1 ? "pedido" : "pedidos"}`;
         }
       });
+      actualizarGraficoFinanciero();
     }
 
     suscribirsePedidos(actualizarCostosDiseno);
@@ -607,6 +970,9 @@ const periodosFinancieros = [
                 tarjeta.dataset.periodoCard !== idSeleccionado,
               );
             });
+
+          periodoFinancieroSeleccionado = idSeleccionado;
+          actualizarGraficoFinanciero();
         });
       });
 
@@ -724,7 +1090,9 @@ const periodosFinancieros = [
     async function cargarProduccion(fecha: string) {
       if (!cuerpo || !pie) return;
 
+      const solicitud = ++solicitudProduccion;
       error?.classList.add("hidden");
+      limpiarGraficoProduccion();
 
       cuerpo.innerHTML = `
       <tr>
@@ -739,6 +1107,7 @@ const periodosFinancieros = [
 
       try {
         const produccion = await obtenerResumenProduccion(fecha);
+        if (solicitud !== solicitudProduccion) return;
 
         cuerpo.innerHTML = [
           fila("DTF Textil · 31 cm", produccion.textil31),
@@ -770,6 +1139,8 @@ const periodosFinancieros = [
         </tr>
       `;
 
+        actualizarGraficoProduccion(produccion);
+
         if (metrosTotal) {
           metrosTotal.textContent = `${produccion.totalGeneral.metros.toFixed(2)} m producidos`;
         }
@@ -790,10 +1161,12 @@ const periodosFinancieros = [
           );
         }
       } catch (caught) {
+        if (solicitud !== solicitudProduccion) return;
         console.error("No se pudieron cargar las estadísticas:", caught);
 
         cuerpo.innerHTML = "";
         pie.innerHTML = "";
+        limpiarGraficoProduccion();
 
         if (error) {
           error.textContent =
@@ -808,6 +1181,8 @@ const periodosFinancieros = [
 
     async function cargarResumenFinanciero(fecha: string) {
       const solicitud = ++solicitudFinanciera;
+      resumenesFinancieros.clear();
+      limpiarGraficoFinanciero();
       try {
         const periodos = obtenerPeriodos(fecha);
         const resumenes = await Promise.all(
@@ -819,6 +1194,12 @@ const periodosFinancieros = [
 
         periodos.forEach(({ id }, indice) => {
           const resumen = resumenes[indice];
+          if (!resumen) return;
+
+          resumenesFinancieros.set(id, {
+            ...resumen,
+            costoDiseno: costosDisenoPorPeriodo.get(id) ?? 0,
+          });
           const cobrado = document.querySelector(`[data-cobrado="${id}"]`);
           const porCobrar = document.querySelector(`[data-por-cobrar="${id}"]`);
           const efectivo = document.querySelector(`[data-efectivo="${id}"]`);
@@ -836,8 +1217,11 @@ const periodosFinancieros = [
             pedidos.textContent = `${resumen.pedidosPorCobrar} pedidos entregados con saldo`;
           }
         });
+        actualizarGraficoFinanciero();
       } catch (caught) {
+        if (solicitud !== solicitudFinanciera) return;
         console.error("No se pudo cargar el resumen financiero:", caught);
+        limpiarGraficoFinanciero();
 
         if (error) {
           error.textContent =

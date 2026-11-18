@@ -1,5 +1,9 @@
 import type { Pedido } from "../types/pedido";
-import { formatearFecha, formatearHora } from "./fecha";
+import {
+  formatearFecha,
+  formatearFechaCorta,
+  formatearHora,
+} from "./fecha";
 import {
   estados,
   escaparHtml,
@@ -41,37 +45,27 @@ export function crearBotonCopiarEtiqueta(pedido: Pedido): string {
   return `
     <button
       type="button"
-      class="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+      class="inline-flex items-center justify-center rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-cyan-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600"
       title="Copiar etiqueta de impresión"
       aria-label="Copiar etiqueta de impresión"
       data-etiqueta="${encodeURIComponent(etiqueta)}"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-4 w-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        stroke-width="2"
+      <span
+        class="material-symbols-rounded pedido-accion-icono leading-none"
         aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M7.5 7.5h.008v.008H7.5V7.5zM3 3h6.586a2 2 0 011.414.586l9.414 9.414a2 2 0 010 2.828l-5.172 5.172a2 2 0 01-2.828 0L3.586 11.586A2 2 0 013 10.172V3z"
-        />
-      </svg>
-      <span>Copiar etiqueta</span>
+      >sell</span>
     </button>
   `;
 }
 
-function crearPopoverMensajes(pedido: Pedido): string {
-  const popoverId = `pedido-mensajes-${pedido.id}`;
+function crearPopoverMensajes(
+  pedido: Pedido,
+  esTarjeta = false,
+): string {
+  const popoverId = `pedido-mensajes-${esTarjeta ? "tarjeta-" : ""}${pedido.id}`;
   const botonCopiarTelefono = pedido.cliente.telefono
     ? crearBotonCopiarTelefono(pedido.cliente.telefono)
     : "";
-  const botonCopiarEtiqueta = crearBotonCopiarEtiqueta(pedido);
 
   return `
     <div class="relative">
@@ -87,20 +81,10 @@ function crearPopoverMensajes(pedido: Pedido): string {
         title="Copiar mensajes"
         class="inline-flex items-center justify-center rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-cyan-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600"
       >
-        <svg
-          class="h-4 w-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
+        <span
+          class="material-symbols-rounded pedido-accion-icono leading-none"
           aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M8 7V5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2h-2M6 7h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2z"
-          />
-        </svg>
+        >send</span>
       </button>
 
       <div
@@ -113,7 +97,6 @@ function crearPopoverMensajes(pedido: Pedido): string {
         <p class="px-2 py-1 text-xs font-semibold text-slate-500">
           Acciones rápidas
         </p>
-        ${botonCopiarEtiqueta}
         ${botonCopiarTelefono}
         <button
           type="button"
@@ -259,6 +242,7 @@ export function crearFilaPedido(pedido: Pedido): string {
             <p class="pedido-cliente font-semibold text-slate-800">
               ${escaparHtml(pedido.cliente.nombre)}
             </p>
+            ${crearBotonCopiarEtiqueta(pedido)}
             ${crearPopoverMensajes(pedido)}
           </div>
 
@@ -360,21 +344,10 @@ export function crearFilaPedido(pedido: Pedido): string {
                   aria-label="Vista previa de imagen del pedido ${pedido.id}"
                   title="Vista previa de imagen"
                 >
-                  <svg
-                    class="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
+                  <span
+                    class="material-symbols-rounded text-[20px] leading-none"
                     aria-hidden="true"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
-                    />
-                    <circle cx="12" cy="12" r="2.5" />
-                  </svg>
+                  >image</span>
                 </button>
               `
               : ""
@@ -404,5 +377,73 @@ export function crearFilaPedido(pedido: Pedido): string {
         </div>
       </td>
     </tr>
+  `;
+}
+
+export function crearTarjetaPedido(pedido: Pedido): string {
+  const estado = estados[pedido.estado];
+  const servicio =
+    pedido.servicio === "TEXTIL"
+      ? `Textil ${pedido.ancho} cm`
+      : "UV";
+
+  return `
+    <article class="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div class="flex items-start gap-3 p-4">
+        <button
+          type="button"
+          data-pedido-card-open="${pedido.id}"
+          aria-label="Abrir detalle del pedido ${pedido.id}"
+          class="min-w-0 flex-1 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-cyan-700"
+        >
+          <div class="flex min-w-0 items-center justify-between gap-2">
+            <div class="flex min-w-0 items-center gap-2">
+              ${
+                pedido.prioridad > 0
+                  ? '<span class="h-2 w-2 shrink-0 rounded-full bg-orange-500" title="Prioridad alta" aria-hidden="true"></span>'
+                  : ""
+              }
+              <span class="truncate text-sm font-semibold text-slate-800">
+                ${escaparHtml(pedido.cliente.nombre)}
+              </span>
+            </div>
+            <span
+              class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                estado?.clase ?? "bg-slate-100 text-slate-600"
+              }"
+            >
+              ${estado?.label ?? pedido.estado}
+            </span>
+          </div>
+
+          <div class="mt-2 flex flex-wrap items-center gap-x-1.5 text-xs text-slate-500">
+            <span>Pedido #${pedido.id}</span>
+            <span aria-hidden="true">·</span>
+            <time>
+              ${formatearFechaCorta(pedido.createdAt)}
+              ${formatearHora(pedido.createdAt)}
+            </time>
+          </div>
+
+          <div class="mt-3 flex items-center justify-between gap-2">
+            <span class="text-xs font-medium text-slate-600">${servicio}</span>
+            <span
+              class="material-symbols-rounded text-lg leading-none text-slate-400"
+              aria-hidden="true"
+            >chevron_right</span>
+          </div>
+        </button>
+
+        <div class="flex shrink-0 flex-col items-center justify-between self-stretch">
+          ${crearPopoverMensajes(pedido, true)}
+          <input
+            type="checkbox"
+            data-pedido-seleccion="${pedido.id}"
+            aria-label="Seleccionar pedido #${pedido.id}"
+            class="h-4 w-4 shrink-0 rounded border-slate-300 accent-cyan-700 focus:ring-cyan-600"
+          />
+        </div>
+      </div>
+    </article>
   `;
 }

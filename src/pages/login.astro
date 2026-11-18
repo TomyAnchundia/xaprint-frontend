@@ -1,7 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 
-const API_URL = import.meta.env.PUBLIC_API_URL ?? "http://localhost:3000";
+const API_URL = import.meta.env.PUBLIC_API_URL ?? "";
 ---
 
 <Layout title="Iniciar sesión | Centro de Control">
@@ -267,7 +267,9 @@ const API_URL = import.meta.env.PUBLIC_API_URL ?? "http://localhost:3000";
 
         console.log("Formulario de login interceptado");
 
-        const apiUrl = loginForm.dataset.apiUrl;
+        const apiUrl =
+          loginForm.dataset.apiUrl ||
+          `${window.location.protocol}//${window.location.hostname}:3000`;
 
         const username = loginUsername?.value.trim() ?? "";
 
