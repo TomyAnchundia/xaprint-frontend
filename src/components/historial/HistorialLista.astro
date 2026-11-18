@@ -25,6 +25,15 @@ import HistorialVacio from "./HistorialVacio.astro";
   const busquedaCliente = document.getElementById(
     "historial-buscar-cliente",
   ) as HTMLInputElement | null;
+  const filtroEstadoMovil = document.getElementById(
+    "historial-estado-movil",
+  ) as HTMLSelectElement | null;
+  const filtroFechaMovil = document.getElementById(
+    "historial-fecha-movil",
+  ) as HTMLSelectElement | null;
+  const filtroServicioMovil = document.getElementById(
+    "historial-servicio-movil",
+  ) as HTMLSelectElement | null;
 
   let filtroEstado = "TODOS";
   let filtroFecha = "HOY";
@@ -36,6 +45,10 @@ import HistorialVacio from "./HistorialVacio.astro";
   let recargaHistorialPendiente = false;
 
   function actualizarEstadoBotones(): void {
+    if (filtroEstadoMovil) filtroEstadoMovil.value = filtroEstado;
+    if (filtroFechaMovil) filtroFechaMovil.value = filtroFecha;
+    if (filtroServicioMovil) filtroServicioMovil.value = filtroServicio;
+
     document
       .querySelectorAll<HTMLButtonElement>("[data-historial-estado]")
       .forEach((boton) => {
@@ -435,6 +448,21 @@ import HistorialVacio from "./HistorialVacio.astro";
         aplicarFiltros();
       });
     });
+
+  filtroEstadoMovil?.addEventListener("change", () => {
+    filtroEstado = filtroEstadoMovil.value;
+    aplicarFiltros();
+  });
+
+  filtroFechaMovil?.addEventListener("change", () => {
+    filtroFecha = filtroFechaMovil.value;
+    aplicarFiltros();
+  });
+
+  filtroServicioMovil?.addEventListener("change", () => {
+    filtroServicio = filtroServicioMovil.value;
+    aplicarFiltros();
+  });
 
   document
     .querySelectorAll<HTMLButtonElement>("[data-historial-fecha]")

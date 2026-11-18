@@ -6,7 +6,7 @@
       </p>
       <h2 class="mt-1 text-2xl font-bold text-slate-900">Notas de venta</h2>
       <p class="mt-1 text-sm text-slate-500">
-        Selecciona pedidos no pagados por cliente para generar una nota.
+        Abre un cliente para revisar sus pedidos pendientes de pago.
       </p>
     </div>
     <label class="group relative block w-full max-w-sm">
@@ -44,7 +44,7 @@
 
 <div
   id="modal-nota-venta"
-  class="fixed inset-0 z-[200] hidden items-center justify-center p-4"
+  class="fixed inset-0 z-[200] hidden items-center justify-center p-2 sm:p-4"
   role="dialog"
   aria-modal="true"
   aria-labelledby="modal-nota-venta-titulo"
@@ -55,7 +55,7 @@
   >
   </div>
   <section
-    class="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+    class="relative flex max-h-[min(94dvh,60rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
   >
     <header
       class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4"
@@ -94,7 +94,7 @@
     </header>
     <div
       id="modal-nota-venta-detalle"
-      class="min-h-0 flex-1 overflow-y-auto p-5"
+      class="min-h-0 flex-1 overflow-y-auto p-3 sm:p-5"
     >
     </div>
     <p
@@ -105,42 +105,36 @@
     >
     </p>
     <footer
-      class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3"
+      class="grid grid-cols-2 gap-2 border-t border-slate-200 bg-slate-50 px-3 py-3 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:px-5"
     >
       <button
         id="modal-nota-venta-cancelar"
         type="button"
-        class="h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300"
+        class="col-span-2 h-10 rounded-lg border border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 sm:col-span-1 sm:px-4 sm:text-sm"
       >
         Cerrar
       </button>
       <button
         id="modal-nota-venta-compartir"
         type="button"
-        class="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+        class="inline-flex h-10 items-center justify-center gap-1 rounded-lg bg-emerald-700 px-2 text-xs font-semibold text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-50 sm:gap-2 sm:px-4 sm:text-sm"
       >
         <svg
           class="h-4 w-4"
           viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
+          fill="currentColor"
           aria-hidden="true"
         >
-          <rect x="4" y="8" width="12" height="12" rx="2"></rect>
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M8 8V5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3"></path>
+          <path d="M12.04 2a9.93 9.93 0 0 0-8.52 15.04L2 22l5.12-1.34A9.93 9.93 0 1 0 12.04 2Zm0 18.04a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-3.04.8.81-2.96-.2-.31A8.1 8.1 0 1 1 12.04 20.04Zm4.45-6.07c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.95-1.2-.72-.64-1.21-1.43-1.35-1.67-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.19-.46-.39-.4-.54-.41l-.46-.01c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.1.15 1.51.09.46-.07 1.43-.58 1.63-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z"></path>
         </svg>
-        Compartir resumen
+        Compartir
       </button>
       <button
         id="modal-nota-venta-descargar"
         type="button"
         class="h-10 rounded-lg bg-cyan-800 px-4 text-sm font-semibold text-white transition hover:bg-cyan-900 focus:outline-none focus:ring-2 focus:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Descargar PDF
+        Generar nota
       </button>
     </footer>
   </section>
@@ -332,6 +326,13 @@
 
     const { grupo, pedidos, notaEmitida } = notaEnRevision;
     const procesando = accionesEnCurso.has(grupo.clienteId);
+    const seleccion = selecciones.get(grupo.clienteId) ?? new Set<number>();
+    const pedidosElegibles = grupo.pedidos.filter(
+      (pedido) => obtenerPrecio(pedido) !== null,
+    );
+    const todosSeleccionados =
+      pedidosElegibles.length > 0 &&
+      pedidosElegibles.every((pedido) => seleccion.has(pedido.id));
     const total = pedidos.reduce(
       (suma, pedido) => suma + (obtenerPrecio(pedido) ?? 0),
       0,
@@ -340,51 +341,91 @@
     if (titulo) titulo.textContent = `Detalle para ${grupo.nombre}`;
 
     modalDetalle.innerHTML = `
-      <div class="mb-4 rounded-lg bg-slate-50 p-4">
-        <p class="text-sm font-semibold text-slate-900">${escaparHtml(grupo.nombre)}</p>
-        ${
-          grupo.telefono
-            ? `<p class="mt-1 text-sm text-slate-500">${escaparHtml(grupo.telefono)}</p>`
-            : ""
-        }
-        <p class="mt-3 text-xs leading-5 text-slate-500">
-          Revisa los pedidos y el total. Puedes generar la nota en PDF o
-          compartir un resumen temporal que no se guarda como nota.
-        </p>
-        ${
-          notaEmitida
-            ? `<p class="mt-2 text-sm font-semibold text-emerald-700">Nota ${escaparHtml(notaEmitida.numero)} emitida.</p>`
-            : ""
-        }
+      <div class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-50 p-3 sm:p-4">
+        <div>
+          <p class="text-sm font-semibold text-slate-900">${escaparHtml(grupo.nombre)}</p>
+          <p class="mt-1 text-xs text-slate-500">
+            ${grupo.telefono ? `${escaparHtml(grupo.telefono)} · ` : ""}
+            ${grupo.pedidos.length} ${grupo.pedidos.length === 1 ? "pedido pendiente" : "pedidos pendientes"}
+          </p>
+        </div>
+        <label class="inline-flex min-h-10 items-center gap-2 text-xs font-semibold text-slate-700">
+          <input
+            type="checkbox"
+            data-seleccionar-modal-cliente="${grupo.clienteId}"
+            ${todosSeleccionados ? "checked" : ""}
+            ${procesando || pedidosElegibles.length === 0 ? "disabled" : ""}
+            class="h-4 w-4 rounded border-slate-300 accent-cyan-700 focus:ring-cyan-600 disabled:cursor-not-allowed"
+          />
+          Seleccionar todos
+        </label>
       </div>
+      <p class="mb-2 text-xs text-slate-500">
+        Marca los pedidos que incluirás en la imagen o nota de venta.
+      </p>
       <ul class="divide-y divide-slate-100 rounded-lg border border-slate-200">
-        ${pedidos
-          .map((pedido) => `
-            <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-              <div class="min-w-0">
-                <p class="truncate text-sm font-semibold text-slate-800">
-                  Pedido #${pedido.id} · ${pedido.servicio === "TEXTIL" ? "DTF textil" : "DTF UV"}
-                </p>
-                <p class="mt-1 text-xs text-slate-500">
-                  ${formatearMedidas(pedido)} · ${etiquetasEstado[pedido.estado]}
-                </p>
-              </div>
-              <p class="shrink-0 text-sm font-semibold tabular-nums text-slate-800">
-                ${formatearPrecio(obtenerPrecio(pedido))}
-              </p>
-            </li>
-          `)
+        ${grupo.pedidos
+          .map((pedido) => {
+            const precio = obtenerPrecio(pedido);
+            return `
+              <li>
+                <label class="grid min-h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 transition hover:bg-slate-50 sm:px-4">
+                  <input
+                    type="checkbox"
+                    data-seleccionar-modal-pedido="${pedido.id}"
+                    data-cliente-id="${grupo.clienteId}"
+                    ${seleccion.has(pedido.id) ? "checked" : ""}
+                    ${procesando || precio === null ? "disabled" : ""}
+                    aria-label="Incluir pedido #${pedido.id}"
+                    class="h-4 w-4 rounded border-slate-300 accent-cyan-700 focus:ring-cyan-600 disabled:cursor-not-allowed"
+                  />
+                  <span class="min-w-0">
+                    <span class="block text-sm font-semibold text-slate-800">
+                      Pedido #${pedido.id} · ${pedido.servicio === "TEXTIL" ? "DTF textil" : "DTF UV"}
+                    </span>
+                    <span class="mt-1 block text-xs text-slate-500">
+                      ${formatearMedidas(pedido)} · ${formatearFechaCorta(pedido.createdAt)} · ${etiquetasEstado[pedido.estado]}
+                    </span>
+                    ${precio === null ? `<span class="mt-1 block text-xs font-medium text-red-600">No tiene un precio confirmado</span>` : ""}
+                  </span>
+                  <span class="text-right text-sm font-semibold tabular-nums text-slate-800">
+                    ${formatearPrecio(precio)}
+                  </span>
+                </label>
+              </li>
+            `;
+          })
           .join("")}
       </ul>
-      <div class="mt-4 flex items-center justify-between gap-3 rounded-lg bg-cyan-50 px-4 py-3">
-        <p class="text-sm font-semibold text-slate-700">Total a pagar</p>
+      ${
+        pedidos.length === 0
+          ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Selecciona al menos un pedido con precio confirmado para continuar.</p>`
+          : ""
+      }
+      <div class="mt-3 flex items-center justify-between gap-3 rounded-lg bg-cyan-50 px-3 py-3 sm:px-4">
+        <p class="text-sm font-semibold text-slate-700">
+          Total · ${pedidos.length} ${pedidos.length === 1 ? "pedido" : "pedidos"}
+        </p>
         <p class="text-lg font-bold tabular-nums text-cyan-900">${formatearPrecio(total)}</p>
       </div>
       <p class="mt-3 text-xs leading-5 text-slate-500">
-        Compartir crea una imagen temporal de este resumen, sin emitir ni
-        registrar una nota. Luego puedes pegarla en WhatsApp con Ctrl+V.
+        Compartir copia una imagen temporal para pegar en WhatsApp. Generar nota
+        registra los pedidos seleccionados y prepara el PDF.
       </p>
+      ${
+        notaEmitida
+          ? `<p class="mt-2 text-sm font-semibold text-emerald-700">Nota ${escaparHtml(notaEmitida.numero)} emitida.</p>`
+          : ""
+      }
     `;
+
+    const seleccionarTodos = modalDetalle.querySelector<HTMLInputElement>(
+      `[data-seleccionar-modal-cliente="${grupo.clienteId}"]`,
+    );
+    if (seleccionarTodos) {
+      seleccionarTodos.indeterminate =
+        seleccion.size > 0 && !todosSeleccionados;
+    }
 
     if (modalMensaje) {
       modalMensaje.textContent = mensajeModal?.texto ?? "";
@@ -400,17 +441,17 @@
     }
 
     if (modalDescargar) {
-      modalDescargar.disabled = procesando;
+      modalDescargar.disabled = procesando || pedidos.length === 0;
       modalDescargar.textContent = procesando
         ? accionEnCurso === "pdf"
-          ? "Generando y descargando..."
+          ? "Generando nota..."
           : "Espera..."
         : notaEmitida
-          ? "Volver a descargar PDF"
-          : "Descargar PDF";
+          ? "Volver a descargar nota"
+          : "Generar nota";
     }
     if (modalCompartir) {
-      modalCompartir.disabled = procesando;
+      modalCompartir.disabled = procesando || pedidos.length === 0;
       modalCompartir.setAttribute("aria-busy", String(procesando));
     }
     if (modalCerrar) modalCerrar.disabled = procesando;
@@ -427,18 +468,19 @@
       grupo?.pedidos.filter(
         (pedido) => seleccion?.has(pedido.id) && obtenerPrecio(pedido) !== null,
       ) ?? [];
-    if (!grupo || pedidos.length === 0) return;
+    if (!grupo) return;
 
-    const firma = obtenerFirmaNota(clienteId, pedidos);
+    const firma = pedidos.length > 0 ? obtenerFirmaNota(clienteId, pedidos) : "";
     notaEnRevision = {
       grupo,
       pedidos,
-      notaEmitida: notasEmitidas.get(firma) ?? null,
+      notaEmitida: firma ? notasEmitidas.get(firma) ?? null : null,
     };
     mensajeModal = null;
     renderizarModalNota();
     modal.classList.remove("hidden");
     modal.classList.add("flex");
+    document.body.classList.add("overflow-hidden");
     modalCerrar?.focus();
   }
 
@@ -447,6 +489,7 @@
     if (clienteId !== undefined && accionesEnCurso.has(clienteId)) return;
     modal?.classList.add("hidden");
     modal?.classList.remove("flex");
+    document.body.classList.remove("overflow-hidden");
     notaEnRevision = null;
     mensajeModal = null;
     if (clienteId !== undefined) {
@@ -504,146 +547,85 @@
         const pedidosSeleccionados = pedidosConPrecio.filter((pedido) =>
           seleccion.has(pedido.id),
         );
-        const totalSeleccionado = Math.round(
-          pedidosSeleccionados.reduce(
-            (total, pedido) => total + (obtenerPrecio(pedido) ?? 0),
-            0,
-          ) * 100,
-        ) / 100;
+        const totalPendiente = pedidosConPrecio.reduce(
+          (total, pedido) => total + (obtenerPrecio(pedido) ?? 0),
+          0,
+        );
         const procesando = accionesEnCurso.has(grupo.clienteId);
+        const estado = mensajesEstado.get(grupo.clienteId);
 
         return `
-          <section
-            class="overflow-hidden rounded-xl border border-slate-200 bg-white"
-            aria-labelledby="notas-cliente-${grupo.clienteId}"
+          <button
+            type="button"
+            data-generar-nota="${grupo.clienteId}"
+            aria-label="Abrir pedidos pendientes de ${escaparHtml(grupo.nombre)}"
+            ${procesando ? "disabled" : ""}
+            class="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600 disabled:cursor-wait disabled:opacity-60"
           >
-            <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/70 px-4 py-3">
-              <div class="min-w-0">
-                <h3 id="notas-cliente-${grupo.clienteId}" class="truncate font-semibold text-slate-900">
-                  ${escaparHtml(grupo.nombre)}
-                </h3>
-                <p class="mt-0.5 text-xs text-slate-500">
-                  ${grupo.telefono ? escaparHtml(grupo.telefono) + " · " : ""}
-                  ${grupo.pedidos.length} ${grupo.pedidos.length === 1 ? "pedido" : "pedidos"} sin pagar
-                </p>
-              </div>
-              <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-600">
-                <input
-                  type="checkbox"
-                  data-seleccionar-cliente="${grupo.clienteId}"
-                  aria-label="Seleccionar todos los pedidos de ${escaparHtml(grupo.nombre)}"
-                  ${pedidosConPrecio.length > 0 && pedidosSeleccionados.length === pedidosConPrecio.length ? "checked" : ""}
-                  ${procesando || pedidosConPrecio.length === 0 ? "disabled" : ""}
-                  class="h-4 w-4 rounded border-slate-300 accent-cyan-700 focus:ring-cyan-600 disabled:cursor-not-allowed"
-                />
-                Seleccionar todos
-              </label>
-            </header>
-            <div class="divide-y divide-slate-100">
-              ${grupo.pedidos
-                .map((pedido) => {
-                  const precio = obtenerPrecio(pedido);
-                  return `
-                    <label class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 transition hover:bg-slate-50 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
-                      <input
-                        type="checkbox"
-                        data-seleccionar-pedido="${pedido.id}"
-                        data-cliente-id="${grupo.clienteId}"
-                        aria-label="Seleccionar pedido #${pedido.id}"
-                        ${seleccion.has(pedido.id) ? "checked" : ""}
-                        ${procesando || precio === null ? "disabled" : ""}
-                        class="h-4 w-4 rounded border-slate-300 accent-cyan-700 focus:ring-cyan-600 disabled:cursor-not-allowed"
-                      />
-                      <span class="min-w-0">
-                        <span class="block truncate text-sm font-semibold text-slate-800">
-                          Pedido #${pedido.id} · ${pedido.servicio === "TEXTIL" ? "DTF textil" : "DTF UV"}
-                        </span>
-                        <span class="mt-0.5 block text-xs text-slate-500">
-                          ${formatearMedidas(pedido)} · ${formatearFechaCorta(pedido.createdAt)}
-                        </span>
-                        ${
-                          precio === null
-                            ? `<span class="mt-1 block text-xs font-medium text-red-600">No tiene un precio confirmado</span>`
-                            : ""
-                        }
-                      </span>
-                      <span class="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-600">
-                        ${etiquetasEstado[pedido.estado]}
-                      </span>
-                      <span class="col-span-2 text-right text-sm font-semibold tabular-nums text-slate-800 sm:col-span-1">
-                        ${formatearPrecio(precio)}
-                      </span>
-                    </label>
-                  `;
-                })
-                .join("")}
-            </div>
-            <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3">
-              <div>
-                <p class="text-sm font-semibold text-slate-800">
-                  ${pedidosSeleccionados.length} ${pedidosSeleccionados.length === 1 ? "pedido seleccionado" : "pedidos seleccionados"}
-                  <span class="ml-1 font-normal text-slate-500">
-                    · ${formatearPrecio(totalSeleccionado)}
-                  </span>
-                </p>
-                <p
-                  data-nota-estado="${grupo.clienteId}"
-                  class="mt-1 text-xs ${
-                    mensajesEstado.get(grupo.clienteId)?.tipo === "error"
-                      ? "text-red-700"
-                      : "text-emerald-700"
-                  }"
-                  role="status"
-                  aria-live="polite"
-                >
-                  ${mensajesEstado.has(grupo.clienteId) ? escaparHtml(mensajesEstado.get(grupo.clienteId)!.texto) : ""}
-                </p>
-              </div>
-              <button
-                type="button"
-                data-generar-nota="${grupo.clienteId}"
-                ${procesando || pedidosSeleccionados.length === 0 ? "disabled" : ""}
-                class="rounded-lg bg-cyan-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-cyan-900 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                ${procesando ? "Procesando..." : "Revisar detalle"}
-              </button>
-            </footer>
-          </section>
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-base font-bold text-cyan-900">
+              ${escaparHtml(grupo.nombre.slice(0, 1).toUpperCase())}
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-semibold text-slate-900">
+                ${escaparHtml(grupo.nombre)}
+              </span>
+              <span class="mt-0.5 block truncate text-xs text-slate-500">
+                ${grupo.telefono ? escaparHtml(grupo.telefono) + " · " : ""}
+                ${grupo.pedidos.length} ${grupo.pedidos.length === 1 ? "pedido sin pagar" : "pedidos sin pagar"}
+              </span>
+              <span class="mt-1 block text-xs font-medium text-amber-800">
+                ${formatearPrecio(totalPendiente)} por cobrar
+                ${pedidosSeleccionados.length > 0 ? ` · ${pedidosSeleccionados.length} seleccionados` : ""}
+              </span>
+              ${
+                estado
+                  ? `<span class="mt-1 block text-xs ${estado.tipo === "error" ? "text-red-700" : "text-emerald-700"}" role="status">${escaparHtml(estado.texto)}</span>`
+                  : ""
+              }
+            </span>
+            <svg class="h-5 w-5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"></path>
+            </svg>
+          </button>
         `;
       })
       .join("");
 
-    for (const grupo of grupos) {
-      const seleccion = selecciones.get(grupo.clienteId) ?? new Set<number>();
-      const cantidadElegible = grupo.pedidos.filter(
-        (pedido) => obtenerPrecio(pedido) !== null,
-      ).length;
-      const seleccionarTodos = lista.querySelector<HTMLInputElement>(
-        `[data-seleccionar-cliente="${grupo.clienteId}"]`,
+    if (notaEnRevision && !accionesEnCurso.has(notaEnRevision.grupo.clienteId)) {
+      const grupoActual = todosLosGrupos.find(
+        (grupo) => grupo.clienteId === notaEnRevision?.grupo.clienteId,
       );
-      if (seleccionarTodos) {
-        seleccionarTodos.indeterminate =
-          seleccion.size > 0 && seleccion.size < cantidadElegible;
+      if (grupoActual) {
+        notaEnRevision.grupo = grupoActual;
+        const seleccion = selecciones.get(grupoActual.clienteId) ?? new Set();
+        notaEnRevision.pedidos = grupoActual.pedidos.filter(
+          (pedido) => seleccion.has(pedido.id) && obtenerPrecio(pedido) !== null,
+        );
+        const firma =
+          notaEnRevision.pedidos.length > 0
+            ? obtenerFirmaNota(grupoActual.clienteId, notaEnRevision.pedidos)
+            : "";
+        notaEnRevision.notaEmitida = firma
+          ? notasEmitidas.get(firma) ?? null
+          : null;
+        renderizarModalNota();
       }
     }
   }
 
-  lista?.addEventListener("change", (event) => {
+  modalDetalle?.addEventListener("change", (event) => {
     const target = event.target;
-    if (!(target instanceof HTMLInputElement)) return;
+    if (!(target instanceof HTMLInputElement) || !notaEnRevision) return;
 
-    const clienteId = Number(
-      target.dataset.clienteId ?? target.dataset.seleccionarCliente,
-    );
-    if (!Number.isSafeInteger(clienteId) || clienteId <= 0) return;
-
+    const clienteId = notaEnRevision.grupo.clienteId;
+    if (accionesEnCurso.has(clienteId)) return;
     const grupo = agruparPedidosElegibles().find(
       (actual) => actual.clienteId === clienteId,
     );
-    if (!grupo || accionesEnCurso.has(clienteId)) return;
+    if (!grupo) return;
 
     const seleccion = obtenerSeleccion(clienteId);
-    if (target.matches("[data-seleccionar-cliente]")) {
+    if (target.matches("[data-seleccionar-modal-cliente]")) {
       if (target.checked) {
         grupo.pedidos.forEach((pedido) => {
           if (obtenerPrecio(pedido) !== null) seleccion.add(pedido.id);
@@ -652,7 +634,7 @@
         seleccion.clear();
       }
     } else {
-      const pedidoId = Number(target.dataset.seleccionarPedido);
+      const pedidoId = Number(target.dataset.seleccionarModalPedido);
       if (!Number.isSafeInteger(pedidoId)) return;
       if (target.checked) seleccion.add(pedidoId);
       else seleccion.delete(pedidoId);
@@ -661,7 +643,23 @@
     clavesSolicitud.delete(clienteId);
     mensajesEstado.delete(clienteId);
     if (seleccion.size === 0) selecciones.delete(clienteId);
+    const pedidos = grupo.pedidos.filter(
+      (pedido) => seleccion.has(pedido.id) && obtenerPrecio(pedido) !== null,
+    );
+    const firma = pedidos.length > 0 ? obtenerFirmaNota(clienteId, pedidos) : "";
+    notaEnRevision = {
+      grupo,
+      pedidos,
+      notaEmitida: firma ? notasEmitidas.get(firma) ?? null : null,
+    };
+    const foco =
+      target.matches("[data-seleccionar-modal-cliente]")
+        ? `[data-seleccionar-modal-cliente="${clienteId}"]`
+        : `[data-seleccionar-modal-pedido="${target.dataset.seleccionarModalPedido}"]`;
     renderizar();
+    modalDetalle
+      ?.querySelector<HTMLInputElement>(foco)
+      ?.focus();
   });
 
   lista?.addEventListener("click", (event) => {
@@ -682,9 +680,27 @@
     .getElementById("modal-nota-venta-backdrop")
     ?.addEventListener("click", cerrarModalNota);
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && modal?.classList.contains("flex")) {
+    if (!modal?.classList.contains("flex")) return;
+    if (event.key === "Escape") {
       event.preventDefault();
       cerrarModalNota();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const controles = Array.from(
+      modal.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), [href], [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((control) => control.offsetParent !== null);
+    if (controles.length === 0) return;
+    const primero = controles[0];
+    const ultimo = controles[controles.length - 1];
+    if (event.shiftKey && document.activeElement === primero) {
+      event.preventDefault();
+      ultimo.focus();
+    } else if (!event.shiftKey && document.activeElement === ultimo) {
+      event.preventDefault();
+      primero.focus();
     }
   });
   modalDescargar?.addEventListener("click", () => {
