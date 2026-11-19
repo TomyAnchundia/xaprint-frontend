@@ -706,10 +706,11 @@
       if (valor === null) return null;
 
       pedidosImagen.push({
-        id: pedido.id,
+        fecha: pedido.createdAt,
         servicio: pedido.servicio === "TEXTIL" ? "DTF textil" : "DTF UV",
         medidas: formatearMedidas(pedido),
         valor,
+        aplicaPromocion: pedido.aplicaPromocion,
       });
     }
 

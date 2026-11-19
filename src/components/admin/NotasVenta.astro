@@ -1,11 +1,14 @@
 <section class="flex h-full min-h-0 flex-col gap-4">
   <header class="flex flex-wrap items-end justify-between gap-3">
     <div>
-      <p class="text-xs font-semibold uppercase text-cyan-800">
+      <p
+        id="notas-venta-etiqueta"
+        class="text-xs font-semibold uppercase text-cyan-800"
+      >
         Pedidos pendientes de pago
       </p>
       <h2 class="mt-1 text-2xl font-bold text-slate-900">Notas de venta</h2>
-      <p class="mt-1 text-sm text-slate-500">
+      <p id="notas-venta-descripcion" class="mt-1 text-sm text-slate-500">
         Abre un cliente para revisar sus pedidos pendientes de pago.
       </p>
     </div>
@@ -26,6 +29,7 @@
         id="notas-venta-buscar"
         type="search"
         autocomplete="off"
+        maxlength="100"
         placeholder="Buscar por cliente o teléfono"
         class="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
       />
@@ -33,12 +37,74 @@
   </header>
 
   <div
-    id="notas-venta-lista"
-    class="min-h-0 flex-1 space-y-3 overflow-y-auto"
+    class="inline-flex w-fit rounded-lg bg-slate-100 p-1"
+    role="tablist"
+    aria-label="Sección de notas de venta"
   >
-    <p class="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">
-      Cargando pedidos...
-    </p>
+    <button
+      id="notas-venta-tab-pendientes"
+      type="button"
+      role="tab"
+      aria-selected="true"
+      aria-controls="notas-venta-panel-pendientes"
+      class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-cyan-900 shadow-sm transition"
+    >
+      Pendientes
+    </button>
+    <button
+      id="notas-venta-tab-historial"
+      type="button"
+      role="tab"
+      aria-selected="false"
+      aria-controls="notas-venta-panel-historial"
+      class="rounded-md px-3 py-2 text-sm font-semibold text-slate-600 transition hover:text-slate-900"
+    >
+      Historial
+    </button>
+  </div>
+
+  <div
+    id="notas-venta-panel-pendientes"
+    role="tabpanel"
+    aria-labelledby="notas-venta-tab-pendientes"
+    class="min-h-0 flex-1"
+  >
+    <div
+      id="notas-venta-lista"
+      class="min-h-0 h-full space-y-3 overflow-y-auto"
+    >
+      <p class="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">
+        Cargando pedidos...
+      </p>
+    </div>
+  </div>
+
+  <div
+    id="notas-venta-panel-historial"
+    role="tabpanel"
+    aria-labelledby="notas-venta-tab-historial"
+    class="hidden min-h-0 flex-1 overflow-y-auto"
+  >
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p class="text-sm font-semibold text-slate-800">Notas emitidas</p>
+        <p class="mt-1 text-xs text-slate-500">
+          Descarga nuevamente el PDF de una nota sin volver a emitirla.
+        </p>
+      </div>
+      <button
+        id="notas-venta-historial-actualizar"
+        type="button"
+        class="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-600"
+      >
+        Actualizar
+      </button>
+    </div>
+    <div id="notas-venta-historial-lista" class="space-y-3">
+      <p class="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">
+        Selecciona la pestaña Historial para cargar las notas emitidas.
+      </p>
+    </div>
   </div>
 </section>
 
@@ -143,7 +209,10 @@
 <script>
   import {
     emitirNotaVentaNoPagados,
+    obtenerNotaVentaPorId,
+    obtenerNotasVenta,
     type NotaVenta,
+    type NotaVentaResumen,
   } from "../../services/api";
   import {
     iniciarPedidosStore,
@@ -175,10 +244,35 @@
     notaEmitida: NotaVenta | null;
   }
 
+  type PestanaNotas = "pendientes" | "historial";
+  type EstadoHistorialNotas = "idle" | "loading" | "loaded" | "error";
+
   const lista = document.getElementById("notas-venta-lista");
+  const listaHistorial = document.getElementById(
+    "notas-venta-historial-lista",
+  );
   const busqueda = document.getElementById(
     "notas-venta-buscar",
   ) as HTMLInputElement | null;
+  const etiquetaVista = document.getElementById("notas-venta-etiqueta");
+  const descripcionVista = document.getElementById(
+    "notas-venta-descripcion",
+  );
+  const tabPendientes = document.getElementById(
+    "notas-venta-tab-pendientes",
+  ) as HTMLButtonElement | null;
+  const tabHistorial = document.getElementById(
+    "notas-venta-tab-historial",
+  ) as HTMLButtonElement | null;
+  const panelPendientes = document.getElementById(
+    "notas-venta-panel-pendientes",
+  );
+  const panelHistorial = document.getElementById(
+    "notas-venta-panel-historial",
+  );
+  const actualizarHistorial = document.getElementById(
+    "notas-venta-historial-actualizar",
+  );
   const modal = document.getElementById("modal-nota-venta");
   const modalDetalle = document.getElementById("modal-nota-venta-detalle");
   const modalMensaje = document.getElementById("modal-nota-venta-mensaje");
@@ -211,6 +305,7 @@
   const clavesSolicitud = new Map<number, string>();
   const notasEmitidas = new Map<string, NotaVenta>();
   const accionesEnCurso = new Set<number>();
+  const descargasHistorialEnCurso = new Set<string>();
   const mensajesEstado = new Map<
     number,
     { texto: string; tipo: "success" | "error" }
@@ -222,6 +317,16 @@
   let notaEnRevision: NotaEnRevision | null = null;
   let mensajeModal: { texto: string; tipo: "success" | "error" } | null = null;
   let accionEnCurso: "pdf" | "imagen" | null = null;
+  let pestanaActiva: PestanaNotas = "pendientes";
+  let notasHistorial: NotaVentaResumen[] = [];
+  let estadoHistorial: EstadoHistorialNotas = "idle";
+  let errorHistorial: string | null = null;
+  let errorCargaMasHistorial: string | null = null;
+  let cursorHistorial: number | null = null;
+  let hayMasHistorial = false;
+  let cargandoMasHistorial = false;
+  let secuenciaCargaHistorial = 0;
+  let temporizadorBusquedaHistorial: number | null = null;
 
   function normalizar(valor: string): string {
     return valor
@@ -613,6 +718,304 @@
     }
   }
 
+  function renderizarHistorial() {
+    if (!listaHistorial) return;
+
+    if (estadoHistorial === "idle" || estadoHistorial === "loading") {
+      listaHistorial.innerHTML = `
+        <p class="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">
+          ${estadoHistorial === "loading" ? "Cargando historial de notas..." : "Selecciona la pestaña Historial para cargar las notas emitidas."}
+        </p>
+      `;
+      return;
+    }
+
+    if (estadoHistorial === "error") {
+      listaHistorial.innerHTML = `
+        <div class="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+          <p>No se pudo cargar el historial: ${escaparHtml(errorHistorial ?? "Error desconocido.")}</p>
+          <button
+            type="button"
+            data-reintentar-historial
+            class="mt-3 rounded-lg border border-red-200 bg-white px-3 py-2 font-semibold text-red-700 transition hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            Reintentar
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    if (notasHistorial.length === 0) {
+      listaHistorial.innerHTML = `
+        <div class="rounded-xl border border-slate-200 bg-white p-8 text-center">
+          <p class="font-medium text-slate-700">
+            ${
+              busqueda?.value.trim()
+                ? "No se encontraron notas para ese cliente."
+                : "Aún no se han emitido notas de venta."
+            }
+          </p>
+          <p class="mt-1 text-sm text-slate-500">
+            Las notas emitidas aparecerán aquí para volver a descargar su PDF.
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    const cargarMas = errorCargaMasHistorial
+      ? `
+        <p class="text-sm text-red-700">${escaparHtml(errorCargaMasHistorial)}</p>
+        <button
+          type="button"
+          data-cargar-mas-historial
+          class="h-10 rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
+          Reintentar
+        </button>
+      `
+      : hayMasHistorial
+        ? `
+          <button
+            type="button"
+            data-cargar-mas-historial
+            ${cargandoMasHistorial ? "disabled" : ""}
+            class="h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-600 disabled:cursor-wait disabled:opacity-60"
+          >
+            ${cargandoMasHistorial ? "Cargando notas..." : "Cargar más"}
+          </button>
+        `
+        : "";
+
+    listaHistorial.innerHTML = `
+      ${notasHistorial
+      .map((nota) => {
+        const procesando = descargasHistorialEnCurso.has(nota.numero);
+        return `
+          <article class="grid grid-cols-1 items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto]">
+            <div class="min-w-0">
+              <p class="text-xs font-semibold uppercase tracking-wide text-cyan-800">
+                Nota N.° ${escaparHtml(nota.numero)}
+              </p>
+              <p class="mt-1 truncate text-sm font-semibold text-slate-900">
+                ${escaparHtml(nota.cliente.nombre)}
+              </p>
+              <p class="mt-1 text-xs text-slate-500">
+                ${formatearFechaCorta(nota.fecha)}
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
+              <p class="text-sm font-bold tabular-nums text-slate-900">
+                ${formatearPrecio(nota.total)}
+              </p>
+              <button
+                type="button"
+                data-descargar-historial-nota="${escaparHtml(nota.numero)}"
+                aria-label="Descargar PDF de la nota ${escaparHtml(nota.numero)}"
+                ${procesando ? "disabled" : ""}
+                class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-cyan-800 px-4 text-sm font-semibold text-white transition hover:bg-cyan-900 focus:outline-none focus:ring-2 focus:ring-cyan-300 disabled:cursor-wait disabled:opacity-60"
+              >
+                ${procesando ? "Preparando PDF..." : "Descargar PDF"}
+              </button>
+            </div>
+          </article>
+        `;
+      })
+      .join("")}
+      ${
+        cargarMas
+          ? `<div class="flex flex-col items-center gap-2 py-2">${cargarMas}</div>`
+          : ""
+      }
+    `;
+  }
+
+  async function cargarHistorialNotas(cargarPrimeraPagina = true) {
+    if (cargarPrimeraPagina) {
+      secuenciaCargaHistorial += 1;
+      estadoHistorial = "loading";
+      errorHistorial = null;
+      errorCargaMasHistorial = null;
+      cursorHistorial = null;
+      hayMasHistorial = false;
+      cargandoMasHistorial = false;
+      notasHistorial = [];
+    } else {
+      if (
+        estadoHistorial !== "loaded" ||
+        !hayMasHistorial ||
+        cargandoMasHistorial
+      ) {
+        return;
+      }
+      cargandoMasHistorial = true;
+      errorCargaMasHistorial = null;
+    }
+
+    const secuencia = secuenciaCargaHistorial;
+    const cursor = cargarPrimeraPagina
+      ? undefined
+      : (cursorHistorial ?? undefined);
+    renderizarHistorial();
+
+    try {
+      const pagina = await obtenerNotasVenta(
+        busqueda?.value.trim() ?? "",
+        cursor,
+      );
+      if (secuencia !== secuenciaCargaHistorial) return;
+      notasHistorial = cargarPrimeraPagina
+        ? pagina.notas
+        : [...notasHistorial, ...pagina.notas];
+      cursorHistorial = pagina.siguienteCursor;
+      hayMasHistorial = pagina.siguienteCursor !== null;
+      estadoHistorial = "loaded";
+    } catch (caught) {
+      if (secuencia !== secuenciaCargaHistorial) return;
+      console.error("No se pudo cargar el historial de notas de venta:", caught);
+      const mensaje =
+        caught instanceof Error
+          ? caught.message
+          : "Ocurrió un error inesperado.";
+      if (cargarPrimeraPagina) {
+        errorHistorial = mensaje;
+        estadoHistorial = "error";
+      } else {
+        errorCargaMasHistorial = mensaje;
+      }
+    } finally {
+      if (secuencia === secuenciaCargaHistorial) {
+        cargandoMasHistorial = false;
+        renderizarHistorial();
+      }
+    }
+  }
+
+  function seleccionarPestana(pestana: PestanaNotas) {
+    if (pestanaActiva === pestana) return;
+    if (temporizadorBusquedaHistorial !== null) {
+      window.clearTimeout(temporizadorBusquedaHistorial);
+      temporizadorBusquedaHistorial = null;
+    }
+    pestanaActiva = pestana;
+    if (busqueda) busqueda.value = "";
+
+    const mostrarHistorial = pestana === "historial";
+    panelPendientes?.classList.toggle("hidden", mostrarHistorial);
+    panelHistorial?.classList.toggle("hidden", !mostrarHistorial);
+    tabPendientes?.setAttribute("aria-selected", String(!mostrarHistorial));
+    tabHistorial?.setAttribute("aria-selected", String(mostrarHistorial));
+    tabPendientes?.classList.toggle("bg-white", !mostrarHistorial);
+    tabPendientes?.classList.toggle("shadow-sm", !mostrarHistorial);
+    tabPendientes?.classList.toggle("text-cyan-900", !mostrarHistorial);
+    tabPendientes?.classList.toggle("text-slate-600", mostrarHistorial);
+    tabHistorial?.classList.toggle("bg-white", mostrarHistorial);
+    tabHistorial?.classList.toggle("shadow-sm", mostrarHistorial);
+    tabHistorial?.classList.toggle("text-cyan-900", mostrarHistorial);
+    tabHistorial?.classList.toggle("text-slate-600", !mostrarHistorial);
+
+    if (busqueda) {
+      busqueda.placeholder = mostrarHistorial
+        ? "Buscar por nombre del cliente"
+        : "Buscar por cliente o teléfono";
+      busqueda.setAttribute(
+        "aria-label",
+        mostrarHistorial
+          ? "Buscar por nombre del cliente"
+          : "Buscar cliente o teléfono",
+      );
+    }
+    if (etiquetaVista) {
+      etiquetaVista.textContent = mostrarHistorial
+        ? "Historial de notas"
+        : "Pedidos pendientes de pago";
+    }
+    if (descripcionVista) {
+      descripcionVista.textContent = mostrarHistorial
+        ? "Consulta y descarga notas que ya fueron emitidas."
+        : "Abre un cliente para revisar sus pedidos pendientes de pago.";
+    }
+
+    if (mostrarHistorial) {
+      void cargarHistorialNotas();
+    } else {
+      renderizar();
+    }
+  }
+
+  async function descargarNotaDelHistorial(nota: NotaVentaResumen) {
+    if (descargasHistorialEnCurso.has(nota.numero)) return;
+    descargasHistorialEnCurso.add(nota.numero);
+    renderizarHistorial();
+
+    try {
+      const numero = Number(nota.numero);
+      if (!Number.isSafeInteger(numero) || numero <= 0) {
+        throw new Error("El número de la nota no es válido.");
+      }
+      const detalle = await obtenerNotaVentaPorId(numero);
+      await descargarNotaVentaPdf(detalle);
+      mostrarNotificacion(`Nota de venta ${nota.numero} descargada.`);
+    } catch (caught) {
+      console.error(`No se pudo descargar la nota ${nota.numero}:`, caught);
+      const mensaje =
+        caught instanceof Error
+          ? `No se pudo descargar la nota ${nota.numero}: ${caught.message}`
+          : `No se pudo descargar la nota ${nota.numero}.`;
+      mostrarNotificacion(mensaje, "error");
+    } finally {
+      descargasHistorialEnCurso.delete(nota.numero);
+      renderizarHistorial();
+    }
+  }
+
+  tabPendientes?.addEventListener("click", () => {
+    seleccionarPestana("pendientes");
+  });
+  tabHistorial?.addEventListener("click", () => {
+    seleccionarPestana("historial");
+  });
+  actualizarHistorial?.addEventListener("click", () => {
+    if (temporizadorBusquedaHistorial !== null) {
+      window.clearTimeout(temporizadorBusquedaHistorial);
+      temporizadorBusquedaHistorial = null;
+    }
+    void cargarHistorialNotas();
+  });
+  listaHistorial?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (target.closest("[data-reintentar-historial]")) {
+      if (temporizadorBusquedaHistorial !== null) {
+        window.clearTimeout(temporizadorBusquedaHistorial);
+        temporizadorBusquedaHistorial = null;
+      }
+      void cargarHistorialNotas();
+      return;
+    }
+    if (target.closest("[data-cargar-mas-historial]")) {
+      void cargarHistorialNotas(false);
+      return;
+    }
+
+    const boton = target.closest<HTMLButtonElement>(
+      "button[data-descargar-historial-nota]",
+    );
+    const numero = boton?.dataset.descargarHistorialNota;
+    if (!numero) return;
+    const nota = notasHistorial.find((item) => item.numero === numero);
+    if (!nota) {
+      mostrarNotificacion(
+        "La nota ya no está disponible. Actualiza el historial e inténtalo de nuevo.",
+        "error",
+      );
+      void cargarHistorialNotas();
+      return;
+    }
+    void descargarNotaDelHistorial(nota);
+  });
+
   modalDetalle?.addEventListener("change", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLInputElement) || !notaEnRevision) return;
@@ -803,10 +1206,11 @@
             throw new Error(`El pedido #${pedido.id} no tiene un precio válido.`);
           }
           return {
-            id: pedido.id,
+            fecha: pedido.createdAt,
             servicio: pedido.servicio === "TEXTIL" ? "DTF textil" : "DTF UV",
             medidas: formatearMedidas(pedido),
             valor,
+            aplicaPromocion: pedido.aplicaPromocion,
           };
         });
         const compartirPromesa = copiarImagenResumenPedidos({
@@ -855,6 +1259,16 @@
   }
 
   busqueda?.addEventListener("input", () => {
+    if (pestanaActiva === "historial") {
+      if (temporizadorBusquedaHistorial !== null) {
+        window.clearTimeout(temporizadorBusquedaHistorial);
+      }
+      temporizadorBusquedaHistorial = window.setTimeout(() => {
+        temporizadorBusquedaHistorial = null;
+        void cargarHistorialNotas();
+      }, 250);
+      return;
+    }
     selecciones.clear();
     clavesSolicitud.clear();
     mensajesEstado.clear();

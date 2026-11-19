@@ -251,6 +251,21 @@ export interface NotaVenta {
   total: number;
 }
 
+export interface NotaVentaResumen {
+  numero: string;
+  fecha: string;
+  cliente: {
+    id: number;
+    nombre: string;
+  };
+  total: number;
+}
+
+export interface PaginaNotasVenta {
+  notas: NotaVentaResumen[];
+  siguienteCursor: number | null;
+}
+
 export class ApiError extends Error {
   status: number;
 
@@ -626,6 +641,23 @@ export async function emitirNotaVentaNoPagados(
     method: "POST",
     body: JSON.stringify({ pedidoIds, idempotencyKey }),
   });
+}
+
+export async function obtenerNotasVenta(
+  nombre: string,
+  cursor?: number,
+): Promise<PaginaNotasVenta> {
+  const parametros = new URLSearchParams();
+  if (nombre) parametros.set("nombre", nombre);
+  if (cursor !== undefined) parametros.set("cursor", String(cursor));
+  const consulta = parametros.toString();
+  return request<PaginaNotasVenta>(
+    `/pedidos/notas-venta${consulta ? `?${consulta}` : ""}`,
+  );
+}
+
+export async function obtenerNotaVentaPorId(id: number): Promise<NotaVenta> {
+  return request<NotaVenta>(`/pedidos/notas-venta/${id}`);
 }
 
 export async function subirImagenReferenciaPedido(

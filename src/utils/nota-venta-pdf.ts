@@ -68,7 +68,7 @@ export async function descargarNotaVentaPdf(nota: NotaVenta): Promise<void> {
     pdf.setTextColor(100, 116, 113);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(8);
-    pdf.text("FACTURAR A:", margen + 5, 57);
+    pdf.text("CLIENTE:", margen + 5, 57);
     pdf.setTextColor(30, 41, 39);
     pdf.setFontSize(11);
     pdf.text(clienteLineas, margen + 5, 64);

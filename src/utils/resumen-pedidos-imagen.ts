@@ -1,15 +1,18 @@
 import { formatearPrecio } from "./pedidos-lista";
+import { formatearFechaCorta } from "./fecha";
 import { cargarLogoXaprintPng } from "./logo-xaprint";
 
-const anchoImagen = 900;
-const margen = 64;
+const anchoImagen = 640;
+const escalaImagen = 2;
+const margen = 40;
 const fuente = "Arial, Helvetica, sans-serif";
 
 export interface PedidoResumenImagen {
-  id: number;
+  fecha: string;
   servicio: string;
   medidas: string;
   valor: number;
+  aplicaPromocion: boolean;
 }
 
 export interface ResumenPedidosImagen {
@@ -91,7 +94,7 @@ async function generarImagenResumenPedidos(
   await logo.decode();
 
   const canvas = document.createElement("canvas");
-  canvas.width = anchoImagen;
+  canvas.width = anchoImagen * escalaImagen;
   const contexto = canvas.getContext("2d");
   if (!contexto) {
     throw new Error("No se pudo preparar la imagen del resumen.");
@@ -103,92 +106,143 @@ async function generarImagenResumenPedidos(
     resumen.cliente,
     anchoImagen - margen * 2,
   );
-  const yCliente = 151;
-  const altoLineaCliente = 40;
+  const yCliente = 202;
+  const altoLineaCliente = 36;
   const yEtiquetaPedidos =
-    yCliente + lineasCliente.length * altoLineaCliente + 7;
-  const yLista = yEtiquetaPedidos + 20;
-  const altoFila = 68;
-  const yTotal = yLista + resumen.pedidos.length * altoFila + 14;
-  const yPie = yTotal + 74;
-  canvas.height = yPie + 42;
+    yCliente + lineasCliente.length * altoLineaCliente + 20;
+  const yLista = yEtiquetaPedidos + 34;
+  const altoFila = 78;
+  const yTotal = yLista + resumen.pedidos.length * altoFila + 18;
+  const yPie = yTotal + 108;
+  canvas.height = (yPie + 42) * escalaImagen;
+  contexto.scale(escalaImagen, escalaImagen);
 
-  contexto.fillStyle = "#f4f7f6";
-  contexto.fillRect(0, 0, canvas.width, canvas.height);
+  const fondo = contexto.createLinearGradient(0, 0, anchoImagen, yPie + 42);
+  fondo.addColorStop(0, "#eaf3f1");
+  fondo.addColorStop(1, "#f5f7fb");
+  contexto.fillStyle = fondo;
+  contexto.fillRect(0, 0, anchoImagen, yPie + 42);
   contexto.fillStyle = "#ffffff";
   dibujarRectangulo(
     contexto,
+    16,
     28,
-    28,
-    canvas.width - 56,
-    canvas.height - 56,
+    anchoImagen - 32,
+    yPie + 42 - 56,
     22,
   );
 
-  contexto.drawImage(logo, margen, 54, 170, 35);
-  contexto.strokeStyle = "#e7eeeb";
+  contexto.drawImage(logo, (anchoImagen - 170) / 2, 40, 170, 35);
+  contexto.fillStyle = "#e7f4f0";
+  dibujarRectangulo(
+    contexto,
+    (anchoImagen - 200) / 2,
+    88,
+    200,
+    34,
+    17,
+  );
+  contexto.fillStyle = "#176354";
+  contexto.font = `700 12px ${fuente}`;
+  contexto.textAlign = "center";
+  contexto.fillText("RESUMEN DE PEDIDOS", anchoImagen / 2, 110);
+
+  contexto.strokeStyle = "#e6eeeb";
   contexto.lineWidth = 1;
   contexto.beginPath();
-  contexto.moveTo(margen, 108);
-  contexto.lineTo(anchoImagen - margen, 108);
+  contexto.moveTo(margen, 140);
+  contexto.lineTo(anchoImagen - margen, 140);
   contexto.stroke();
 
-  contexto.textAlign = "left";
+  contexto.textAlign = "center";
+  contexto.fillStyle = "#71817b";
+  contexto.font = `700 12px ${fuente}`;
+  contexto.fillText("CLIENTE", anchoImagen / 2, 170);
   contexto.fillStyle = "#173d38";
   contexto.font = `700 30px ${fuente}`;
   lineasCliente.forEach((linea, indice) => {
-    contexto.fillText(linea, margen, yCliente + indice * altoLineaCliente);
+    contexto.fillText(
+      linea,
+      anchoImagen / 2,
+      yCliente + indice * altoLineaCliente,
+      anchoImagen - margen * 2,
+    );
   });
 
-  contexto.fillStyle = "#64716d";
-  contexto.font = `400 15px ${fuente}`;
-  contexto.fillText("Pedidos seleccionados", margen, yEtiquetaPedidos);
+  contexto.fillStyle = "#176354";
+  contexto.font = `700 13px ${fuente}`;
+  contexto.fillText("DETALLE DE PEDIDOS", anchoImagen / 2, yEtiquetaPedidos);
+  contexto.fillStyle = "#71817b";
+  contexto.font = `400 13px ${fuente}`;
+  contexto.fillText(
+    `${resumen.pedidos.length} ${resumen.pedidos.length === 1 ? "pedido" : "pedidos"}`,
+    anchoImagen / 2,
+    yEtiquetaPedidos + 19,
+  );
 
   resumen.pedidos.forEach((pedido, indice) => {
     const yFila = yLista + indice * altoFila;
-    contexto.fillStyle = "#26332f";
-    contexto.font = `500 18px ${fuente}`;
-    contexto.textAlign = "left";
-    contexto.fillText(
-      `#${pedido.id} · ${pedido.servicio} · ${pedido.medidas}`,
+    contexto.fillStyle = "#f1f7f5";
+    dibujarRectangulo(
+      contexto,
       margen,
-      yFila + 39,
-      anchoImagen - margen * 2 - 150,
+      yFila + 8,
+      anchoImagen - margen * 2,
+      62,
+      12,
     );
+    contexto.textAlign = "center";
     contexto.fillStyle = "#173d38";
-    contexto.font = `700 19px ${fuente}`;
-    contexto.textAlign = "right";
+    contexto.font = `600 15px ${fuente}`;
     contexto.fillText(
-      formatearPrecio(pedido.valor),
-      anchoImagen - margen,
-      yFila + 39,
+      `${formatearFechaCorta(pedido.fecha)}  ·  ${pedido.servicio}  ·  ${pedido.medidas}  ·  ${formatearPrecio(pedido.valor)}${pedido.aplicaPromocion ? "  ·  PROMO APLICADA" : ""}`,
+      anchoImagen / 2,
+      yFila + 47,
+      anchoImagen - margen * 2 - 24,
     );
     contexto.strokeStyle = "#edf1ef";
     contexto.beginPath();
-    contexto.moveTo(margen, yFila + altoFila);
-    contexto.lineTo(anchoImagen - margen, yFila + altoFila);
+    contexto.moveTo(margen + 12, yFila + altoFila);
+    contexto.lineTo(anchoImagen - margen - 12, yFila + altoFila);
     contexto.stroke();
   });
 
-  contexto.textAlign = "left";
-  contexto.fillStyle = "#52625d";
-  contexto.font = `500 17px ${fuente}`;
-  contexto.fillText("Total seleccionado", margen, yTotal + 31);
-  contexto.textAlign = "right";
-  contexto.fillStyle = "#173d38";
-  contexto.font = `700 25px ${fuente}`;
+  const totalGradient = contexto.createLinearGradient(
+    margen,
+    yTotal,
+    anchoImagen - margen,
+    yTotal + 86,
+  );
+  totalGradient.addColorStop(0, "#174c43");
+  totalGradient.addColorStop(1, "#176354");
+  contexto.fillStyle = totalGradient;
+  dibujarRectangulo(
+    contexto,
+    margen,
+    yTotal,
+    anchoImagen - margen * 2,
+    86,
+    16,
+  );
+  contexto.textAlign = "center";
+  contexto.fillStyle = "#d5eee7";
+  contexto.font = `700 13px ${fuente}`;
+  contexto.fillText("TOTAL", anchoImagen / 2, yTotal + 29);
+  contexto.fillStyle = "#ffffff";
+  contexto.font = `700 24px ${fuente}`;
   contexto.fillText(
     formatearPrecio(resumen.total),
-    anchoImagen - margen,
-    yTotal + 33,
+    anchoImagen / 2,
+    yTotal + 64,
+    anchoImagen - margen * 2 - 32,
   );
 
-  contexto.textAlign = "left";
-  contexto.fillStyle = "#89938f";
-  contexto.font = `400 13px ${fuente}`;
+  contexto.textAlign = "center";
+  contexto.fillStyle = "#71817b";
+  contexto.font = `400 12px ${fuente}`;
   contexto.fillText(
-    "Resumen informativo · no es un comprobante.",
-    margen,
+    "Resumen informativo · no es un comprobante",
+    anchoImagen / 2,
     yPie + 8,
   );
 
