@@ -157,13 +157,10 @@
 
 <script>
   import {
-    iniciarPedidosStore,
-    suscribirsePedidos,
-  } from "../../services/pedidos-store";
-
-  import type { Pedido } from "../../types/pedido";
-  import { obtenerUsuario } from "../../services/auth";
-  import { pedidoPerteneceAlArea } from "../../services/permisos";
+    obtenerEstadisticasPedidosHoy,
+    type EstadisticasPedidosHoy,
+  } from "../../services/api";
+  import { obtenerToken, obtenerUsuario } from "../../services/auth";
 
   const enRevision = document.getElementById("stat-en-revision");
   const enImpresion = document.getElementById("stat-en-impresion");
@@ -333,57 +330,9 @@
   document.addEventListener("pointerdown", prepararAudio, { once: true });
   document.addEventListener("keydown", prepararAudio, { once: true });
 
-  /**
-   * Determina si una fecha corresponde al día actual
-   * en la zona horaria de Ecuador.
-   */
-  function fechaEsDeHoy(fecha: string | null): boolean {
-    if (!fecha) {
-      return false;
-    }
-
-    const fechaRegistro = new Date(fecha);
-    const fechaActual = new Date();
-
-    const formatoFecha = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/Guayaquil",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-
-    return (
-      formatoFecha.format(fechaRegistro) === formatoFecha.format(fechaActual)
-    );
-  }
-
-  /**
-   * Actualiza las estadísticas del dashboard.
-   *
-   * El store emite Pedido[], por lo que el callback debe
-   * usar el contrato real del modelo y no un array custom.
-   */
-  function actualizarEstadisticas(pedidos: Pedido[]) {
-    const estadisticas: EstadoContadores = {
-      REVISION: 0,
-      IMPRIMIENDO: 0,
-      LISTO: 0,
-      ENTREGADO: 0,
-    };
-
-    const usuario = obtenerUsuario();
-    const pedidosDeHoy = pedidos.filter(
-      (pedido) =>
-        pedidoPerteneceAlArea(pedido, usuario) &&
-        fechaEsDeHoy(pedido.updatedAt),
-    );
-
-    pedidosDeHoy.forEach((pedido) => {
-      if (pedido.estado in estadisticas) {
-        estadisticas[pedido.estado as keyof typeof estadisticas]++;
-      }
-    });
-
+  function actualizarEstadisticas(
+    estadisticas: EstadisticasPedidosHoy,
+  ) {
     let huboIncremento = false;
 
     (Object.keys(articulosEstadisticas) as (keyof EstadoContadores)[]).forEach(
@@ -411,13 +360,33 @@
     }
   }
 
-  suscribirsePedidos(actualizarEstadisticas);
+  let temporizadorActualizacion: number | null = null;
+  let secuenciaEstadisticas = 0;
 
-  iniciarPedidosStore()
-    .catch((error) => {
-      console.error("No se pudo iniciar el store:", error);
-    })
-    .finally(() => {
+  async function cargarEstadisticas() {
+    const secuencia = ++secuenciaEstadisticas;
+    try {
+      const estadisticas = await obtenerEstadisticasPedidosHoy();
+      if (secuencia !== secuenciaEstadisticas) return;
+      actualizarEstadisticas(estadisticas);
       cargaInicialCompleta = true;
-    });
+    } catch (error) {
+      if (secuencia !== secuenciaEstadisticas) return;
+      console.error("No se pudieron cargar las estadísticas de pedidos:", error);
+    }
+  }
+
+  window.addEventListener("centro-control:pedido-actualizado", () => {
+    if (temporizadorActualizacion !== null) {
+      window.clearTimeout(temporizadorActualizacion);
+    }
+    temporizadorActualizacion = window.setTimeout(() => {
+      temporizadorActualizacion = null;
+      void cargarEstadisticas();
+    }, 300);
+  });
+
+  if (obtenerToken() && obtenerUsuario()) {
+    void cargarEstadisticas();
+  }
 </script>

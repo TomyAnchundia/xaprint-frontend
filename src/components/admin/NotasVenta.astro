@@ -211,14 +211,10 @@
     emitirNotaVentaNoPagados,
     obtenerNotaVentaPorId,
     obtenerNotasVenta,
+    obtenerPedidosPendientesNotaVenta,
     type NotaVenta,
     type NotaVentaResumen,
   } from "../../services/api";
-  import {
-    iniciarPedidosStore,
-    obtenerPedidosStore,
-    suscribirsePedidos,
-  } from "../../services/pedidos-store";
   import type { EstadoPedido, Pedido } from "../../types/pedido";
   import { formatearFechaCorta } from "../../utils/fecha";
   import {
@@ -313,6 +309,8 @@
 
   let pedidosActuales: Pedido[] = [];
   let pedidosCargados = false;
+  let vistaNotasActiva = false;
+  let secuenciaCargaPedidos = 0;
   let errorCarga: string | null = null;
   let notaEnRevision: NotaEnRevision | null = null;
   let mensajeModal: { texto: string; tipo: "success" | "error" } | null = null;
@@ -327,6 +325,26 @@
   let cargandoMasHistorial = false;
   let secuenciaCargaHistorial = 0;
   let temporizadorBusquedaHistorial: number | null = null;
+
+  async function cargarPedidosPendientes() {
+    const secuencia = ++secuenciaCargaPedidos;
+    pedidosCargados = false;
+    errorCarga = null;
+    renderizar();
+
+    try {
+      pedidosActuales = await obtenerPedidosPendientesNotaVenta();
+      if (secuencia !== secuenciaCargaPedidos) return;
+      pedidosCargados = true;
+      renderizar();
+    } catch (error: unknown) {
+      if (secuencia !== secuenciaCargaPedidos) return;
+      console.error("No se pudieron cargar los pedidos para notas de venta:", error);
+      errorCarga = "No se pudieron cargar los pedidos.";
+      pedidosCargados = true;
+      renderizar();
+    }
+  }
 
   function normalizar(valor: string): string {
     return valor
@@ -1275,21 +1293,61 @@
     renderizar();
   });
 
-  suscribirsePedidos((pedidos) => {
-    pedidosActuales = pedidos;
-    renderizar();
+  window.addEventListener("centro-control:vista-activada", (event) => {
+    const vista = (event as CustomEvent<{ vista?: string }>).detail?.vista;
+    if (vista !== "notas-venta") {
+      vistaNotasActiva = false;
+      return;
+    }
+
+    vistaNotasActiva = true;
+    void cargarPedidosPendientes();
   });
 
-  iniciarPedidosStore()
-    .then(() => {
-      pedidosActuales = obtenerPedidosStore();
-      pedidosCargados = true;
-      renderizar();
-    })
-    .catch((error: unknown) => {
-      console.error("No se pudieron cargar los pedidos para notas de venta:", error);
-      errorCarga = "No se pudieron cargar los pedidos.";
-      pedidosCargados = true;
-      renderizar();
-    });
+  window.addEventListener("centro-control:pedido-actualizado", (event) => {
+    if (!vistaNotasActiva || !pedidosCargados) return;
+    const pedido = (
+      event as CustomEvent<Pedido | { id: number; eliminado: true }>
+    ).detail;
+    if (!pedido) return;
+
+    const indice = pedidosActuales.findIndex(
+      (actual) => actual.id === pedido.id,
+    );
+    if ("eliminado" in pedido && pedido.eliminado) {
+      if (indice !== -1) {
+        pedidosActuales = pedidosActuales.filter(
+          (actual) => actual.id !== pedido.id,
+        );
+        renderizar();
+      }
+      return;
+    }
+
+    const esElegible =
+      pedido.estadoPago === "NO_PAGADO" &&
+      estadosElegibles.has(pedido.estado) &&
+      Number.isSafeInteger(pedido.cliente?.id) &&
+      pedido.cliente.id > 0;
+    if (!esElegible) {
+      if (indice !== -1) {
+        pedidosActuales = pedidosActuales.filter(
+          (actual) => actual.id !== pedido.id,
+        );
+        renderizar();
+      }
+      return;
+    }
+
+    pedidosActuales =
+      indice === -1
+        ? [...pedidosActuales, pedido]
+        : pedidosActuales.map((actual) =>
+            actual.id === pedido.id ? pedido : actual,
+          );
+    pedidosActuales.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    renderizar();
+  });
 </script>

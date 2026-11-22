@@ -23,6 +23,30 @@ export interface Cliente {
   tarifaEspecial: boolean;
 }
 
+export type FiltroEstadoPedidos =
+  "TODOS" | "REVISION" | "IMPRIMIENDO" | "LISTO" | "ENTREGADO";
+
+export type FiltroServicioPedidos = "TODOS" | "UV" | "TEXTIL_31" | "TEXTIL_58";
+
+export interface FiltrosPaginaPedidos {
+  estado: FiltroEstadoPedidos;
+  servicio: FiltroServicioPedidos;
+  busqueda: string;
+  cursor?: string;
+}
+
+export interface PaginaPedidos {
+  items: Pedido[];
+  nextCursor: string | null;
+}
+
+export interface EstadisticasPedidosHoy {
+  REVISION: number;
+  IMPRIMIENDO: number;
+  LISTO: number;
+  ENTREGADO: number;
+}
+
 export interface TarifaCliente {
   id: number;
   clienteId: number;
@@ -353,6 +377,27 @@ async function request<T>(
 
 export async function obtenerPedidos(): Promise<Pedido[]> {
   return request<Pedido[]>("/pedidos");
+}
+
+export async function obtenerPaginaPedidos(
+  filtros: FiltrosPaginaPedidos,
+): Promise<PaginaPedidos> {
+  const parametros = new URLSearchParams({
+    estado: filtros.estado,
+    servicio: filtros.servicio,
+    busqueda: filtros.busqueda,
+    limite: "50",
+  });
+  if (filtros.cursor) parametros.set("cursor", filtros.cursor);
+  return request<PaginaPedidos>(`/pedidos/pagina?${parametros.toString()}`);
+}
+
+export async function obtenerEstadisticasPedidosHoy(): Promise<EstadisticasPedidosHoy> {
+  return request<EstadisticasPedidosHoy>("/pedidos/estadisticas");
+}
+
+export async function obtenerPedidosPendientesNotaVenta(): Promise<Pedido[]> {
+  return request<Pedido[]>("/pedidos/pendientes-nota-venta");
 }
 
 export async function obtenerPedido(id: number): Promise<Pedido> {

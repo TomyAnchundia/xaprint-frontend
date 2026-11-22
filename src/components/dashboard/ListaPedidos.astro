@@ -45,6 +45,7 @@
               id="buscar-pedidos-cliente"
               type="search"
               autocomplete="off"
+              maxlength="100"
               placeholder="Buscar por nombre de cliente"
               class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition-[width,border-color,box-shadow,background-color] duration-300 ease-out placeholder:text-slate-400 focus:border-cyan-600 focus:bg-white focus:ring-2 focus:ring-cyan-100 sm:w-80 sm:focus:w-96"
             />
@@ -262,6 +263,15 @@
       <!-- Tarjetas móviles -->
       <div id="pedidos-tarjetas" class="h-full overflow-y-auto p-3 lg:hidden">
         <div id="pedidos-tarjetas-body" class="space-y-3"></div>
+        <div class="py-3 text-center">
+          <button
+            type="button"
+            data-cargar-mas-pedidos
+            class="hidden rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+          >
+            Cargar más
+          </button>
+        </div>
       </div>
 
       <!-- Tabla para pantallas grandes -->
@@ -275,7 +285,7 @@
                 <input
                   id="pedidos-seleccionar-visibles"
                   type="checkbox"
-                  aria-label="Seleccionar todos los pedidos disponibles del filtro actual"
+                  aria-label="Seleccionar todos los pedidos cargados del filtro actual"
                   class="h-4 w-4 rounded border-slate-300 accent-cyan-700 focus:ring-cyan-600"
                 />
               </th>
@@ -292,6 +302,15 @@
 
           <tbody id="pedidos-body" class="divide-y divide-slate-100"></tbody>
         </table>
+        <div class="py-3 text-center">
+          <button
+            type="button"
+            data-cargar-mas-pedidos
+            class="hidden rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+          >
+            Cargar más
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -444,8 +463,13 @@
 <script>
   import { Popover } from "flowbite";
   import {
+    cambiarFiltrosPedidos,
+    cargarMasPedidos,
     iniciarPedidosStore,
+    obtenerEstadoPaginacionPedidos,
     suscribirsePedidos,
+    suscribirsePaginacionPedidos,
+    type FiltrosStorePedidos,
   } from "../../services/pedidos-store";
 
   import type { EstadoPedido, Pedido } from "../../types/pedido";
@@ -609,6 +633,7 @@
   let filtroActual: FiltroPedido = "TODOS";
   let filtroServicioActual: FiltroServicioPedido = "TODOS";
   let nombreBuscado = "";
+  let temporizadorBusquedaServidor: number | null = null;
   const pedidosSeleccionados = new Set<number>();
   let procesandoCambioMasivo = false;
   let progresoCambioMasivo = "";
@@ -666,6 +691,27 @@
     return pedidosFiltrados.filter((pedido) =>
       normalizarTexto(pedido.cliente.nombre).includes(consulta),
     );
+  }
+
+  function solicitarPedidosFiltrados() {
+    const filtros: FiltrosStorePedidos = {
+      estado: filtroActual,
+      servicio: filtroServicioActual,
+      busqueda: nombreBuscado,
+    };
+    void cambiarFiltrosPedidos(filtros).catch((errorApi: unknown) => {
+      console.error("No se pudieron cargar los pedidos filtrados:", errorApi);
+    });
+  }
+
+  function programarBusquedaPedidos() {
+    if (temporizadorBusquedaServidor !== null) {
+      window.clearTimeout(temporizadorBusquedaServidor);
+    }
+    temporizadorBusquedaServidor = window.setTimeout(() => {
+      temporizadorBusquedaServidor = null;
+      solicitarPedidosFiltrados();
+    }, 250);
   }
 
   function normalizarTexto(valor: string): string {
@@ -1160,7 +1206,8 @@
       return;
     }
 
-    if (!cargaInicialPedidosCompleta) {
+    const estadoCarga = obtenerEstadoPaginacionPedidos();
+    if (estadoCarga.cargandoInicial || !cargaInicialPedidosCompleta) {
       loading.classList.remove("hidden");
       vacio.classList.add("hidden");
       error.classList.add("hidden");
@@ -1169,7 +1216,12 @@
     }
 
     loading.classList.add("hidden");
-    error.classList.add("hidden");
+    error.classList.toggle("hidden", estadoCarga.error !== "inicial");
+    if (estadoCarga.error === "inicial") {
+      lista.classList.add("hidden");
+      vacio.classList.add("hidden");
+      return;
+    }
 
     const pedidos = obtenerPedidosFiltrados();
 
@@ -1186,13 +1238,17 @@
     if (resultadosBusqueda) {
       const consultando = Boolean(nombreBuscado.trim());
       resultadosBusqueda.classList.toggle("hidden", !consultando);
-      resultadosBusqueda.textContent = `${pedidos.length} ${pedidos.length === 1 ? "pedido encontrado" : "pedidos encontrados"}`;
+      resultadosBusqueda.textContent = `${pedidos.length} ${
+        pedidos.length === 1 ? "pedido cargado" : "pedidos cargados"
+      }${estadoCarga.hayMas ? " · hay más resultados" : ""}`;
     }
 
     if (pedidos.length === 0) {
       lista.classList.add("hidden");
       vacio.classList.remove("hidden");
-
+      document
+        .querySelectorAll<HTMLButtonElement>("[data-cargar-mas-pedidos]")
+        .forEach((boton) => boton.classList.add("hidden"));
       return;
     }
 
@@ -1292,6 +1348,23 @@
           }
         });
     });
+
+    document
+        .querySelectorAll<HTMLButtonElement>("[data-cargar-mas-pedidos]")
+        .forEach((boton) => {
+          boton.classList.toggle(
+            "hidden",
+            !estadoCarga.hayMas && estadoCarga.error !== "mas",
+          );
+          boton.disabled =
+            estadoCarga.cargandoMas || estadoCarga.cargandoInicial;
+          boton.textContent =
+            estadoCarga.error === "mas"
+              ? "Reintentar"
+              : estadoCarga.cargandoMas
+                ? "Cargando..."
+                : "Cargar más";
+        });
   }
 
   if (checkboxSeleccionarVisibles) {
@@ -1565,6 +1638,7 @@
     pedidosSeleccionados.clear();
     nombreBuscado = buscadorCliente.value;
     renderizarPedidos();
+    programarBusquedaPedidos();
   });
 
   /*
@@ -1582,6 +1656,7 @@
 
         pedidosSeleccionados.clear();
         filtroActual = filtro;
+        solicitarPedidosFiltrados();
 
         renderizarPedidos();
       });
@@ -1600,6 +1675,7 @@
 
         pedidosSeleccionados.clear();
         filtroServicioActual = filtro;
+        solicitarPedidosFiltrados();
         renderizarPedidos();
       });
     });
@@ -1608,6 +1684,7 @@
     const filtro = filtroPedidoMovil.value as FiltroPedido;
     pedidosSeleccionados.clear();
     filtroActual = filtro;
+    solicitarPedidosFiltrados();
     renderizarPedidos();
   });
 
@@ -1615,8 +1692,19 @@
     const filtro = filtroServicioMovil.value as FiltroServicioPedido;
     pedidosSeleccionados.clear();
     filtroServicioActual = filtro;
+    solicitarPedidosFiltrados();
     renderizarPedidos();
   });
+
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-cargar-mas-pedidos]")
+    .forEach((boton) => {
+      boton.addEventListener("click", () => {
+        void cargarMasPedidos().catch((errorApi: unknown) => {
+          console.error("No se pudieron cargar más pedidos:", errorApi);
+        });
+      });
+    });
 
   /*
    * Copiar teléfono.
@@ -1703,6 +1791,9 @@
   suscribirsePedidos((pedidos) => {
     pedidosActuales = pedidos;
 
+    renderizarPedidos();
+  });
+  suscribirsePaginacionPedidos(() => {
     renderizarPedidos();
   });
 

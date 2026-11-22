@@ -1440,6 +1440,14 @@
     }
   });
 
+  window.addEventListener("centro-control:clientes-actualizados", () => {
+    if (cargandoDatos) {
+      recargaPendiente = true;
+    } else if (datosCargados) {
+      void cargar();
+    }
+  });
+
   window.addEventListener("centro-control:vista-activada", (event) => {
     const vista = (event as CustomEvent<{ vista?: string }>).detail?.vista;
     if (vista === "clientes" && !datosCargados && !cargandoDatos)
