@@ -262,6 +262,8 @@ export interface NotaVentaDetalle {
   ancho: number;
   largo: number | null;
   valor: number;
+  abonado: number;
+  porCobrar: number;
 }
 
 export interface NotaVenta {
@@ -273,6 +275,8 @@ export interface NotaVenta {
   };
   pedidos: NotaVentaDetalle[];
   total: number;
+  totalPedidos: number;
+  totalAbonado: number;
 }
 
 export interface NotaVentaResumen {

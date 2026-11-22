@@ -21,6 +21,8 @@ export interface Pedido {
 
   estadoPago: EstadoPagoPedido;
 
+  montoAbonado?: number;
+
   metodosPago?: ("Efectivo" | "Transferencia")[];
 
   prioridad: number;

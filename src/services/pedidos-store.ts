@@ -261,7 +261,13 @@ export async function cargarMasPedidos(): Promise<void> {
 }
 
 function actualizarPedido(
-  pedidoActualizado: Pedido | { id: number; eliminado: true },
+  pedidoActualizado:
+    | Pedido
+    | {
+        id: number;
+        eliminado: true;
+        clienteId?: number;
+      },
 ) {
   if ("eliminado" in pedidoActualizado && pedidoActualizado.eliminado) {
     const anterior = pedidos.find((pedido) => pedido.id === pedidoActualizado.id);
@@ -269,7 +275,12 @@ function actualizarPedido(
     notificarPedidos();
     window.dispatchEvent(
       new CustomEvent("centro-control:pedido-actualizado", {
-        detail: { anterior, nuevo: null, eliminado: true },
+        detail: {
+          anterior,
+          nuevo: null,
+          eliminado: true,
+          clienteId: pedidoActualizado.clienteId,
+        },
       }),
     );
     return;

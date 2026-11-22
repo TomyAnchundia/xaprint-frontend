@@ -12,6 +12,8 @@ export interface PedidoResumenImagen {
   servicio: string;
   medidas: string;
   valor: number;
+  abonado: number;
+  porCobrar: number;
   aplicaPromocion: boolean;
 }
 
@@ -19,6 +21,8 @@ export interface ResumenPedidosImagen {
   cliente: string;
   pedidos: PedidoResumenImagen[];
   total: number;
+  totalPedidos: number;
+  totalAbonado: number;
 }
 
 export interface ResultadoCompartirResumen {
@@ -111,9 +115,9 @@ async function generarImagenResumenPedidos(
   const yEtiquetaPedidos =
     yCliente + lineasCliente.length * altoLineaCliente + 20;
   const yLista = yEtiquetaPedidos + 34;
-  const altoFila = 78;
+  const altoFila = 96;
   const yTotal = yLista + resumen.pedidos.length * altoFila + 18;
-  const yPie = yTotal + 108;
+  const yPie = yTotal + 132;
   canvas.height = (yPie + 42) * escalaImagen;
   contexto.scale(escalaImagen, escalaImagen);
 
@@ -123,25 +127,11 @@ async function generarImagenResumenPedidos(
   contexto.fillStyle = fondo;
   contexto.fillRect(0, 0, anchoImagen, yPie + 42);
   contexto.fillStyle = "#ffffff";
-  dibujarRectangulo(
-    contexto,
-    16,
-    28,
-    anchoImagen - 32,
-    yPie + 42 - 56,
-    22,
-  );
+  dibujarRectangulo(contexto, 16, 28, anchoImagen - 32, yPie + 42 - 56, 22);
 
   contexto.drawImage(logo, (anchoImagen - 170) / 2, 40, 170, 35);
   contexto.fillStyle = "#e7f4f0";
-  dibujarRectangulo(
-    contexto,
-    (anchoImagen - 200) / 2,
-    88,
-    200,
-    34,
-    17,
-  );
+  dibujarRectangulo(contexto, (anchoImagen - 200) / 2, 88, 200, 34, 17);
   contexto.fillStyle = "#176354";
   contexto.font = `700 12px ${fuente}`;
   contexto.textAlign = "center";
@@ -188,16 +178,24 @@ async function generarImagenResumenPedidos(
       margen,
       yFila + 8,
       anchoImagen - margen * 2,
-      62,
+      80,
       12,
     );
     contexto.textAlign = "center";
     contexto.fillStyle = "#173d38";
-    contexto.font = `600 15px ${fuente}`;
+    contexto.font = `600 14px ${fuente}`;
     contexto.fillText(
-      `${formatearFechaCorta(pedido.fecha)}  ·  ${pedido.servicio}  ·  ${pedido.medidas}  ·  ${formatearPrecio(pedido.valor)}${pedido.aplicaPromocion ? "  ·  PROMO APLICADA" : ""}`,
+      `${formatearFechaCorta(pedido.fecha)}  ·  ${pedido.servicio}  ·  ${pedido.medidas}${pedido.aplicaPromocion ? "  ·  PROMO APLICADA" : ""}`,
       anchoImagen / 2,
-      yFila + 47,
+      yFila + 40,
+      anchoImagen - margen * 2 - 24,
+    );
+    contexto.fillStyle = "#53645e";
+    contexto.font = `500 13px ${fuente}`;
+    contexto.fillText(
+      `Total ${formatearPrecio(pedido.valor)}  ·  Abonado ${formatearPrecio(pedido.abonado)}  ·  Saldo ${formatearPrecio(pedido.porCobrar)}`,
+      anchoImagen / 2,
+      yFila + 64,
       anchoImagen - margen * 2 - 24,
     );
     contexto.strokeStyle = "#edf1ef";
@@ -211,7 +209,7 @@ async function generarImagenResumenPedidos(
     margen,
     yTotal,
     anchoImagen - margen,
-    yTotal + 86,
+    yTotal + 108,
   );
   totalGradient.addColorStop(0, "#174c43");
   totalGradient.addColorStop(1, "#176354");
@@ -221,20 +219,34 @@ async function generarImagenResumenPedidos(
     margen,
     yTotal,
     anchoImagen - margen * 2,
-    86,
+    108,
     16,
   );
-  contexto.textAlign = "center";
+  contexto.textAlign = "left";
   contexto.fillStyle = "#d5eee7";
-  contexto.font = `700 13px ${fuente}`;
-  contexto.fillText("TOTAL", anchoImagen / 2, yTotal + 29);
+  contexto.font = `600 13px ${fuente}`;
+  contexto.fillText("VALOR TOTAL", margen + 18, yTotal + 29);
+  contexto.fillText("ABONADO", margen + 18, yTotal + 56);
+  contexto.font = `700 14px ${fuente}`;
+  contexto.fillText("SALDO PENDIENTE", margen + 18, yTotal + 84);
+  contexto.textAlign = "right";
   contexto.fillStyle = "#ffffff";
-  contexto.font = `700 24px ${fuente}`;
+  contexto.font = `600 14px ${fuente}`;
+  contexto.fillText(
+    formatearPrecio(resumen.totalPedidos),
+    anchoImagen - margen - 18,
+    yTotal + 29,
+  );
+  contexto.fillText(
+    formatearPrecio(resumen.totalAbonado),
+    anchoImagen - margen - 18,
+    yTotal + 56,
+  );
+  contexto.font = `700 18px ${fuente}`;
   contexto.fillText(
     formatearPrecio(resumen.total),
-    anchoImagen / 2,
-    yTotal + 64,
-    anchoImagen - margen * 2 - 32,
+    anchoImagen - margen - 18,
+    yTotal + 85,
   );
 
   contexto.textAlign = "center";

@@ -83,8 +83,10 @@ export async function descargarNotaVentaPdf(nota: NotaVenta): Promise<void> {
     pdf.setFontSize(8);
     pdf.text("PEDIDO", margen + 4, posicionY + 6);
     pdf.text("SERVICIO", margen + 31, posicionY + 6);
-    pdf.text("MEDIDAS", margen + 79, posicionY + 6);
-    pdf.text("VALOR", ladoDerecho, posicionY + 6, { align: "right" });
+    pdf.text("MEDIDAS", margen + 67, posicionY + 6);
+    pdf.text("TOTAL", margen + 122, posicionY + 6, { align: "right" });
+    pdf.text("ABONADO", margen + 149, posicionY + 6, { align: "right" });
+    pdf.text("SALDO", ladoDerecho, posicionY + 6, { align: "right" });
     return posicionY + 9;
   };
 
@@ -95,51 +97,66 @@ export async function descargarNotaVentaPdf(nota: NotaVenta): Promise<void> {
 
   let posicionY = dibujarCabeceraTabla(dibujarCabecera(false));
   nota.pedidos.forEach((pedido, indice) => {
-    if (posicionY + 11 > altoPagina - margen - 12) {
+    if (posicionY + 14 > altoPagina - margen - 12) {
       posicionY = dibujarContinuacion();
     }
 
     if (indice % 2 === 1) {
       pdf.setFillColor(247, 249, 248);
-      pdf.rect(margen, posicionY, anchoContenido, 11, "F");
+      pdf.rect(margen, posicionY, anchoContenido, 14, "F");
     }
     pdf.setDrawColor(226, 232, 230);
-    pdf.line(margen, posicionY + 11, margen + anchoContenido, posicionY + 11);
+    pdf.line(margen, posicionY + 14, margen + anchoContenido, posicionY + 14);
     pdf.setTextColor(45, 55, 53);
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
+    pdf.setFontSize(7.5);
     pdf.text(`#${pedido.pedidoId}`, margen + 4, posicionY + 7);
     pdf.text(
       pedido.servicio === "TEXTIL" ? "DTF textil" : "DTF UV",
-      margen + 31,
+      margen + 27,
       posicionY + 7,
     );
     pdf.text(
       pedido.largo === null
         ? `${pedido.ancho} cm`
         : `${pedido.ancho} x ${pedido.largo} cm`,
-      margen + 79,
+      margen + 67,
       posicionY + 7,
     );
-    pdf.text(formatearPrecio(pedido.valor), ladoDerecho, posicionY + 7, {
+    pdf.text(formatearPrecio(pedido.valor), margen + 122, posicionY + 7, {
       align: "right",
     });
-    posicionY += 11;
+    pdf.text(formatearPrecio(pedido.abonado), margen + 149, posicionY + 7, {
+      align: "right",
+    });
+    pdf.text(formatearPrecio(pedido.porCobrar), ladoDerecho, posicionY + 7, {
+      align: "right",
+    });
+    posicionY += 14;
   });
 
-  if (posicionY + 24 > altoPagina - margen - 12) {
+  if (posicionY + 38 > altoPagina - margen - 12) {
     posicionY = dibujarContinuacion();
   }
   posicionY += 7;
   pdf.setFillColor(245, 248, 247);
-  pdf.roundedRect(margen + anchoContenido - 73, posicionY, 73, 20, 2, 2, "F");
+  pdf.roundedRect(margen + anchoContenido - 105, posicionY, 105, 30, 2, 2, "F");
   pdf.setTextColor(100, 116, 113);
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(8);
-  pdf.text("TOTAL A PAGAR", margen + anchoContenido - 68, posicionY + 7);
+  pdf.setFontSize(7.5);
+  pdf.text("VALOR TOTAL", margen + anchoContenido - 100, posicionY + 7);
+  pdf.text("ABONADO", margen + anchoContenido - 100, posicionY + 15);
+  pdf.text("SALDO PENDIENTE", margen + anchoContenido - 100, posicionY + 24);
   pdf.setTextColor(...colorMarca);
-  pdf.setFontSize(13);
-  pdf.text(formatearPrecio(nota.total), ladoDerecho, posicionY + 15, {
+  pdf.setFontSize(8);
+  pdf.text(formatearPrecio(nota.totalPedidos), ladoDerecho, posicionY + 7, {
+    align: "right",
+  });
+  pdf.text(formatearPrecio(nota.totalAbonado), ladoDerecho, posicionY + 15, {
+    align: "right",
+  });
+  pdf.setFontSize(10);
+  pdf.text(formatearPrecio(nota.total), ladoDerecho, posicionY + 24, {
     align: "right",
   });
 

@@ -317,6 +317,63 @@
 </section>
 
 <div
+  id="pedido-menu-contextual"
+  class="fixed z-[120] hidden min-w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl"
+  role="menu"
+  aria-label="Acciones del pedido"
+>
+  <button
+    type="button"
+    data-pedido-menu-accion="avanzar"
+    class="flex w-full items-center px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+    role="menuitem"
+  >
+    Avanzar estado
+  </button>
+  <button
+    type="button"
+    data-pedido-menu-accion="retroceder"
+    class="flex w-full items-center px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+    role="menuitem"
+  >
+    Retroceder estado
+  </button>
+  <div class="my-1 border-t border-slate-100"></div>
+  <button
+    type="button"
+    data-pedido-menu-accion="editar"
+    class="flex w-full items-center px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+    role="menuitem"
+  >
+    Editar
+  </button>
+  <button
+    type="button"
+    data-pedido-menu-accion="pago"
+    class="flex w-full items-center px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+    role="menuitem"
+  >
+    Registrar pago
+  </button>
+  <button
+    type="button"
+    data-pedido-menu-accion="cancelar"
+    class="flex w-full items-center px-4 py-2.5 text-left text-sm font-medium text-red-700 transition hover:bg-red-50 focus:bg-red-50 focus:outline-none"
+    role="menuitem"
+  >
+    Cancelar
+  </button>
+  <button
+    type="button"
+    data-pedido-menu-accion="eliminar"
+    class="flex w-full items-center px-4 py-2.5 text-left text-sm font-medium text-red-700 transition hover:bg-red-50 focus:bg-red-50 focus:outline-none"
+    role="menuitem"
+  >
+    Eliminar
+  </button>
+</div>
+
+<div
   id="pedido-referencia-preview-modal"
   class="invisible fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/75 p-4 opacity-0 transition-opacity"
   aria-hidden="true"
@@ -501,7 +558,10 @@
     type FiltroPedido,
     type FiltroServicioPedido,
   } from "../../utils/pedidos-lista";
-  import { estadosSiguientes } from "../../utils/pedido-detalle";
+  import {
+    estadosAnteriores,
+    estadosSiguientes,
+  } from "../../utils/pedido-detalle";
   import {
     copiarImagenResumenPedidos,
     type ResumenPedidosImagen,
@@ -522,6 +582,9 @@
   const resultadosBusqueda = document.getElementById(
     "pedidos-busqueda-resultados",
   );
+  const menuContextual = document.getElementById(
+    "pedido-menu-contextual",
+  ) as HTMLDivElement | null;
   const accionesSeleccion = document.getElementById(
     "pedidos-seleccion-acciones",
   );
@@ -720,6 +783,234 @@
       .replace(/[\u0300-\u036f]/g, "")
       .toLocaleLowerCase("es");
   }
+
+  let pedidoMenuContextual: Pedido | null = null;
+  let procesandoAccionContextual = false;
+
+  function ocultarMenuContextual() {
+    menuContextual?.classList.add("hidden");
+    pedidoMenuContextual = null;
+  }
+
+  function abrirMenuContextual(pedido: Pedido, x: number, y: number) {
+    if (!menuContextual) return;
+    pedidoMenuContextual = pedido;
+    const usuario = obtenerUsuario();
+    const acciones = {
+      avanzar: menuContextual.querySelector<HTMLButtonElement>(
+        '[data-pedido-menu-accion="avanzar"]',
+      ),
+      retroceder: menuContextual.querySelector<HTMLButtonElement>(
+        '[data-pedido-menu-accion="retroceder"]',
+      ),
+      editar: menuContextual.querySelector<HTMLButtonElement>(
+        '[data-pedido-menu-accion="editar"]',
+      ),
+      pago: menuContextual.querySelector<HTMLButtonElement>(
+        '[data-pedido-menu-accion="pago"]',
+      ),
+      cancelar: menuContextual.querySelector<HTMLButtonElement>(
+        '[data-pedido-menu-accion="cancelar"]',
+      ),
+      eliminar: menuContextual.querySelector<HTMLButtonElement>(
+        '[data-pedido-menu-accion="eliminar"]',
+      ),
+    };
+
+    if (acciones.avanzar) {
+      acciones.avanzar.hidden =
+        !usuario || !estadosSiguientes[pedido.estado];
+    }
+    if (acciones.retroceder) {
+      acciones.retroceder.hidden =
+        !usuario || !estadosAnteriores[pedido.estado];
+    }
+    if (acciones.editar) {
+      acciones.editar.hidden = !usuario || usuario.rol === "EMPLEADO";
+    }
+    if (acciones.pago) {
+      acciones.pago.hidden =
+        !usuario ||
+        usuario.rol === "EMPLEADO" ||
+        pedido.estado === "CANCELADO";
+      acciones.pago.textContent =
+        pedido.estadoPago === "PAGADO"
+          ? "Revertir último pago"
+          : "Registrar pago";
+    }
+    if (acciones.cancelar) {
+      acciones.cancelar.hidden =
+        !usuario ||
+        usuario.rol === "EMPLEADO" ||
+        !["REVISION", "IMPRIMIENDO", "LISTO"].includes(pedido.estado);
+    }
+    if (acciones.eliminar) {
+      acciones.eliminar.hidden = usuario?.rol !== "ADMIN";
+    }
+
+    menuContextual.classList.remove("hidden");
+    const rectangulo = menuContextual.getBoundingClientRect();
+    menuContextual.style.left = `${Math.max(
+      8,
+      Math.min(x, window.innerWidth - rectangulo.width - 8),
+    )}px`;
+    menuContextual.style.top = `${Math.max(
+      8,
+      Math.min(y, window.innerHeight - rectangulo.height - 8),
+    )}px`;
+    menuContextual
+      .querySelector<HTMLButtonElement>(
+        '[data-pedido-menu-accion]:not([hidden])',
+      )
+      ?.focus();
+  }
+
+  function obtenerPedidoDesdeElemento(elemento: Element): Pedido | undefined {
+    const fila = elemento.closest<HTMLElement>("[data-pedido-row-id]");
+    const tarjeta = elemento.closest<HTMLElement>("[data-pedido-card-open]");
+    const id = Number(
+      fila?.dataset.pedidoRowId ?? tarjeta?.dataset.pedidoCardOpen,
+    );
+    if (!Number.isSafeInteger(id) || id <= 0) return undefined;
+    return pedidosActuales.find((pedido) => pedido.id === id);
+  }
+
+  if (menuContextual) document.body.append(menuContextual);
+
+  document.addEventListener("contextmenu", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const pedido = obtenerPedidoDesdeElemento(event.target);
+    if (!pedido) return;
+
+    const control = event.target.closest(
+      "button, input, select, textarea, a",
+    );
+    if (control && !control.matches("[data-pedido-card-open]")) return;
+
+    event.preventDefault();
+    abrirMenuContextual(pedido, event.clientX, event.clientY);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (
+      event.key === "Escape" &&
+      menuContextual?.classList.contains("hidden") === false
+    ) {
+      event.preventDefault();
+      ocultarMenuContextual();
+      return;
+    }
+
+    if (
+      !(event.target instanceof Element) ||
+      !(
+        event.key === "ContextMenu" ||
+        (event.key === "F10" && event.shiftKey)
+      )
+    ) {
+      return;
+    }
+
+    const pedido = obtenerPedidoDesdeElemento(event.target);
+    if (!pedido) return;
+    event.preventDefault();
+    const rectangulo = event.target
+      .closest<HTMLElement>("[data-pedido-row-id], [data-pedido-card-open]")
+      ?.getBoundingClientRect();
+    if (!rectangulo) return;
+    abrirMenuContextual(pedido, rectangulo.left, rectangulo.bottom);
+  });
+
+  document.addEventListener("click", (event) => {
+    if (
+      !(event.target instanceof Node) ||
+      !menuContextual ||
+      !menuContextual.contains(event.target)
+    ) {
+      ocultarMenuContextual();
+    }
+  });
+  document.addEventListener("scroll", ocultarMenuContextual, true);
+  window.addEventListener("resize", ocultarMenuContextual);
+
+  menuContextual?.addEventListener("keydown", (event) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const opciones = [
+      ...menuContextual.querySelectorAll<HTMLButtonElement>(
+        '[data-pedido-menu-accion]:not([hidden])',
+      ),
+    ];
+    if (opciones.length === 0) return;
+    event.preventDefault();
+    const indiceActual = opciones.indexOf(
+      document.activeElement as HTMLButtonElement,
+    );
+    const indiceSiguiente =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? opciones.length - 1
+          : (indiceActual +
+              (event.key === "ArrowDown" ? 1 : opciones.length - 1)) %
+            opciones.length;
+    opciones[indiceSiguiente]?.focus();
+  });
+
+  menuContextual?.addEventListener("click", async (event) => {
+    const boton = (event.target as Element).closest<HTMLButtonElement>(
+      "[data-pedido-menu-accion]",
+    );
+    const pedido = pedidoMenuContextual;
+    const accion = boton?.dataset.pedidoMenuAccion;
+    if (!pedido || !accion || procesandoAccionContextual) return;
+
+    ocultarMenuContextual();
+    if (accion === "editar") {
+      document.dispatchEvent(
+        new CustomEvent("centro-control:editar-pedido", {
+          detail: { id: pedido.id },
+        }),
+      );
+      return;
+    }
+    if (accion === "pago" || accion === "cancelar" || accion === "eliminar") {
+      document.dispatchEvent(
+        new CustomEvent("centro-control:accion-pedido", {
+          detail: { id: pedido.id, accion },
+        }),
+      );
+      return;
+    }
+
+    const estadoDestino =
+      accion === "avanzar"
+        ? estadosSiguientes[pedido.estado]
+        : accion === "retroceder"
+          ? estadosAnteriores[pedido.estado]
+          : undefined;
+    if (!estadoDestino) return;
+
+    procesandoAccionContextual = true;
+    try {
+      await cambiarEstadoPedido(pedido.id, estadoDestino);
+      mostrarNotificacion(
+        `Pedido #${pedido.id}: estado actualizado a ${estados[estadoDestino].label}.`,
+      );
+    } catch (errorApi) {
+      console.error(
+        `No se pudo cambiar el estado del pedido #${pedido.id}:`,
+        errorApi,
+      );
+      mostrarNotificacion(
+        errorApi instanceof Error
+          ? errorApi.message
+          : "No se pudo cambiar el estado del pedido.",
+        "error",
+      );
+    } finally {
+      procesandoAccionContextual = false;
+    }
+  });
 
   function obtenerSiguienteEstadoMasivo(
     estado: EstadoPedido,
@@ -1202,6 +1493,7 @@
   }
 
   function renderizarPedidos() {
+    ocultarMenuContextual();
     if (!body || !tarjetasBody || !lista || !loading || !vacio || !error) {
       return;
     }

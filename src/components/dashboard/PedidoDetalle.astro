@@ -1193,6 +1193,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
 
     let pedidoActual: Pedido | null = null;
     let historialActual: HistorialPedido[] = [];
+    let secuenciaCargaPedido = 0;
     let procesandoEstado = false;
     let procesandoPrecioEspecial = false;
     let procesandoCostoDiseno = false;
@@ -2191,7 +2192,8 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
      * --------------------------------------------------------------------------
      */
 
-    async function cargarPedido(id: number) {
+    async function cargarPedido(id: number): Promise<Pedido | null> {
+      const secuencia = ++secuenciaCargaPedido;
       mostrarCarga();
 
       try {
@@ -2199,11 +2201,14 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
           obtenerPedido(id),
           obtenerHistorialPedido(id),
         ]);
+        if (secuencia !== secuenciaCargaPedido) return null;
 
         historialActual = historial;
 
         renderizarPedido(pedido);
+        return pedido;
       } catch (errorApi) {
+        if (secuencia !== secuenciaCargaPedido) return null;
         console.error("No se pudo cargar el pedido:", errorApi);
 
         mostrarError(
@@ -2211,6 +2216,7 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
             ? errorApi.message
             : "Ocurrió un error al cargar el pedido.",
         );
+        return null;
       }
     }
 
@@ -2678,13 +2684,17 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       if (pedidoActual) imprimirEtiquetaPedido(pedidoActual);
     });
 
-    eliminar?.addEventListener("click", () => {
-      cerrarMenuOpciones();
+    function mostrarConfirmacionEliminarPedido() {
       if (!pedidoActual || procesandoEliminacion) return;
       if (modalEliminarPedidoTexto) {
         modalEliminarPedidoTexto.textContent = `¿Eliminar el pedido #${pedidoActual.id} de ${pedidoActual.cliente?.nombre ?? "este cliente"}? Esta acción no se puede deshacer.`;
       }
       mostrarModalElement(modalEliminarPedido);
+    }
+
+    eliminar?.addEventListener("click", () => {
+      cerrarMenuOpciones();
+      mostrarConfirmacionEliminarPedido();
     });
 
     async function confirmarEliminacionPedido() {
@@ -2839,6 +2849,45 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
       mostrarOverlay();
       void cargarPedido(id);
     });
+
+    document.addEventListener(
+      "centro-control:accion-pedido",
+      async (evento) => {
+        const customEvent = evento as CustomEvent<{
+          id: number;
+          accion: "pago" | "cancelar" | "eliminar";
+        }>;
+        const { id, accion } = customEvent.detail ?? {};
+        if (!Number.isSafeInteger(id) || id <= 0) return;
+
+        mostrarOverlay();
+        const pedido = await cargarPedido(id);
+        if (!pedido || pedidoActual?.id !== id) return;
+
+        switch (accion) {
+          case "pago":
+            if (!esEmpleado && pedido.estado !== "CANCELADO") {
+              mostrarModalPago(
+                pedido.estadoPago === "PAGADO" ? "revertir" : "registrar",
+              );
+            }
+            break;
+          case "cancelar":
+            if (
+              !esEmpleado &&
+              ["REVISION", "IMPRIMIENDO", "LISTO"].includes(pedido.estado)
+            ) {
+              mostrarModalCancelar();
+            }
+            break;
+          case "eliminar":
+            if (usuarioActual?.rol === "ADMIN") {
+              mostrarConfirmacionEliminarPedido();
+            }
+            break;
+        }
+      },
+    );
 
     /*
      * --------------------------------------------------------------------------

@@ -493,6 +493,7 @@
     establecerCargaBoton,
     mostrarNotificacion,
   } from "../../utils/notificaciones";
+  import type { Pedido } from "../../types/pedido";
 
   const lista = document.getElementById("clientes-lista");
   const detalle = document.getElementById("cliente-detalle");
@@ -533,6 +534,9 @@
   let datosCargados = false;
   let cargandoDatos = false;
   let recargaPendiente = false;
+  let vistaClientesActiva = false;
+  let temporizadorDeudas: number | null = null;
+  const clientesConDeudaPendiente = new Set<number>();
   let clienteSeleccionado: Cliente | null = null;
   let fichaModalAbierto = false;
   let fichaTriggerId: number | null = null;
@@ -917,7 +921,7 @@
       });
   }
 
-  async function renderDetalle() {
+  async function renderDetalle(deudaActualizada?: DeudaCliente) {
     if (!detalle) return;
     const cliente = clienteSeleccionado;
     const idSolicitud = ++solicitudDetalle;
@@ -950,7 +954,9 @@
 
     try {
       const [deuda, pagosCliente] = await Promise.all([
-        obtenerDeudaCliente(cliente.id),
+        deudaActualizada?.cliente.id === cliente.id
+          ? Promise.resolve(deudaActualizada)
+          : obtenerDeudaCliente(cliente.id),
         obtenerPagosCliente(cliente.id),
       ]);
       if (
@@ -1144,6 +1150,7 @@
         obtenerClientes(),
         obtenerDeudasClientes(),
       ]);
+      clientesConDeudaPendiente.clear();
       datosCargados = true;
       renderLista();
       renderDetalle();
@@ -1156,6 +1163,51 @@
         void cargar();
       }
     }
+  }
+
+  async function actualizarResumenDeudaCliente(clienteId: number) {
+    if (!clientes.some((cliente) => cliente.id === clienteId)) return;
+    try {
+      const deuda = await obtenerDeudaCliente(clienteId);
+      resumenesDeuda = [
+        ...resumenesDeuda.filter((resumen) => resumen.cliente.id !== clienteId),
+        {
+          cliente: deuda.cliente,
+          pedidosConDeuda: deuda.pedidos.length,
+          totalDeuda: deuda.totalDeuda,
+        },
+      ];
+      renderLista();
+      if (clienteSeleccionado?.id === clienteId) {
+        await renderDetalle(deuda);
+      }
+    } catch (caught) {
+      console.error(
+        `No se pudo actualizar la deuda del cliente ${clienteId}:`,
+        caught,
+      );
+    }
+  }
+
+  function programarActualizacionDeudas() {
+    if (
+      !vistaClientesActiva ||
+      !datosCargados ||
+      temporizadorDeudas !== null ||
+      clientesConDeudaPendiente.size === 0
+    ) {
+      return;
+    }
+    temporizadorDeudas = window.setTimeout(() => {
+      temporizadorDeudas = null;
+      const clienteIds = [...clientesConDeudaPendiente];
+      clientesConDeudaPendiente.clear();
+      void Promise.all(
+        clienteIds.map((clienteId) =>
+          actualizarResumenDeudaCliente(clienteId),
+        ),
+      );
+    }, 150);
   }
 
   async function borrarCliente() {
@@ -1432,14 +1484,6 @@
     }
   });
 
-  window.addEventListener("centro-control:actualizar-datos", () => {
-    if (cargandoDatos) {
-      recargaPendiente = true;
-    } else if (datosCargados) {
-      void cargar();
-    }
-  });
-
   window.addEventListener("centro-control:clientes-actualizados", () => {
     if (cargandoDatos) {
       recargaPendiente = true;
@@ -1448,9 +1492,40 @@
     }
   });
 
+  window.addEventListener("centro-control:pedido-actualizado", (event) => {
+    const detail = (
+      event as CustomEvent<{
+        anterior?: Pedido | null;
+        nuevo?: Pedido | null;
+        clienteId?: number;
+      }>
+    ).detail;
+    if (
+      typeof detail?.clienteId === "number" &&
+      Number.isSafeInteger(detail.clienteId) &&
+      detail.clienteId > 0
+    ) {
+      clientesConDeudaPendiente.add(detail.clienteId);
+    }
+    for (const pedido of [detail?.anterior, detail?.nuevo]) {
+      const clienteId = pedido?.cliente?.id;
+      if (
+        typeof clienteId === "number" &&
+        Number.isSafeInteger(clienteId) &&
+        clienteId > 0
+      ) {
+        clientesConDeudaPendiente.add(clienteId);
+      }
+    }
+    programarActualizacionDeudas();
+  });
+
   window.addEventListener("centro-control:vista-activada", (event) => {
     const vista = (event as CustomEvent<{ vista?: string }>).detail?.vista;
-    if (vista === "clientes" && !datosCargados && !cargandoDatos)
-      void cargar();
+    vistaClientesActiva = vista === "clientes";
+    if (vistaClientesActiva) {
+      if (!datosCargados && !cargandoDatos) void cargar();
+      else programarActualizacionDeudas();
+    }
   });
 </script>

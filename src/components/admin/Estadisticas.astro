@@ -657,6 +657,8 @@ const indicadoresProduccion = [
     ) as HTMLButtonElement | null;
     const aporteError = document.getElementById("aporte-desarrollador-error");
     let estadisticasCargadas = false;
+    let vistaEstadisticasActiva = false;
+    let produccionDesactualizada = false;
     const modalAporte = document.getElementById(
       "modal-liquidacion-desarrollador",
     );
@@ -674,6 +676,7 @@ const indicadoresProduccion = [
       | Awaited<ReturnType<typeof obtenerResumenProduccion>>
       | null = null;
     const costosDisenoPorPeriodo = new Map<string, number>();
+    const periodosDesactualizados = new Set<string>();
     const resumenesFinancieros = new Map<
       string,
       ResumenPagosPeriodo & { costoDiseno: number }
@@ -982,7 +985,17 @@ const indicadoresProduccion = [
             });
 
           periodoFinancieroSeleccionado = idSeleccionado;
-          actualizarGraficoFinanciero();
+          if (
+            !resumenesFinancieros.has(idSeleccionado) ||
+            periodosDesactualizados.has(idSeleccionado)
+          ) {
+            void cargarResumenFinanciero(
+              fechaEcuador(),
+              new Set([idSeleccionado]),
+            );
+          } else {
+            actualizarGraficoFinanciero();
+          }
         });
       });
 
@@ -1233,12 +1246,17 @@ const indicadoresProduccion = [
       }
     }
 
-    async function cargarResumenFinanciero(fecha: string) {
+    async function cargarResumenFinanciero(
+      fecha: string,
+      ids: ReadonlySet<string>,
+    ) {
       const solicitud = ++solicitudFinanciera;
-      resumenesFinancieros.clear();
       limpiarGraficoFinanciero();
       try {
-        const periodos = obtenerPeriodos(fecha);
+        const periodos = obtenerPeriodos(fecha).filter(({ id }) =>
+          ids.has(id),
+        );
+        if (periodos.length === 0) return;
         const resumenes = await Promise.all(
           periodos.map((periodo) =>
             obtenerResumenPagosPeriodo(periodo.desde, periodo.hasta),
@@ -1254,6 +1272,7 @@ const indicadoresProduccion = [
             ...resumen,
             costoDiseno: costosDisenoPorPeriodo.get(id) ?? 0,
           });
+          periodosDesactualizados.delete(id);
           const cobrado = document.querySelector(`[data-cobrado="${id}"]`);
           const porCobrar = document.querySelector(`[data-por-cobrar="${id}"]`);
           const efectivo = document.querySelector(`[data-efectivo="${id}"]`);
@@ -1351,25 +1370,96 @@ const indicadoresProduccion = [
       if (estadisticasCargadas) return;
       estadisticasCargadas = true;
       if (fechaInput?.value) void cargarProduccion(fechaInput.value);
-      void cargarResumenFinanciero(fechaEcuador());
+      void cargarResumenFinanciero(
+        fechaEcuador(),
+        new Set([periodoFinancieroSeleccionado]),
+      );
     }
 
     window.addEventListener("centro-control:vista-activada", (event) => {
       const vista = (event as CustomEvent<{ vista?: string }>).detail?.vista;
-      if (vista === "estadisticas") cargarVistaEstadisticas();
+      vistaEstadisticasActiva = vista === "estadisticas";
+      if (vista === "estadisticas") {
+        cargarVistaEstadisticas();
+        if (produccionDesactualizada && fechaInput?.value) {
+          produccionDesactualizada = false;
+          void cargarProduccion(fechaInput.value);
+        }
+        if (periodosDesactualizados.has(periodoFinancieroSeleccionado)) {
+          void cargarResumenFinanciero(
+            fechaEcuador(),
+            new Set([periodoFinancieroSeleccionado]),
+          );
+        }
+      }
     });
 
     window.addEventListener("centro-control:actualizar-datos", () => {
-      if (!estadisticasCargadas) return;
-      if (fechaInput?.value) {
-        void cargarProduccion(fechaInput.value);
-      }
-      void cargarResumenFinanciero(fechaEcuador());
+      const fecha = fechaEcuador();
+      obtenerPeriodos(fecha).forEach(({ id }) =>
+        periodosDesactualizados.add(id),
+      );
+      if (!vistaEstadisticasActiva) return;
+      void cargarResumenFinanciero(
+        fecha,
+        new Set([periodoFinancieroSeleccionado]),
+      );
       if (
         periodoAporteInput?.value &&
         !modalAporte?.classList.contains("hidden")
       ) {
         void cargarAporteDesarrollador(periodoAporteInput.value);
+      }
+    });
+
+    window.addEventListener("centro-control:pedido-actualizado", (event) => {
+      if (!fechaInput?.value) return;
+      const detail = (
+        event as CustomEvent<{
+          anterior?: Pedido | null;
+          nuevo?: Pedido | null;
+          eliminado?: boolean;
+        }>
+      ).detail;
+      const anterior = detail?.anterior ?? null;
+      const pedido = detail?.nuevo ?? null;
+
+      if (!pedido) {
+        if (anterior || detail?.eliminado) {
+          if (vistaEstadisticasActiva) {
+            void cargarProduccion(fechaInput.value);
+          } else {
+            produccionDesactualizada = true;
+          }
+        }
+        return;
+      }
+
+      if (pedido.montoAbonado !== undefined) return;
+
+      const cambioDatosProduccion =
+        !anterior ||
+        anterior.servicio !== pedido.servicio ||
+        anterior.ancho !== pedido.ancho ||
+        anterior.largo !== pedido.largo ||
+        anterior.valorCobrar !== pedido.valorCobrar ||
+        anterior.aporteDesarrollador !== pedido.aporteDesarrollador;
+
+      const pasoAListo =
+        pedido.estado === "LISTO" &&
+        (anterior === null || anterior.estado !== "LISTO");
+      const cambioPrecioDePedidoEnLista =
+        cambioDatosProduccion && pedido.estado === "LISTO";
+      if (
+        (pasoAListo &&
+          fechaEcuadorPedido(pedido.updatedAt) === fechaInput.value) ||
+        cambioPrecioDePedidoEnLista
+      ) {
+        if (vistaEstadisticasActiva) {
+          void cargarProduccion(fechaInput.value);
+        } else {
+          produccionDesactualizada = true;
+        }
       }
     });
   </script>
