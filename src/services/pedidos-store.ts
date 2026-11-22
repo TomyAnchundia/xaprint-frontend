@@ -264,11 +264,12 @@ function actualizarPedido(
   pedidoActualizado: Pedido | { id: number; eliminado: true },
 ) {
   if ("eliminado" in pedidoActualizado && pedidoActualizado.eliminado) {
+    const anterior = pedidos.find((pedido) => pedido.id === pedidoActualizado.id);
     pedidos = pedidos.filter((pedido) => pedido.id !== pedidoActualizado.id);
     notificarPedidos();
     window.dispatchEvent(
       new CustomEvent("centro-control:pedido-actualizado", {
-        detail: pedidoActualizado,
+        detail: { anterior, nuevo: null, eliminado: true },
       }),
     );
     return;
@@ -277,6 +278,7 @@ function actualizarPedido(
   const indice = pedidos.findIndex(
     (pedido) => pedido.id === pedidoActualizado.id,
   );
+  const anterior = indice === -1 ? null : pedidos[indice];
 
   if (!pedidoPerteneceAlArea(pedidoActualizado, obtenerUsuario())) {
     if (indice !== -1) {
@@ -301,7 +303,7 @@ function actualizarPedido(
 
   window.dispatchEvent(
     new CustomEvent("centro-control:pedido-actualizado", {
-      detail: pedidoActualizado,
+      detail: { anterior, nuevo: pedidoActualizado, eliminado: false },
     }),
   );
 }

@@ -160,6 +160,7 @@
     obtenerEstadisticasPedidosHoy,
     type EstadisticasPedidosHoy,
   } from "../../services/api";
+  import type { Pedido } from "../../types/pedido";
   import { obtenerToken, obtenerUsuario } from "../../services/auth";
 
   const enRevision = document.getElementById("stat-en-revision");
@@ -376,7 +377,91 @@
     }
   }
 
-  window.addEventListener("centro-control:pedido-actualizado", () => {
+  function fechaEsDeHoy(fecha: string | null): boolean {
+    if (!fecha) return false;
+    const fechaRegistro = new Date(fecha);
+    const fechaActual = new Date();
+    const formatoFecha = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Guayaquil",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return (
+      formatoFecha.format(fechaRegistro) === formatoFecha.format(fechaActual)
+    );
+  }
+
+  function ajustarEstadisticas(
+    anterior: Pedido | null,
+    nuevo: Pedido | null,
+  ) {
+    if (!cargaInicialCompleta || !estadisticasPrevias) return;
+
+    const siguiente = { ...estadisticasPrevias };
+    const claves = [
+      "REVISION",
+      "IMPRIMIENDO",
+      "LISTO",
+      "ENTREGADO",
+    ] as const;
+    const restaSiCorrespondia = (pedido: Pedido | null) => {
+      if (!pedido || !(pedido.estado in siguiente)) {
+        return;
+      }
+      if (pedido.updatedAt && fechaEsDeHoy(pedido.updatedAt)) {
+        const estado = pedido.estado as keyof EstadoContadores;
+        siguiente[estado] = Math.max(0, siguiente[estado] - 1);
+      }
+    };
+
+    if (!nuevo && anterior) {
+      restaSiCorrespondia(anterior);
+    }
+
+    if (nuevo && anterior && anterior.estado !== nuevo.estado) {
+      restaSiCorrespondia(anterior);
+    }
+
+    if (nuevo && nuevo.estado in siguiente && fechaEsDeHoy(nuevo.updatedAt)) {
+      const estado = nuevo.estado as keyof EstadoContadores;
+      if (!anterior || anterior.estado !== nuevo.estado) {
+        siguiente[estado]++;
+      }
+    }
+
+    for (const clave of claves) {
+      const contador = articulosEstadisticas[clave].contador;
+      if (contador) contador.textContent = String(siguiente[clave]);
+    }
+
+    let huboIncremento = false;
+    for (const clave of claves) {
+      if (siguiente[clave] > estadisticasPrevias[clave]) {
+        const articulo = articulosEstadisticas[clave].articulo;
+        if (articulo) animarIncremento(articulo);
+        huboIncremento = true;
+      }
+    }
+    estadisticasPrevias = siguiente;
+    if (huboIncremento) reproducirSonidoIncremento();
+  }
+
+  window.addEventListener("centro-control:pedido-actualizado", (event) => {
+    const detail = (event as CustomEvent<unknown>).detail;
+    if (
+      typeof detail === "object" &&
+      detail !== null &&
+      "anterior" in detail &&
+      "nuevo" in detail
+    ) {
+      ajustarEstadisticas(
+        (detail as { anterior: Pedido | null }).anterior,
+        (detail as { nuevo: Pedido | null }).nuevo,
+      );
+      return;
+    }
+
     if (temporizadorActualizacion !== null) {
       window.clearTimeout(temporizadorActualizacion);
     }

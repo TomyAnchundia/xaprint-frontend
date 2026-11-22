@@ -2396,15 +2396,17 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
           nuevoEstado,
         );
         renderizarPedido(pedidoActualizado);
-
-        /*
-         * El store/WebSocket actualizará el pedido.
-         * Recargamos el historial inmediatamente.
-         */
-
-        const nuevoHistorial = await obtenerHistorialPedido(pedidoActual.id);
-
-        renderizarHistorial(nuevoHistorial);
+        const estadoAnterior = pedidoActual.estado;
+        renderizarHistorial([
+          {
+            id: Date.now(),
+            estadoAnterior,
+            estadoNuevo: nuevoEstado,
+            fecha: pedidoActualizado.updatedAt,
+            usuario: usuarioActual?.username ?? "Usuario",
+          },
+          ...historialActual,
+        ]);
         if (nuevoEstado !== "CANCELADO") {
           mostrarNotificacion(
             `Pedido #${pedidoActual.id}: estado actualizado.`,

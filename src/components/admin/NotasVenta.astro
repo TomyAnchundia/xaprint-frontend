@@ -1306,24 +1306,41 @@
 
   window.addEventListener("centro-control:pedido-actualizado", (event) => {
     if (!vistaNotasActiva || !pedidosCargados) return;
-    const pedido = (
-      event as CustomEvent<Pedido | { id: number; eliminado: true }>
-    ).detail;
-    if (!pedido) return;
-
-    const indice = pedidosActuales.findIndex(
-      (actual) => actual.id === pedido.id,
-    );
-    if ("eliminado" in pedido && pedido.eliminado) {
-      if (indice !== -1) {
-        pedidosActuales = pedidosActuales.filter(
-          (actual) => actual.id !== pedido.id,
+    const detail = (event as CustomEvent<unknown>).detail;
+    const anterior =
+      typeof detail === "object" &&
+      detail !== null &&
+      "anterior" in detail
+        ? (detail as { anterior: Pedido | null }).anterior
+        : null;
+    const pedido =
+      typeof detail === "object" &&
+      detail !== null &&
+      "nuevo" in detail
+        ? (detail as { nuevo: Pedido | null }).nuevo
+        : typeof detail === "object" &&
+            detail !== null &&
+            "pedido" in detail
+          ? (detail as { pedido: Pedido }).pedido
+          : (detail as Pedido | null);
+    if (!pedido) {
+      if (anterior) {
+        const eliminado = pedidosActuales.some(
+          (actual) => actual.id === anterior.id,
         );
-        renderizar();
+        if (eliminado) {
+          pedidosActuales = pedidosActuales.filter(
+            (actual) => actual.id !== anterior.id,
+          );
+          renderizar();
+        }
       }
       return;
     }
 
+    const indice = pedidosActuales.findIndex(
+      (actual) => actual.id === pedido.id,
+    );
     const esElegible =
       pedido.estadoPago === "NO_PAGADO" &&
       estadosElegibles.has(pedido.estado) &&
