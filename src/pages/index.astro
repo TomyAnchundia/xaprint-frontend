@@ -13,6 +13,7 @@ import NotasVenta from "../components/admin/NotasVenta.astro";
 import Usuarios from "../components/admin/Usuarios.astro";
 import Tarifas from "../components/admin/Tarifas.astro";
 import Estadisticas from "../components/admin/Estadisticas.astro";
+import Cotizador from "../components/cotizador/Cotizador.astro";
 ---
 
 <Layout title="Pedidos | Centro de Control">
@@ -72,6 +73,13 @@ import Estadisticas from "../components/admin/Estadisticas.astro";
               class="hidden h-full min-h-0 flex-col"
             >
               <Historial />
+            </section>
+
+            <section
+              id="vista-cotizador"
+              class="hidden h-full min-h-0 flex-col"
+            >
+              <Cotizador />
             </section>
 
             <section
@@ -185,6 +193,10 @@ import Estadisticas from "../components/admin/Estadisticas.astro";
       pedidos: {
         element: document.getElementById("vista-pedidos"),
         titulo: "Pedidos",
+      },
+      cotizador: {
+        element: document.getElementById("vista-cotizador"),
+        titulo: "Cotizador",
       },
       historial: {
         element: document.getElementById("vista-historial"),

@@ -3,6 +3,7 @@ import type { Pedido, ServicioPedido } from "../types/pedido";
 
 export type VistaDashboard =
   | "pedidos"
+  | "cotizador"
   | "historial"
   | "clientes"
   | "notas-venta"
@@ -21,7 +22,7 @@ export function puedeVerVista(
     return !["usuarios", "tarifas", "estadisticas"].includes(vista);
   }
 
-  return vista === "pedidos" || vista === "historial";
+  return vista === "pedidos" || vista === "cotizador" || vista === "historial";
 }
 
 export function pedidoPerteneceAlArea(

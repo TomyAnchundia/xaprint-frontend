@@ -1,0 +1,741 @@
+<section
+  id="cotizador-contenido"
+  class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto"
+>
+  <div class="shrink-0">
+    <h2 class="text-2xl font-bold tracking-tight text-slate-900">Cotizador</h2>
+    <p class="mt-1 text-sm text-slate-500">
+      Calcula el largo y el precio según las medidas de las imágenes.
+    </p>
+  </div>
+
+  <div class="grid min-h-0 gap-4 xl:grid-cols-[minmax(280px,0.75fr)_minmax(420px,1.25fr)]">
+    <div class="space-y-4">
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <label class="block text-xs font-semibold text-slate-600">
+          Servicio
+        </label>
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <button
+            id="cotizador-servicio-uv"
+            type="button"
+            data-cotizador-servicio="UV"
+            class="rounded-lg border border-cyan-700 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-900"
+          >
+            UV · 29 cm
+          </button>
+          <button
+            id="cotizador-servicio-textil"
+            type="button"
+            data-cotizador-servicio="TEXTIL"
+            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+          >
+            Textil
+          </button>
+        </div>
+        <div id="cotizador-ancho-textil" class="mt-4 hidden">
+          <p class="text-xs font-semibold text-slate-600">Ancho del rollo textil</p>
+          <div class="mt-2 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              data-cotizador-ancho="31"
+              aria-pressed="false"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+            >
+              31 cm
+            </button>
+            <button
+              type="button"
+              data-cotizador-ancho="58"
+              aria-pressed="false"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+            >
+              58 cm
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-sm font-semibold text-slate-900">Imágenes</h3>
+          <button
+            id="cotizador-agregar"
+            type="button"
+            class="rounded-lg border border-cyan-200 px-3 py-2 text-xs font-semibold text-cyan-800 transition hover:bg-cyan-50"
+          >
+            Agregar
+          </button>
+        </div>
+        <div id="cotizador-piezas" class="mt-3 space-y-2"></div>
+      </div>
+      <p class="text-xs text-slate-500">
+        La orientación se ajusta automáticamente; las piezas pueden rotarse 90° para aprovechar el ancho.
+      </p>
+    </div>
+
+    <div class="min-w-0 space-y-4">
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900">Acomodo</h3>
+            <p id="cotizador-resumen-acomodo" class="mt-1 text-xs text-slate-500">
+              Agrega medidas para calcular.
+            </p>
+          </div>
+          <span
+            id="cotizador-separacion"
+            class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600"
+          >
+            Separación 3 mm
+          </span>
+        </div>
+        <div
+          id="cotizador-lienzo"
+          class="mt-4 flex min-h-64 items-center justify-center overflow-auto rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3"
+        ></div>
+        <div
+          id="cotizador-leyenda"
+          class="mt-3 flex flex-wrap gap-x-4 gap-y-2"
+          aria-label="Colores por tipo de imagen"
+        ></div>
+      </div>
+
+      <div id="cotizador-opciones" class="grid gap-3 sm:grid-cols-2"></div>
+
+      <div class="flex flex-wrap justify-end gap-2">
+        <button
+          id="cotizador-descargar"
+          type="button"
+          disabled
+          class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Descargar
+        </button>
+        <button
+          id="cotizador-compartir"
+          type="button"
+          disabled
+          class="rounded-lg bg-cyan-800 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Compartir
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import {
+    acomodarPiezas,
+    type PiezaCotizador,
+  } from "../../utils/cotizador-layout";
+  import { calcularPrecio } from "../../services/api";
+  import { mostrarNotificacion } from "../../utils/notificaciones";
+
+  type ServicioCotizador = "UV" | "TEXTIL";
+  interface OpcionCotizacion {
+    servicio: "UV" | "TEXTIL";
+    ancho: number;
+    largo: number;
+    precio: number | null;
+  }
+
+  const contenedorPiezas = document.getElementById("cotizador-piezas");
+  const lienzo = document.getElementById("cotizador-lienzo");
+  const opcionesContenedor = document.getElementById("cotizador-opciones");
+  const selectorAnchoTextil = document.getElementById("cotizador-ancho-textil");
+  const resumenAcomodo = document.getElementById("cotizador-resumen-acomodo");
+  const leyenda = document.getElementById("cotizador-leyenda");
+  const botonAgregar = document.getElementById("cotizador-agregar");
+  const botonCompartir = document.getElementById("cotizador-compartir") as HTMLButtonElement | null;
+  const botonDescargar = document.getElementById("cotizador-descargar") as HTMLButtonElement | null;
+
+  let servicioActual: ServicioCotizador = "UV";
+  let anchoSeleccionado = 29;
+  let siguienteId = 1;
+  let piezas: PiezaCotizador[] = [
+    { id: siguienteId++, cantidad: 1, ancho: 10, alto: 10 },
+  ];
+  let opcionSeleccionada: OpcionCotizacion | null = null;
+  let secuenciaRecalculo = 0;
+
+  const coloresGrupos = [
+    { fondo: "#bfdbfe", borde: "#2563eb", texto: "#1e3a8a" },
+    { fondo: "#bbf7d0", borde: "#16a34a", texto: "#14532d" },
+    { fondo: "#fde68a", borde: "#d97706", texto: "#78350f" },
+    { fondo: "#fbcfe8", borde: "#db2777", texto: "#831843" },
+    { fondo: "#ddd6fe", borde: "#7c3aed", texto: "#4c1d95" },
+    { fondo: "#a5f3fc", borde: "#0891b2", texto: "#164e63" },
+    { fondo: "#fecaca", borde: "#dc2626", texto: "#7f1d1d" },
+    { fondo: "#d9f99d", borde: "#65a30d", texto: "#365314" },
+  ] as const;
+
+  function colorGrupo(indice: number) {
+    const colorExistente = coloresGrupos[indice];
+    if (colorExistente) return colorExistente;
+    const tono = (indice * 137.508) % 360;
+    return {
+      fondo: `hsl(${tono} 75% 82%)`,
+      borde: `hsl(${tono} 70% 40%)`,
+      texto: `hsl(${tono} 60% 22%)`,
+    };
+  }
+
+  function moneda(valor: number): string {
+    return `$${valor.toFixed(2)}`;
+  }
+
+  function escapar(valor: string): string {
+    const elemento = document.createElement("span");
+    elemento.textContent = valor;
+    return elemento.innerHTML;
+  }
+
+  function obtenerPiezasValidas(): PiezaCotizador[] | null {
+    if (piezas.length === 0) return null;
+    for (const pieza of piezas) {
+      if (
+        !Number.isSafeInteger(pieza.cantidad) ||
+        pieza.cantidad < 1 ||
+        !Number.isFinite(pieza.ancho) ||
+        pieza.ancho <= 0 ||
+        !Number.isFinite(pieza.alto) ||
+        pieza.alto <= 0
+      ) {
+        return null;
+      }
+    }
+    return piezas;
+  }
+
+  function renderizarPiezas() {
+    if (!contenedorPiezas) return;
+    contenedorPiezas.innerHTML = piezas
+      .map(
+        (pieza, indice) => `
+          <div class="grid grid-cols-[64px_1fr_1fr_32px] items-end gap-2 rounded-lg border border-slate-100 p-2">
+            <label class="text-[10px] font-semibold text-slate-500">
+              Cantidad
+              <input
+                type="number"
+                min="1"
+                step="1"
+                data-cotizador-cantidad="${pieza.id}"
+                value="${pieza.cantidad}"
+                class="mt-1 h-9 w-full rounded-md border border-slate-200 px-2 text-sm text-slate-800"
+              />
+            </label>
+            <label class="text-[10px] font-semibold text-slate-500">
+              Ancho cm
+              <input
+                type="number"
+                min="0.1"
+                step="0.1"
+                data-cotizador-ancho="${pieza.id}"
+                value="${pieza.ancho}"
+                class="mt-1 h-9 w-full rounded-md border border-slate-200 px-2 text-sm text-slate-800"
+              />
+            </label>
+            <label class="text-[10px] font-semibold text-slate-500">
+              Alto cm
+              <input
+                type="number"
+                min="0.1"
+                step="0.1"
+                data-cotizador-alto="${pieza.id}"
+                value="${pieza.alto}"
+                class="mt-1 h-9 w-full rounded-md border border-slate-200 px-2 text-sm text-slate-800"
+              />
+            </label>
+            <button
+              type="button"
+              data-cotizador-eliminar="${pieza.id}"
+              aria-label="Eliminar fila ${indice + 1}"
+              class="mb-1 flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600"
+            >
+              ×
+            </button>
+          </div>
+        `,
+      )
+      .join("");
+
+    contenedorPiezas
+      .querySelectorAll<HTMLInputElement>("input[data-cotizador-cantidad]")
+      .forEach((input) =>
+        input.addEventListener("input", () => {
+          const id = Number(input.dataset.cotizadorCantidad);
+          const pieza = piezas.find((item) => item.id === id);
+          if (pieza) pieza.cantidad = Number(input.value);
+          void recalcular();
+        }),
+      );
+    contenedorPiezas
+      .querySelectorAll<HTMLInputElement>("input[data-cotizador-ancho]")
+      .forEach((input) =>
+        input.addEventListener("input", () => {
+          const id = Number(input.dataset.cotizadorAncho);
+          const pieza = piezas.find((item) => item.id === id);
+          if (pieza) pieza.ancho = Number(input.value);
+          void recalcular();
+        }),
+      );
+    contenedorPiezas
+      .querySelectorAll<HTMLInputElement>("input[data-cotizador-alto]")
+      .forEach((input) =>
+        input.addEventListener("input", () => {
+          const id = Number(input.dataset.cotizadorAlto);
+          const pieza = piezas.find((item) => item.id === id);
+          if (pieza) pieza.alto = Number(input.value);
+          void recalcular();
+        }),
+      );
+    contenedorPiezas
+      .querySelectorAll<HTMLButtonElement>("button[data-cotizador-eliminar]")
+      .forEach((boton) =>
+        boton.addEventListener("click", () => {
+          const id = Number(boton.dataset.cotizadorEliminar);
+          piezas = piezas.filter((pieza) => pieza.id !== id);
+          renderizarPiezas();
+          void recalcular();
+        }),
+      );
+  }
+
+  function svgAcomodo(
+    ancho: number,
+    largo: number,
+    resultado: ReturnType<typeof acomodarPiezas>,
+  ): string {
+    const margenIzquierdo = 42;
+    const margenSuperior = 32;
+    const margenDerecho = 12;
+    const margenInferior = 26;
+    const largoPlano = Math.max(largo, 1);
+    const escala = Math.min(8, 620 / ancho, 420 / largoPlano);
+    const anchoMesa = ancho * escala;
+    const altoMesa = largoPlano * escala;
+    const anchoSvg = margenIzquierdo + anchoMesa + margenDerecho;
+    const altoSvg = margenSuperior + altoMesa + margenInferior;
+    const origenX = margenIzquierdo;
+    const origenY = margenSuperior;
+    const pasoRegla =
+      largoPlano > 10000 ? 100 : largoPlano > 1000 ? 10 : largoPlano > 300 ? 5 : 1;
+    const pasoEtiqueta = Math.max(
+      pasoRegla,
+      Math.ceil(36 / (escala * pasoRegla)) * pasoRegla,
+    );
+    const marcasAncho = Array.from(
+      { length: Math.floor(ancho / pasoRegla) + 1 },
+      (_, indice) => indice * pasoRegla,
+    )
+      .map((cm) => {
+        const x = origenX + cm * escala;
+        const mayor = cm % pasoEtiqueta === 0;
+        return `
+          <line x1="${x}" y1="${origenY - (mayor ? 9 : 5)}" x2="${x}" y2="${origenY}" stroke="#475569" stroke-width="1"/>
+          ${
+            mayor
+              ? `<text x="${x}" y="${origenY - 13}" text-anchor="middle" font-family="Arial" font-size="10" fill="#334155">${cm}</text>`
+              : ""
+          }
+        `;
+      })
+      .join("");
+    const marcasLargo = Array.from(
+      { length: Math.floor(largoPlano / pasoRegla) + 1 },
+      (_, indice) => indice * pasoRegla,
+    )
+      .map((cm) => {
+        const y = origenY + cm * escala;
+        const mayor = cm % pasoEtiqueta === 0;
+        return `
+          <line x1="${origenX - (mayor ? 9 : 5)}" y1="${y}" x2="${origenX}" y2="${y}" stroke="#475569" stroke-width="1"/>
+          ${
+            mayor
+              ? `<text x="${origenX - 12}" y="${y + 3}" text-anchor="end" font-family="Arial" font-size="10" fill="#334155">${cm}</text>`
+              : ""
+          }
+        `;
+      })
+      .join("");
+    const lineasCuadricula = Array.from(
+      { length: Math.floor(largoPlano / 5) },
+      (_, indice) => (indice + 1) * 5,
+    )
+      .map((cm) => {
+        const y = origenY + cm * escala;
+        return `<line x1="${origenX}" y1="${y}" x2="${origenX + anchoMesa}" y2="${y}" stroke="#e2e8f0" stroke-width="0.7"/>`;
+      })
+      .join("");
+    const piezasSvg = resultado.piezas
+      .map((pieza) => {
+        const color = colorGrupo(Math.max(pieza.id - 1, 0));
+        const x = origenX + pieza.x * escala;
+        const y = origenY + pieza.y * escala;
+        const anchoPieza = pieza.ancho * escala;
+        const altoPieza = pieza.alto * escala;
+        const mostrarMedida =
+          anchoPieza >= 42 && altoPieza >= 24;
+        return `
+          <rect
+            x="${x.toFixed(2)}"
+            y="${y.toFixed(2)}"
+            width="${anchoPieza.toFixed(2)}"
+            height="${altoPieza.toFixed(2)}"
+            rx="3"
+            fill="${color.fondo}"
+            stroke="${color.borde}"
+            stroke-width="1"
+          />
+          ${
+            mostrarMedida
+              ? `<text
+                  x="${(x + anchoPieza / 2).toFixed(2)}"
+                  y="${(y + altoPieza / 2 + 4).toFixed(2)}"
+                  text-anchor="middle"
+                  font-family="Arial"
+                  font-size="${Math.min(12, Math.max(8, altoPieza * 0.16)).toFixed(1)}"
+                  fill="${color.texto}"
+                >${pieza.rotada ? `${pieza.alto}×${pieza.ancho}` : `${pieza.ancho}×${pieza.alto}`}</text>`
+              : ""
+          }
+        `;
+      })
+      .join("");
+
+    return `
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="${anchoSvg.toFixed(2)}"
+        height="${altoSvg.toFixed(2)}"
+        viewBox="0 0 ${anchoSvg.toFixed(2)} ${altoSvg.toFixed(2)}"
+        role="img"
+        aria-label="${largo > 0 ? `Mesa de trabajo de ${ancho} centímetros de ancho por ${largo} centímetros de largo` : `No hay piezas acomodadas en el ancho de ${ancho} centímetros`}"
+        class="h-auto max-h-[420px] max-w-full w-auto"
+      >
+        <rect width="${anchoSvg}" height="${altoSvg}" fill="#f8fafc"/>
+        <text x="${origenX}" y="12" font-family="Arial" font-size="9" fill="#64748b">ANCHO · cm</text>
+        <text x="10" y="${origenY + altoMesa / 2}" transform="rotate(-90 10 ${origenY + altoMesa / 2})" text-anchor="middle" font-family="Arial" font-size="9" fill="#64748b">LARGO · cm</text>
+        ${marcasAncho}
+        ${marcasLargo}
+        <rect
+          x="${origenX}"
+          y="${origenY}"
+          width="${anchoMesa}"
+          height="${altoMesa}"
+          fill="#ffffff"
+          stroke="#334155"
+          stroke-width="1.5"
+        />
+        ${lineasCuadricula}
+        ${piezasSvg}
+        <text x="${origenX + anchoMesa / 2}" y="${origenY + altoMesa + 19}" text-anchor="middle" font-family="Arial" font-size="10" fill="#334155">${largo > 0 ? `${ancho} cm × ${largo.toFixed(2)} cm` : `${ancho} cm · sin piezas acomodadas`}</text>
+      </svg>
+    `;
+  }
+
+  async function recalcular() {
+    const secuencia = ++secuenciaRecalculo;
+    const validas = obtenerPiezasValidas();
+    if (!validas) {
+      opcionSeleccionada = null;
+      if (lienzo) lienzo.innerHTML = `<p class="text-sm text-slate-500">Ingresa cantidades y medidas válidas.</p>`;
+      if (opcionesContenedor) opcionesContenedor.innerHTML = "";
+      if (resumenAcomodo) resumenAcomodo.textContent = "Agrega medidas válidas.";
+      if (leyenda) leyenda.innerHTML = "";
+      if (botonCompartir) botonCompartir.disabled = true;
+      if (botonDescargar) botonDescargar.disabled = true;
+      return;
+    }
+
+    const anchos = [servicioActual === "UV" ? 29 : anchoSeleccionado];
+    const resultados = anchos.map((ancho) => ({
+      ancho,
+      acomodo: acomodarPiezas(validas, ancho),
+    }));
+
+    const cotizaciones = await Promise.all(
+      resultados.map(async ({ ancho, acomodo }) => {
+        if (acomodo.piezasNoAcomodadas > 0) {
+          return { servicio: servicioActual, ancho, largo: acomodo.largoNecesario, precio: null };
+        }
+        try {
+          const respuesta = await calcularPrecio({
+            servicio: servicioActual,
+            ancho,
+            largo: acomodo.largoNecesario,
+          });
+          const precio = Number(
+            respuesta.valorCobrar ??
+              respuesta.valor_cobrar ??
+              respuesta.precio,
+          );
+          return {
+            servicio: servicioActual,
+            ancho,
+            largo: acomodo.largoNecesario,
+            precio: Number.isFinite(precio) ? precio : null,
+          };
+        } catch {
+          return { servicio: servicioActual, ancho, largo: acomodo.largoNecesario, precio: null };
+        }
+      }),
+    );
+    if (secuencia !== secuenciaRecalculo) return;
+
+    opcionSeleccionada = cotizaciones[0] ?? null;
+
+    const seleccionada = opcionSeleccionada;
+    if (!seleccionada) return;
+    const acomodoSeleccionado = resultados.find(
+      (resultado) => resultado.ancho === seleccionada.ancho,
+    );
+    if (!acomodoSeleccionado) return;
+
+    if (lienzo) {
+      lienzo.innerHTML = svgAcomodo(
+        seleccionada.ancho,
+        seleccionada.largo,
+        acomodoSeleccionado.acomodo,
+      );
+    }
+    if (resumenAcomodo) {
+      resumenAcomodo.textContent =
+        `${seleccionada.ancho} cm de ancho · ${seleccionada.largo.toFixed(2)} cm de largo`;
+    }
+    if (leyenda) {
+      leyenda.innerHTML = piezas
+        .map((grupo) => {
+          const color = colorGrupo(Math.max(grupo.id - 1, 0));
+          return `
+            <span class="inline-flex items-center gap-1.5 text-[11px] text-slate-600">
+              <span class="h-3 w-3 rounded-sm border" style="background:${color.fondo};border-color:${color.borde}"></span>
+              ${grupo.cantidad} × ${grupo.ancho} × ${grupo.alto} cm
+            </span>
+          `;
+        })
+        .join("");
+    }
+
+    if (opcionesContenedor) {
+      opcionesContenedor.innerHTML = cotizaciones
+        .map(
+          (opcion) => `
+            <div class="rounded-xl border border-cyan-700 bg-cyan-50 px-4 py-3 text-left">
+              <span class="block text-xs font-semibold text-slate-500">
+                ${opcion.servicio === "UV" ? "UV" : "DTF Textil"} · ${opcion.ancho} cm
+              </span>
+              <span class="mt-1 block text-lg font-bold text-slate-900">
+                ${opcion.precio === null ? "No disponible" : moneda(opcion.precio)}
+              </span>
+              <span class="mt-1 block text-xs text-slate-500">
+                Largo ${opcion.largo.toFixed(2)} cm
+              </span>
+            </div>
+          `,
+        )
+        .join("");
+    }
+
+    if (botonCompartir) botonCompartir.disabled = opcionSeleccionada.precio === null;
+    if (botonDescargar) botonDescargar.disabled = opcionSeleccionada.precio === null;
+  }
+
+  async function crearImagen(): Promise<Blob> {
+    if (!opcionSeleccionada) throw new Error("No hay una cotización seleccionada.");
+    const validas = obtenerPiezasValidas();
+    if (!validas) throw new Error("No hay piezas válidas.");
+    const canvas = document.createElement("canvas");
+    canvas.width = 900;
+    canvas.height = 900;
+    const contexto = canvas.getContext("2d");
+    if (!contexto) throw new Error("No se pudo preparar la imagen.");
+
+    contexto.fillStyle = "#f8fafc";
+    contexto.fillRect(0, 0, canvas.width, canvas.height);
+    contexto.fillStyle = "#0f172a";
+    contexto.font = "700 30px Arial";
+    contexto.fillText("Cotización de impresión", 40, 55);
+    contexto.font = "400 18px Arial";
+    contexto.fillStyle = "#475569";
+    contexto.fillText(
+      `${opcionSeleccionada.servicio === "UV" ? "UV" : "DTF Textil"} · ${opcionSeleccionada.ancho} cm`,
+      40,
+      88,
+    );
+
+    const acomodo = acomodarPiezas(validas, opcionSeleccionada.ancho);
+    const svg = svgAcomodo(
+      opcionSeleccionada.ancho,
+      opcionSeleccionada.largo,
+      acomodo,
+    );
+    const svgUrl = URL.createObjectURL(
+      new Blob([svg], { type: "image/svg+xml;charset=utf-8" }),
+    );
+    const imagenAcomodo = new Image();
+    imagenAcomodo.src = svgUrl;
+    try {
+      await imagenAcomodo.decode();
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
+    const escalaImagen = Math.min(
+      820 / imagenAcomodo.naturalWidth,
+      620 / imagenAcomodo.naturalHeight,
+    );
+    const anchoImagen = imagenAcomodo.naturalWidth * escalaImagen;
+    const altoImagen = imagenAcomodo.naturalHeight * escalaImagen;
+    contexto.drawImage(
+      imagenAcomodo,
+      (canvas.width - anchoImagen) / 2,
+      120,
+      anchoImagen,
+      altoImagen,
+    );
+
+    contexto.fillStyle = "#0f172a";
+    contexto.font = "700 24px Arial";
+    contexto.fillText(
+      `Largo: ${opcionSeleccionada.largo.toFixed(2)} cm`,
+      40,
+      795,
+    );
+    contexto.fillStyle = "#0e7490";
+    contexto.font = "700 34px Arial";
+    contexto.fillText(
+      `Precio: ${moneda(opcionSeleccionada.precio ?? 0)}`,
+      40,
+      845,
+    );
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("No se pudo generar la imagen."));
+      }, "image/png");
+    });
+  }
+
+  async function compartir() {
+    try {
+      if (botonCompartir) botonCompartir.disabled = true;
+      const imagen = await crearImagen();
+      const archivo = new File(
+        [imagen],
+        "cotizacion-impresion.png",
+        { type: "image/png" },
+      );
+      if (navigator.share && navigator.canShare?.({ files: [archivo] })) {
+        await navigator.share({
+          title: "Cotización de impresión",
+          text: `Largo: ${opcionSeleccionada?.largo.toFixed(2)} cm · Precio: ${moneda(opcionSeleccionada?.precio ?? 0)}`,
+          files: [archivo],
+        });
+      } else if (navigator.clipboard && typeof ClipboardItem !== "undefined") {
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": imagen }),
+        ]);
+        mostrarNotificacion("Cotización copiada al portapapeles.");
+      } else {
+        await descargarImagen();
+        mostrarNotificacion("La cotización se descargó.");
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      mostrarNotificacion(
+        error instanceof Error ? error.message : "No se pudo compartir la cotización.",
+        "error",
+      );
+    } finally {
+      if (botonCompartir) botonCompartir.disabled = opcionSeleccionada?.precio === null;
+    }
+  }
+
+  async function descargarImagen() {
+    const imagen = await crearImagen();
+    const url = URL.createObjectURL(imagen);
+    const enlace = document.createElement("a");
+    enlace.href = url;
+    enlace.download = "cotizacion-impresion.png";
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  botonAgregar?.addEventListener("click", () => {
+    piezas.push({
+      id: siguienteId++,
+      cantidad: 1,
+      ancho: 10,
+      alto: 10,
+    });
+    renderizarPiezas();
+    void recalcular();
+  });
+
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-cotizador-servicio]")
+    .forEach((boton) => {
+      boton.addEventListener("click", () => {
+        servicioActual = boton.dataset.cotizadorServicio as ServicioCotizador;
+        anchoSeleccionado = servicioActual === "UV" ? 29 : 31;
+        selectorAnchoTextil?.classList.toggle(
+          "hidden",
+          servicioActual !== "TEXTIL",
+        );
+        actualizarAnchosTextil();
+        document
+          .querySelectorAll<HTMLButtonElement>("[data-cotizador-servicio]")
+          .forEach((item) => {
+            item.classList.remove("border-cyan-700", "bg-cyan-50", "text-cyan-900");
+            item.classList.add("border-slate-200", "bg-white", "text-slate-700");
+          });
+        boton.classList.add("border-cyan-700", "bg-cyan-50", "text-cyan-900");
+        boton.classList.remove("border-slate-200", "bg-white", "text-slate-700");
+        void recalcular();
+      });
+    });
+
+  function actualizarAnchosTextil() {
+    document
+      .querySelectorAll<HTMLButtonElement>("[data-cotizador-ancho]")
+      .forEach((boton) => {
+        const seleccionado = Number(boton.dataset.cotizadorAncho) === anchoSeleccionado;
+        boton.setAttribute("aria-pressed", String(seleccionado));
+        boton.classList.toggle("border-cyan-700", seleccionado);
+        boton.classList.toggle("bg-cyan-50", seleccionado);
+        boton.classList.toggle("text-cyan-900", seleccionado);
+        boton.classList.toggle("border-slate-200", !seleccionado);
+        boton.classList.toggle("bg-white", !seleccionado);
+        boton.classList.toggle("text-slate-700", !seleccionado);
+      });
+  }
+
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-cotizador-ancho]")
+    .forEach((boton) =>
+      boton.addEventListener("click", () => {
+        anchoSeleccionado = Number(boton.dataset.cotizadorAncho);
+        actualizarAnchosTextil();
+        void recalcular();
+      }),
+    );
+
+  botonCompartir?.addEventListener("click", () => void compartir());
+  botonDescargar?.addEventListener("click", () => {
+    void descargarImagen().catch((error) =>
+      mostrarNotificacion(
+        error instanceof Error ? error.message : "No se pudo descargar.",
+        "error",
+      ),
+    );
+  });
+
+  renderizarPiezas();
+  actualizarAnchosTextil();
+  void recalcular();
+</script>
