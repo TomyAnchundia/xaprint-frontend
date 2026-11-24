@@ -390,7 +390,7 @@ export async function obtenerPaginaPedidos(
     estado: filtros.estado,
     servicio: filtros.servicio,
     busqueda: filtros.busqueda,
-    limite: "50",
+    limite: "100",
   });
   if (filtros.cursor) parametros.set("cursor", filtros.cursor);
   return request<PaginaPedidos>(`/pedidos/pagina?${parametros.toString()}`);

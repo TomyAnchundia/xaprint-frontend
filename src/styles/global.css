@@ -905,6 +905,36 @@ html[data-theme="dark"]
   }
 }
 
+html[data-theme="dark"]
+  #modal-confirmar-pago
+  input[type="radio"]:checked
+  + label,
+html[data-theme="dark"]
+  #modal-confirmar-pago
+  input[type="radio"]:checked
+  + label:hover {
+  border-color: #34d399;
+  background-color: #064e3b;
+  box-shadow: 0 0 0 1px #34d399;
+}
+
+html[data-theme="dark"]
+  #modal-confirmar-pago
+  input[type="radio"]:checked
+  + label
+  > span
+  > span:first-child {
+  color: #d1fae5;
+}
+
+html[data-theme="dark"]
+  #modal-confirmar-pago
+  input[type="radio"]:checked
+  + label
+  svg {
+  color: #6ee7b7;
+}
+
 @media (max-width: 639px) {
   html[data-theme="dark"] #pedidos-tabla tbody tr,
   html[data-theme="dark"] .overflow-x-auto:has(table) tbody tr {

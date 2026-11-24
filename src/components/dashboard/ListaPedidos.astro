@@ -328,7 +328,17 @@
     class="flex w-full items-center px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
     role="menuitem"
   >
-    Avanzar estado
+    <span data-pedido-menu-etiqueta>Avanzar estado</span>
+    <svg
+      data-pedido-menu-spinner
+      class="ml-auto hidden h-4 w-4 animate-spin text-cyan-700"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+    </svg>
   </button>
   <button
     type="button"
@@ -336,7 +346,17 @@
     class="flex w-full items-center px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
     role="menuitem"
   >
-    Retroceder estado
+    <span data-pedido-menu-etiqueta>Retroceder estado</span>
+    <svg
+      data-pedido-menu-spinner
+      class="ml-auto hidden h-4 w-4 animate-spin text-cyan-700"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+    </svg>
   </button>
   <div class="my-1 border-t border-slate-100"></div>
   <button
@@ -696,7 +716,6 @@
   let filtroActual: FiltroPedido = "TODOS";
   let filtroServicioActual: FiltroServicioPedido = "TODOS";
   let nombreBuscado = "";
-  let temporizadorBusquedaServidor: number | null = null;
   const pedidosSeleccionados = new Set<number>();
   let procesandoCambioMasivo = false;
   let progresoCambioMasivo = "";
@@ -760,21 +779,10 @@
     const filtros: FiltrosStorePedidos = {
       estado: filtroActual,
       servicio: filtroServicioActual,
-      busqueda: nombreBuscado,
     };
     void cambiarFiltrosPedidos(filtros).catch((errorApi: unknown) => {
       console.error("No se pudieron cargar los pedidos filtrados:", errorApi);
     });
-  }
-
-  function programarBusquedaPedidos() {
-    if (temporizadorBusquedaServidor !== null) {
-      window.clearTimeout(temporizadorBusquedaServidor);
-    }
-    temporizadorBusquedaServidor = window.setTimeout(() => {
-      temporizadorBusquedaServidor = null;
-      solicitarPedidosFiltrados();
-    }, 250);
   }
 
   function normalizarTexto(valor: string): string {
@@ -786,6 +794,43 @@
 
   let pedidoMenuContextual: Pedido | null = null;
   let procesandoAccionContextual = false;
+  let accionContextualEnCurso: {
+    pedidoId: number;
+    accion: "avanzar" | "retroceder";
+  } | null = null;
+
+  function actualizarMenuContextualEnProceso(
+    accion?: "avanzar" | "retroceder",
+  ) {
+    menuContextual
+      ?.querySelectorAll<HTMLButtonElement>("[data-pedido-menu-accion]")
+      .forEach((boton) => {
+        const accionBoton = boton.dataset.pedidoMenuAccion;
+        const etiqueta = boton.querySelector("[data-pedido-menu-etiqueta]");
+        const spinner = boton.querySelector<SVGElement>(
+          "[data-pedido-menu-spinner]",
+        );
+        const estaEnProceso = accionBoton === accion;
+
+        boton.disabled = accion !== undefined;
+        boton.classList.toggle("opacity-60", accion !== undefined);
+        boton.setAttribute("aria-busy", String(estaEnProceso));
+        if (
+          etiqueta &&
+          (accionBoton === "avanzar" || accionBoton === "retroceder")
+        ) {
+          etiqueta.textContent =
+            estaEnProceso && accionBoton === "avanzar"
+              ? "Avanzando..."
+              : estaEnProceso && accionBoton === "retroceder"
+                ? "Retrocediendo..."
+                : accionBoton === "avanzar"
+                  ? "Avanzar estado"
+                  : "Retroceder estado";
+        }
+        spinner?.classList.toggle("hidden", !estaEnProceso);
+      });
+  }
 
   function ocultarMenuContextual() {
     menuContextual?.classList.add("hidden");
@@ -793,7 +838,7 @@
   }
 
   function abrirMenuContextual(pedido: Pedido, x: number, y: number) {
-    if (!menuContextual) return;
+    if (!menuContextual || procesandoAccionContextual) return;
     pedidoMenuContextual = pedido;
     const usuario = obtenerUsuario();
     const acciones = {
@@ -964,8 +1009,8 @@
     const accion = boton?.dataset.pedidoMenuAccion;
     if (!pedido || !accion || procesandoAccionContextual) return;
 
-    ocultarMenuContextual();
     if (accion === "editar") {
+      ocultarMenuContextual();
       document.dispatchEvent(
         new CustomEvent("centro-control:editar-pedido", {
           detail: { id: pedido.id },
@@ -974,6 +1019,7 @@
       return;
     }
     if (accion === "pago" || accion === "cancelar" || accion === "eliminar") {
+      ocultarMenuContextual();
       document.dispatchEvent(
         new CustomEvent("centro-control:accion-pedido", {
           detail: { id: pedido.id, accion },
@@ -982,17 +1028,35 @@
       return;
     }
 
+    const accionEstado =
+      accion === "avanzar" || accion === "retroceder" ? accion : undefined;
     const estadoDestino =
-      accion === "avanzar"
+      accionEstado === "avanzar"
         ? estadosSiguientes[pedido.estado]
-        : accion === "retroceder"
+        : accionEstado === "retroceder"
           ? estadosAnteriores[pedido.estado]
           : undefined;
-    if (!estadoDestino) return;
+    if (!accionEstado || !estadoDestino) return;
 
     procesandoAccionContextual = true;
+    accionContextualEnCurso = {
+      pedidoId: pedido.id,
+      accion: accionEstado,
+    };
+    actualizarMenuContextualEnProceso(accionContextualEnCurso.accion);
+    renderizarPedidos(true);
     try {
-      await cambiarEstadoPedido(pedido.id, estadoDestino);
+      const pedidoActualizado = await cambiarEstadoPedido(
+        pedido.id,
+        estadoDestino,
+      );
+      pedidosActuales = pedidosActuales.map((actual) =>
+        actual.id === pedidoActualizado.id ? pedidoActualizado : actual,
+      );
+      accionContextualEnCurso = null;
+      actualizarMenuContextualEnProceso();
+      ocultarMenuContextual();
+      renderizarPedidos();
       mostrarNotificacion(
         `Pedido #${pedido.id}: estado actualizado a ${estados[estadoDestino].label}.`,
       );
@@ -1007,6 +1071,9 @@
           : "No se pudo cambiar el estado del pedido.",
         "error",
       );
+      accionContextualEnCurso = null;
+      actualizarMenuContextualEnProceso();
+      renderizarPedidos(true);
     } finally {
       procesandoAccionContextual = false;
     }
@@ -1041,12 +1108,24 @@
     for (const pedido of pedidos) {
       const valor = obtenerPrecioPedido(pedido);
       if (valor === null) return null;
+      const abonado =
+        typeof pedido.montoAbonado === "number" &&
+        Number.isFinite(pedido.montoAbonado)
+          ? Math.min(Math.max(pedido.montoAbonado, 0), valor)
+          : pedido.estadoPago === "PAGADO"
+            ? valor
+            : pedido.estadoPago === "NO_PAGADO"
+              ? 0
+              : null;
+      if (abonado === null) return null;
 
       pedidosImagen.push({
         fecha: pedido.createdAt,
         servicio: pedido.servicio === "TEXTIL" ? "DTF textil" : "DTF UV",
         medidas: formatearMedidas(pedido),
         valor,
+        abonado,
+        porCobrar: Number(Math.max(valor - abonado, 0).toFixed(2)),
         aplicaPromocion: pedido.aplicaPromocion,
       });
     }
@@ -1054,7 +1133,21 @@
     return {
       cliente: primerPedido.cliente.nombre,
       pedidos: pedidosImagen,
-      total: pedidosImagen.reduce((suma, pedido) => suma + pedido.valor, 0),
+      total: Number(
+        pedidosImagen
+          .reduce((suma, pedido) => suma + pedido.porCobrar, 0)
+          .toFixed(2),
+      ),
+      totalPedidos: Number(
+        pedidosImagen
+          .reduce((suma, pedido) => suma + pedido.valor, 0)
+          .toFixed(2),
+      ),
+      totalAbonado: Number(
+        pedidosImagen
+          .reduce((suma, pedido) => suma + pedido.abonado, 0)
+          .toFixed(2),
+      ),
     };
   }
 
@@ -1138,11 +1231,7 @@
       );
       return;
     }
-    actualizarDetalleModalNota(
-      resumen.cliente,
-      detalle,
-      resumen.total,
-    );
+    actualizarDetalleModalNota(resumen.cliente, detalle, resumen.totalPedidos);
 
     modalTotalEstado && (modalTotalEstado.textContent = "");
     modalTotalPedidos.classList.remove("invisible", "opacity-0");
@@ -1492,8 +1581,8 @@
     });
   }
 
-  function renderizarPedidos() {
-    ocultarMenuContextual();
+  function renderizarPedidos(preservarMenuContextual = false) {
+    if (!preservarMenuContextual) ocultarMenuContextual();
     if (!body || !tarjetasBody || !lista || !loading || !vacio || !error) {
       return;
     }
@@ -1551,10 +1640,17 @@
     tarjetasBody.innerHTML = "";
 
     pedidos.forEach((pedido) => {
-      body.insertAdjacentHTML("beforeend", crearFilaPedido(pedido));
+      const accionEnCurso =
+        accionContextualEnCurso?.pedidoId === pedido.id
+          ? accionContextualEnCurso.accion
+          : undefined;
+      body.insertAdjacentHTML(
+        "beforeend",
+        crearFilaPedido(pedido, accionEnCurso),
+      );
       tarjetasBody.insertAdjacentHTML(
         "beforeend",
-        crearTarjetaPedido(pedido),
+        crearTarjetaPedido(pedido, accionEnCurso),
       );
       const fila = body.lastElementChild as HTMLTableRowElement | null;
       const tarjeta = tarjetasBody.lastElementChild as HTMLElement | null;
@@ -1930,7 +2026,6 @@
     pedidosSeleccionados.clear();
     nombreBuscado = buscadorCliente.value;
     renderizarPedidos();
-    programarBusquedaPedidos();
   });
 
   /*

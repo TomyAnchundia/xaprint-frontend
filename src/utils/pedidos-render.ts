@@ -184,8 +184,30 @@ export function crearIconosMetodoPago(
     .join("");
 }
 
-export function crearFilaPedido(pedido: Pedido): string {
+function crearIndicadorCambioEstado(
+  accion: "avanzar" | "retroceder" | undefined,
+): string {
+  if (!accion) return "";
+
+  const texto =
+    accion === "avanzar" ? "Avanzando estado..." : "Retrocediendo estado...";
+  return `
+    <span
+      class="inline-flex items-center gap-1.5 rounded-full bg-cyan-50 px-2 py-1 text-[11px] font-medium text-cyan-800"
+      role="status"
+      aria-live="polite"
+    >
+      ${texto}
+    </span>
+  `;
+}
+
+export function crearFilaPedido(
+  pedido: Pedido,
+  accionEnCurso?: "avanzar" | "retroceder",
+): string {
   const estado = estados[pedido.estado];
+  const indicadorCambioEstado = crearIndicadorCambioEstado(accionEnCurso);
   const fechaVencimientoReferencia =
     new Date(pedido.createdAt).getTime() + 5 * 24 * 60 * 60 * 1000;
   const referenciaDisponible =
@@ -198,10 +220,11 @@ export function crearFilaPedido(pedido: Pedido): string {
     <tr
       data-pedido-row-id="${pedido.id}"
       tabindex="0"
+      aria-busy="${Boolean(accionEnCurso)}"
       aria-label="Abrir detalle del pedido ${pedido.id}"
       aria-haspopup="dialog"
       title="Abrir detalle del pedido"
-      class="pedido-row group cursor-pointer transition-colors duration-150 hover:bg-slate-100/70 focus-visible:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-700 active:bg-slate-200"
+      class="pedido-row group cursor-pointer transition-colors duration-150 ${accionEnCurso ? "bg-cyan-50/60" : ""} hover:bg-slate-100/70 focus-visible:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-700 active:bg-slate-200"
     >
       <td class="px-3 py-4">
         <input
@@ -256,6 +279,7 @@ export function crearFilaPedido(pedido: Pedido): string {
                 `
                 : ""
             }
+            ${indicadorCambioEstado}
           </div>
         </div>
       </td>
@@ -380,15 +404,22 @@ export function crearFilaPedido(pedido: Pedido): string {
   `;
 }
 
-export function crearTarjetaPedido(pedido: Pedido): string {
+export function crearTarjetaPedido(
+  pedido: Pedido,
+  accionEnCurso?: "avanzar" | "retroceder",
+): string {
   const estado = estados[pedido.estado];
+  const indicadorCambioEstado = crearIndicadorCambioEstado(accionEnCurso);
   const servicio =
     pedido.servicio === "TEXTIL"
       ? `Textil ${pedido.ancho} cm`
       : "UV";
 
   return `
-    <article class="rounded-xl border border-slate-200 bg-white shadow-sm">
+    <article
+      aria-busy="${Boolean(accionEnCurso)}"
+      class="rounded-xl border ${accionEnCurso ? "border-cyan-300 bg-cyan-50/30" : "border-slate-200 bg-white"} shadow-sm"
+    >
       <div class="flex items-start gap-3 p-4">
         <button
           type="button"
@@ -424,6 +455,12 @@ export function crearTarjetaPedido(pedido: Pedido): string {
               ${formatearHora(pedido.createdAt)}
             </time>
           </div>
+
+          ${
+            indicadorCambioEstado
+              ? `<div class="mt-2">${indicadorCambioEstado}</div>`
+              : ""
+          }
 
           <div class="mt-3 flex items-center justify-between gap-2">
             <span class="text-xs font-medium text-slate-600">${servicio}</span>

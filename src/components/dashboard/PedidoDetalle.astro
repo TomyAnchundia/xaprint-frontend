@@ -799,8 +799,6 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     </div>
   </aside>
 
-  <PedidoDetalleModales />
-
   <script>
     import {
       actualizarPedido,
@@ -2860,18 +2858,43 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
         const { id, accion } = customEvent.detail ?? {};
         if (!Number.isSafeInteger(id) || id <= 0) return;
 
+        if (accion === "pago") {
+          if (esEmpleado) return;
+
+          const secuencia = ++secuenciaCargaPedido;
+          try {
+            const pedido = await obtenerPedido(id);
+            if (secuencia !== secuenciaCargaPedido) return;
+
+            pedidoActual = pedido;
+            if (pedido.estado !== "CANCELADO") {
+              mostrarModalPago(
+                pedido.estadoPago === "PAGADO" ? "revertir" : "registrar",
+              );
+            }
+          } catch (errorApi) {
+            if (secuencia !== secuenciaCargaPedido) return;
+            console.error(
+              `No se pudo cargar el pedido #${id} para registrar el pago:`,
+              errorApi,
+            );
+            mostrarNotificacion(
+              errorApi instanceof Error
+                ? errorApi.message
+                : "No se pudo cargar el pedido para registrar el pago.",
+              "error",
+            );
+          }
+          return;
+        }
+
+        if (accion !== "cancelar" && accion !== "eliminar") return;
+
         mostrarOverlay();
         const pedido = await cargarPedido(id);
         if (!pedido || pedidoActual?.id !== id) return;
 
         switch (accion) {
-          case "pago":
-            if (!esEmpleado && pedido.estado !== "CANCELADO") {
-              mostrarModalPago(
-                pedido.estadoPago === "PAGADO" ? "revertir" : "registrar",
-              );
-            }
-            break;
           case "cancelar":
             if (
               !esEmpleado &&
@@ -2912,3 +2935,5 @@ import PedidoDetalleModales from "./PedidoDetalleModales.astro";
     });
   </script>
 </div>
+
+<PedidoDetalleModales />

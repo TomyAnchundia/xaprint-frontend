@@ -26,7 +26,6 @@ export interface EstadoPaginacionPedidos {
 export interface FiltrosStorePedidos {
   estado: FiltroEstadoPedidos;
   servicio: FiltroServicioPedidos;
-  busqueda: string;
 }
 
 let pedidos: Pedido[] = [];
@@ -42,7 +41,6 @@ let secuenciaCarga = 0;
 let filtrosActuales: FiltrosStorePedidos = {
   estado: "TODOS",
   servicio: "TODOS",
-  busqueda: "",
 };
 let estadoPaginacion: EstadoPaginacionPedidos = {
   cargandoInicial: true,
@@ -127,13 +125,6 @@ function notificarClientesActualizados() {
   );
 }
 
-function normalizarTexto(valor: string) {
-  return valor
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("es");
-}
-
 function fechaEsDeHoy(fecha: string | null): boolean {
   if (!fecha) return false;
 
@@ -168,13 +159,7 @@ function pedidoCoincideConFiltros(pedido: Pedido): boolean {
     (filtrosActuales.servicio === "TEXTIL_58" &&
       pedido.servicio === "TEXTIL" &&
       pedido.ancho === 58);
-  if (!coincideServicio) return false;
-
-  const busqueda = normalizarTexto(filtrosActuales.busqueda.trim());
-  return (
-    !busqueda ||
-    normalizarTexto(pedido.cliente?.nombre ?? "").includes(busqueda)
-  );
+  return coincideServicio;
 }
 
 function compararPedidos(a: Pedido, b: Pedido): number {
@@ -205,6 +190,7 @@ async function cargarPagina(reiniciar: boolean): Promise<void> {
   try {
     const pagina = await obtenerPaginaPedidos({
       ...filtrosActuales,
+      busqueda: "",
       ...(reiniciar || !cursor ? {} : { cursor }),
     });
     if (secuencia !== secuenciaCarga) return;
